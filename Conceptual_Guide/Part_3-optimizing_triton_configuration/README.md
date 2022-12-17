@@ -1,4 +1,6 @@
 # Customizing deployment with Model Analyzer
+|Related Pages | [Model Analyzer](https://github.com/triton-inference-server/model_analyzer) | [Model Navigator](https://github.com/triton-inference-server/model_navigator) |
+| ------------ | --------------- | --------------- |
 
 Every inference deployment has its unique set of challenges. These challenges may arise from Service Level Agreements about maintaining latency, limited hardware resources, unique requirements of individual models, the nature and the volume of requests, or something completely different. Additionally, the Triton Inference Server has many features which can be leveraged be make tradeoffs between memory consumption and performance. 
 

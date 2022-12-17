@@ -1,5 +1,8 @@
 # Dynamic Batching & Concurrent Model Execution
 
+|Related Pages | [Performance Analyzer](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/perf_analyzer.md) | [Model Configuration](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md) |
+| ------------ | --------------- | --------------- |
+
 Part-1 of this series introduced the mechanisms to set up a Triton Inference Server. This iteration discusses the concept of dynamic batching and concurrent model execution. These are important features that can be used to reduce latency as well as increase throughput via higher resource utilization. 
 
 ## What is Dynamic Batching?

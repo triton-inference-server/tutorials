@@ -1,5 +1,8 @@
 # Accelerating Inference for Deep Learning Models
 
+|Related Pages | [TensorRT](https://github.com/NVIDIA/TensorRT) | [Model Navigator](https://github.com/triton-inference-server/model_navigator) | [Optimization Summary](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/optimization.md) |
+| ------------ | --------------- | --------------- | --------------- |
+
 Model acceleration is a complex nuanced topic. The viability of techniques like graph optimizations for models, pruning, knowledge distillation, quantization, and more, highly depend on the structure of the model. Each of these topics are vast fields of research in their own right and building custom tools requires massive engineering investment. 
 
 Rather than having an exhaustive outline of the ecosystem, for brevity and objectivity, this discussion will be focused on the tools and features which are recommended to use while deploying models using the Triton Inference Server.
