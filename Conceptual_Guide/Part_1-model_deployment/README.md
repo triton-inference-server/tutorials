@@ -1,5 +1,8 @@
 # Deploy models using Triton
 
+|Related Pages | [Model Repository](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_repository.md) | [Model Configuration](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md) |
+| ------------ | --------------- | --------------- |
+
 Any deep learning inference serving solution needs to tackle two fundamental challenges:
 * Managing multiple models.
 * Versioning, loading, and unloading models.
