@@ -9,8 +9,8 @@ For users experiencing the "Tensor in" & "Tensor out" approach to Deep Learning 
 
 The focus of these examples is to demonstrate deployment for models trained with various frameworks. These are quick demonstrations made with an understanding that the user is somewhat familiar with Triton. **It is highly recommended to review [Part 1 of the Conceptual Guide](Conceptual_Guide/Part_1-model_deployment/README.md) for a complete understanding**.
 
-| Deploy a | [PyTorch Model](./Quick_Deploy/PyTorch/README.md) | [TensorFlow Model](./Quick_Deploy/TensorFlow/README.md) | [ONNX Model]() | [Custom Scripts]() | [TensorRT Accelerated Model](https://github.com/NVIDIA/TensorRT/tree/main/quickstart/deploy_to_triton) |
-| ------------ | --------------- | ------------ | --------------- | --------------- | --------------- |
+| Deploy a | [PyTorch Model](./Quick_Deploy/PyTorch/README.md) | [TensorFlow Model](./Quick_Deploy/TensorFlow/README.md) | [ONNX Model]() | [TensorRT Accelerated Model](https://github.com/NVIDIA/TensorRT/tree/main/quickstart/deploy_to_triton) |
+| ------------ | --------------- | ------------ | --------------- | --------------- |
 
 ## Navigating Triton Inference Server Resources
 
@@ -24,3 +24,12 @@ The Triton Inference Server GitHub organization contains multiple repositories h
 ## Adding Requests
 
 Open an issue and specify details for adding a request for an example. Want to make a contribution? Open a pull request and tag an Admin.
+
+
+## TODO 
+
+* Sanitize images pulled with wget
+* Add copyright
+* Add HuggingFace Section
+* Add links in QuickDeploy
+* Review the CTA for Conceptual Guides
