@@ -1,0 +1,20 @@
+name: "recognition_postprocessing"
+backend: "python"
+max_batch_size: 256 
+input [
+{
+    name: "recognition_postprocessing_input"
+    data_type: TYPE_FP32
+    dims: [ 26, 37]
+}
+] 
+output [
+{
+    name: "recognition_postprocessing_output"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+}
+]
+
+instance_group [{ kind: KIND_CPU }]
+

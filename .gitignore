@@ -1,0 +1,8 @@
+# Pretrained Models
+*.onnx
+
+# Python Stuff
+__pycache__
+
+# Downloaded Assets
+downloads

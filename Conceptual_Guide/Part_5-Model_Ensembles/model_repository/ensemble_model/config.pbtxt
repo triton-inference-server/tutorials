@@ -1,0 +1,95 @@
+name: "ensemble_model"
+platform: "ensemble"
+max_batch_size: 256
+input [
+  {
+    name: "input_image"
+    data_type: TYPE_UINT8
+    dims: [ -1 ]
+  }
+]
+output [
+  {
+    name: "recognized_text"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+
+ensemble_scheduling {
+  step [
+    {
+      model_name: "detection_preprocessing"
+      model_version: -1
+      input_map {
+        key: "detection_preprocessing_input"
+        value: "input_image"
+      }
+      output_map {
+        key: "detection_preprocessing_output"
+        value: "preprocessed_image"
+      }
+    },
+    {
+      model_name: "text_detection"
+      model_version: -1
+      input_map {
+        key: "input_images:0"
+        value: "preprocessed_image"
+      }
+      output_map {
+        key: "feature_fusion/Conv_7/Sigmoid:0"
+        value: "Sigmoid:0"
+      },
+      output_map {
+        key: "feature_fusion/concat_3:0"
+        value: "concat_3:0"
+      }
+    },
+    {
+      model_name: "detection_postprocessing"
+      model_version: -1
+      input_map {
+        key: "detection_postprocessing_input_1"
+        value: "Sigmoid:0"
+      }
+      input_map {
+        key: "detection_postprocessing_input_2"
+        value: "concat_3:0"
+      }
+      input_map {
+        key: "detection_postprocessing_input_3"
+        value: "preprocessed_image"
+      }
+      output_map {
+        key: "detection_postprocessing_output"
+        value: "cropped_images"
+      }
+    },
+    {
+      model_name: "text_recognition"
+      model_version: -1
+      input_map {
+        key: "input.1"
+        value: "cropped_images"
+      }
+      output_map {
+        key: "308"
+        value: "recognition_output"
+      }
+    },
+    {
+      model_name: "recognition_postprocessing"
+      model_version: -1
+      input_map {
+        key: "recognition_postprocessing_input"
+        value: "recognition_output"
+      }
+      output_map {
+        key: "recognition_postprocessing_output"
+        value: "recognized_text"
+      }
+    }
+  ]
+}
+
