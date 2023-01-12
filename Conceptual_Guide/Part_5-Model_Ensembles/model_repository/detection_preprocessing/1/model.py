@@ -1,4 +1,4 @@
-# Copyright (c) 2021, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -25,7 +25,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
-import sys
 import json
 import io
 
@@ -34,10 +33,8 @@ import io
 # contains some utility functions for extracting information from model_config
 # and converting Triton input/output types to numpy types.
 import triton_python_backend_utils as pb_utils
-# from torchvision.utils import save_image
 from PIL import Image
 import torchvision.transforms as transforms
-import os
 import torch
 
 class TritonPythonModel:
@@ -114,7 +111,6 @@ class TritonPythonModel:
                 ])
 
                 im = loader(image)
-                # save_image(im, "processed.png")
                 im = torch.unsqueeze(im,0)
                 return im.permute(0,2,3,1)
 
@@ -123,10 +119,6 @@ class TritonPythonModel:
             image = Image.open(io.BytesIO(img.tobytes()))
             img_out = image_loader(image)
             img_out = np.array(img_out)*255.0
-            #import cv2
-            #image__ = np.squeeze(img_out,axis=0)
-            #print(image__.shape,flush=True)
-            #cv2.imwrite("perm.png", image__)
 
             out_tensor_0 = pb_utils.Tensor("detection_preprocessing_output",
                                            img_out.astype(output0_dtype))

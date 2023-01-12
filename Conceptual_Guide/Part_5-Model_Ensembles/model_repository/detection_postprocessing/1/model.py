@@ -1,4 +1,4 @@
-# Copyright (c) 2021, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -185,11 +185,10 @@ class TritonPythonModel:
                 cropped = fourPointsTransform(frame, vertices)
                 cv2.imwrite(str(count)+".png",cropped)
                 cropped = np.expand_dims(cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY),axis=0)
-                
-                #cropped = cropped.transpose(2,1,0)/255.0
+
                 cropped_list.append(((cropped/255.0)-0.5)*2)
             cropped_arr = np.stack(cropped_list,axis=0)
-            
+
             np.save("tensor.pkl",cropped_arr)
             out_tensor_0 = pb_utils.Tensor("detection_postprocessing_output",
                                            cropped_arr.astype(output0_dtype))
@@ -214,4 +213,3 @@ class TritonPythonModel:
         the model to perform any necessary clean ups before exit.
         """
         print('Cleaning up...')
-
