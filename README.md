@@ -2,8 +2,8 @@
 
 For users experiencing the "Tensor in" & "Tensor out" approach to Deep Learning Inference, getting started with Triton can lead to many questions. The goal of this repository is to familiarize users with Triton's features and provide guides and examples to ease migration.
 
-| [Conceptual Guide](Conceptual_Guide/README.md) | [Quick Overview](https://www.youtube.com/watch?v=NQDtfSi5QF4) | [Documentation](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html) | [Help me deploy](Quick_Deploy/README.md) |
-| ------------ | --------------- | --------------- | ------------ |
+| [Conceptual Guide](Conceptual_Guide/README.md) | [Quick Overview](https://www.youtube.com/watch?v=NQDtfSi5QF4) | [Documentation](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html) |
+| ------------ | --------------- | --------------- |
 
 ## Quick Deploy
 
@@ -24,12 +24,3 @@ The Triton Inference Server GitHub organization contains multiple repositories h
 ## Adding Requests
 
 Open an issue and specify details for adding a request for an example. Want to make a contribution? Open a pull request and tag an Admin.
-
-
-## TODO 
-
-* Sanitize images pulled with wget
-* Add copyright
-* Add HuggingFace Section
-* Add links in QuickDeploy
-* Review the CTA for Conceptual Guides
