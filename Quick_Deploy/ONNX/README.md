@@ -1,10 +1,10 @@
-# Deploying a PyTorch Model
+# Deploying an ONNX Model
 
 This README showcases how to deploy a simple ResNet model on Triton Inference Server.
 
 ## Step 1: Export the model
 
-Save the PyTorch model.
+Export the ONNX model.
 
 ```
 # <xx.xx> is the yy:mm for the publishing tag for NVIDIA's PyTorch 
@@ -20,12 +20,12 @@ To use Triton, we need to build a model repository. The structure of the reposit
 ```
 model_repository
 |
-+-- resnet50
++-- resnet
     |
     +-- config.pbtxt
     +-- 1
         |
-        +-- model.pt
+        +-- model.onnx
 ```
 
 A sample model configuration of the model is included with this demo as `config.pbtxt`. If you are new to Triton, it is highly recommended to [review Part 1](../../Conceptual_Guide/Part_1-model_deployment/README.md) of the conceptual guide.
@@ -49,17 +49,17 @@ client = httpclient.InferenceServerClient(url="localhost:8000")
 ```
 Secondly, we specify the names of the input and output layer(s) of our model.
 ```
-inputs = httpclient.InferInput("input__0", transformed_img.shape, datatype="FP32")
+inputs = httpclient.InferInput("input", transformed_img.shape, datatype="FP32")
 inputs.set_data_from_numpy(transformed_img, binary_data=True)
 
-outputs = httpclient.InferRequestedOutput("output__0", binary_data=True, class_count=1000)
+outputs = httpclient.InferRequestedOutput("output", binary_data=True, class_count=1000)
 ```
 Lastly, we send an inference request to the Triton Inference Server.
 ```
 # Querying the server
-results = client.infer(model_name="resnet50", inputs=[inputs], outputs=[outputs])
-predictions = results.as_numpy('output__0')
-print(predictions[:5])
+results = client.infer(model_name="resnet", inputs=[inputs], outputs=[outputs])
+inference_output = results.as_numpy('output')
+print(np.squeeze(inference_output)[:5])
 ```
 The output of the same should look like below:
 ```
