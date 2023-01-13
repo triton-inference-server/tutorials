@@ -1,10 +1,10 @@
 # Executing Multiple Models with Model Ensembles
 
-In the previous examples, we've executed the text detection and recognition models seperately, with our client making two different network calls and performing various processing steps in between.
+Modern machine learning systems often involve the execution of several models, whether that is because of pre- and post-processing steps, aggregating the prediction of multiple models, or having different models executing different tasks.  In this example, we'll be exploring the use of Model Ensembles for executing multiple models serverside with only a single network call. This offers the benefit of reducing the number of times we need to copy data between the client and the server, and eliminating some of the latency inherent to network calls.
+
+To illustrate the process of creating a model ensemble, we'll be reusing the model pipeline first introduced in [Part 1](../Part_1-model_deployment/README.md). In the previous examples, we've executed the text detection and recognition models seperately, with our client making two different network calls and performing various processing steps -- such as cropping and resizing images, or decoding tensors into text -- in between. Below is a simplified diagram of the pipeline, with some steps occuring on the client and some on the server.
 
 ```mermaid
-%%{init: {'theme':'forest'}}%%
-
 sequenceDiagram
     Client ->> Triton: Full Image
     activate Triton
@@ -21,11 +21,9 @@ sequenceDiagram
     deactivate Triton
 ```
 
-In order to reduce the number of network calls and data copying necessary (and also take advantage of the potentially more powerful server to perform pre/post processing), we can use Triton's [Model Ensemble]() feature to execute multiple models with one network call.
+In order to reduce the number of network calls and data copying necessary (and also take advantage of the potentially more powerful server to perform pre/post processing), we can use Triton's [Model Ensemble](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/architecture.html#ensemble-models) feature to execute multiple models with one network call.
 
 ```mermaid
-%%{init: {'theme':'forest'}}%%
-
 sequenceDiagram
     Client ->> Triton: Full Image
     activate Triton
@@ -44,43 +42,8 @@ sequenceDiagram
 ```
 Let's go over how to create a Triton model ensemble.
 
-<!-- ```mermaid
-sequenceDiagram
-    Client ->> Triton: Model 1 Request
-    activate Triton
-    Note right of Triton: Model 1 Execution
-    Triton ->> Client: Model 1 Response
-    deactivate Triton
-    activate Client
-    Note left of Client: Client Processing
-    Client ->> Triton: Model 2 Request
-    deactivate Client
-    activate Triton
-    Note right of Triton: Model 2 Execution
-    Triton ->> Client: Model 2 Response
-    deactivate Triton
-``` -->
-<!--
-```mermaid
-sequenceDiagram
-    Client ->> Triton: Model 1 Request
-    activate Triton
-    activate Triton
-    Note right of Triton: Model 1 Execution
-    deactivate Triton
-    activate Triton
-    Note right of Triton: Serverside Processing
-    Note left of Triton: Enesemble Model Processing
-    deactivate Triton
-    activate Triton
-    Note right of Triton: Model 2 Execution
-    Triton ->> Client: Model 2 Response
-    deactivate Triton
-    deactivate Triton
-``` -->
-
 ## Deploy Base Models
-The first step is to deploy the Text Detection and Test Recognition models as regular Triton models, just as we've done in the past. For a detailed overview of deploying models to Triton, see [Part 1]() of this tutorial. For convenience, we've included two shell scripts for exporting these models.
+The first step is to deploy the text detection and text recognition models as regular Triton models, just as we've done in the past. For a detailed overview of deploying models to Triton, see [Part 1](../Part_1-model_deployment/README.md) of this tutorial. For convenience, we've included two shell scripts for exporting these models.
 
 >Note: We recommend executing the following step within the NGC TensorFlow container environment, which you can launch with `docker run -it --gpus all -v ${PWD}:/workspace nvcr.io/nvidia/tensorflow:<yy.mm>-tf2-py3`
 ```bash
@@ -93,21 +56,21 @@ bash utils/export_text_recognition.sh
 ```
 
 ## Deploy Pre/Post Processing Scripts with the Python Backend
-In previous parts of this this tutorial, we've created client scripts that perform various pre and post processing steps within the client process. For example, in [Part 1](), we created a script [`client.py`]() which
+In previous parts of this this tutorial, we've created client scripts that perform various pre and post processing steps within the client process. For example, in [Part 1](../Part_1-model_deployment/README.md), we created a script [`client.py`](../Part_1-model_deployment/clients/client.py) which
 1. Read in images
 2. Performed scaling and normalization on the image
 3. Sent the images to the Triton server
-4. Cropped the images based on the bounding boxes returned by the Text Detection model
+4. Cropped the images based on the bounding boxes returned by the text detection model
 5. Saved the cropped images back to disk
 
-Then, we had a second client, [`client2.py`](), which
+Then, we had a second client, [`client2.py`](../Part_1-model_deployment/clients/client2.py), which
 1. Read in the cropped images from `client.py`
 2. Performed scaling and normalization on the images
 3. Sent the cropped images to the Triton server
-4. Decoded the tensor returned by the Text Recogntion model into text
+4. Decoded the tensor returned by the text recogntion model into text
 5. Printed the decoded text
 
-In order to move many of these steps to the Triton server, we can create a set of scripts that will run in the [Python Backend for Triton](). The Python backend can be used to execute any Python code, so we can port our client code directly over to Triton with only a few changes.
+In order to move many of these steps to the Triton server, we can create a set of scripts that will run in the [Python Backend for Triton](https://github.com/triton-inference-server/python_backend). The Python backend can be used to execute any Python code, so we can port our client code directly over to Triton with only a few changes.
 
 To deploy a model for the Python Backend, we can create a directory in our model repository as below (where `my_python_model` can be any name):
 
@@ -170,11 +133,12 @@ for request in requests:
     img = in_0.as_numpy()
     image = Image.open(io.BytesIO(img.tobytes()))
 
+    # Pre-process image
     img_out = image_loader(image)
     img_out = np.array(img_out)*255.0
 
+    # Create object to send to next model
     out_tensor_0 = pb_utils.Tensor("detection_preprocessing_output", img_out.astype(output0_dtype))
-
     inference_response = pb_utils.InferenceResponse(output_tensors=[out_tensor_0])
     responses.append(inference_response)
 return responses
@@ -188,12 +152,12 @@ Now that we have every individal part of our pipeline ready to deploy individual
 To do this, we'll create another entry in our model repository
 ```
 ensemble_model/
+├── 1
 └── config.pbtxt
 ```
-This time, as you can see, we only need the configuration file to describe our ensemble. Within the config file, we'll define the execution graph of our ensemble. This graph describes what the overall inputs and outputs of the ensemble will be, as well as how the data will flow through the models in the form of a Directed Acyclic Graph. Below is a graphical representation of our model pipeline. The diamonds represent the final input and output of the ensemble, which is all the client will interact with. The circles are the different deployed models, and the rectangles are the tensors that get passed between models.
+This time, we only need the configuration file to describe our ensemble along with an empty version folder (which you will need to create with `mkdir -p model_repository/ensemble_model/1`). Within the config file, we'll define the execution graph of our ensemble. This graph describes what the overall inputs and outputs of the ensemble will be, as well as how the data will flow through the models in the form of a Directed Acyclic Graph. Below is a graphical representation of our model pipeline. The diamonds represent the final input and output of the ensemble, which is all the client will interact with. The circles are the different deployed models, and the rectangles are the tensors that get passed between models.
 
 ```mermaid
-%%{init: {'theme':'forest'}}%%
 flowchart LR
     in{input image} --> m1((detection_preprocessing))
     m1((detection_preprocessing)) --> t1((preprocessed_image))
@@ -347,14 +311,21 @@ import numpy as np
 
 client = grpcclient.InferenceServerClient(url="localhost:8001")
 
-image_data = np.fromfile("img1.jpg", dtype='uint8')
+image_data = np.fromfile("img1.jpg", dtype="uint8")
 image_data = np.expand_dims(image_data, axis=0)
 
-input_tensors = [
-    grpcclient.InferInput("input_image", image_data.shape, "UINT8")
-]
+input_tensors = [grpcclient.InferInput("input_image", image_data.shape, "UINT8")]
 input_tensors[0].set_data_from_numpy(image_data)
 results = client.infer(model_name="ensemble_model", inputs=input_tensors)
-output_data = results.as_numpy("recognized_text")
+output_data = results.as_numpy("recognized_text").astype(str)
 print(output_data)
 ```
+
+Now, run the full inference pipeline by executing the following command
+```
+python client.py
+```
+You should see the parsed text printed out to your console.
+
+## What's Next
+In this example, we showed how you can use Model Ensembles to execute multiple models on Triton with a single network call. Model Ensembles are a geat solution when your model pipelines are in the form of a Directed Acyclic Graph. However, not all pipelines can be expressed this way. For example, if your pipeline logic requires conditional branching or looped execution, you might need a more expressive way to define your pipeline. In the [next example](../Part_6-building_complex_pipelines/), we'll explore how you can create define more complex pipelines in Python using [Business Logic Scripting](https://github.com/triton-inference-server/python_backend#business-logic-scripting).
