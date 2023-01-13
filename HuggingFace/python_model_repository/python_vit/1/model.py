@@ -1,15 +1,11 @@
-import json
 import numpy as np
 import triton_python_backend_utils as pb_utils
-
-from PIL import Image
-import requests
 from transformers import ViTFeatureExtractor, ViTModel
 
 class TritonPythonModel:
     def initialize(self, args):
-        self.feature_extractor = ViTFeatureExtractor.from_pretrained('google/vit-base-patch16-224-in21k')
-        self.model = ViTModel.from_pretrained("google/vit-base-patch16-224-in21k")
+        self.feature_extractor = ViTFeatureExtractor.from_pretrained('google/vit-base-patch16-224-in21k').to("cuda")
+        self.model = ViTModel.from_pretrained("google/vit-base-patch16-224-in21k").to("cuda")
 
     def execute(self, requests):
         responses = []

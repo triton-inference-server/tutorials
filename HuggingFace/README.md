@@ -2,7 +2,7 @@
 
 **Note**: If you are new to the Triton Inference Server, it is recommended to review [Part 1 of the Conceptual Guide](../Conceptual_Guide/Part_1-model_deployment/README.md). This tutorial assumes basic understanding about the Triton Inference Server.
 
-Developers often work with open source models. HuggingFace is a popular source of many open source models. The discussion in this guide will focus on how a user can deploy almost any model from HuggingFace with the Triton Inference Server. For this example, the [CLIP](https://openai.com/blog/clip/) model available on [HuggingFace](https://huggingface.co/docs/transformers/model_doc/clip#transformers.CLIPModel.forward.example) is being used.
+Developers often work with open source models. HuggingFace is a popular source of many open source models. The discussion in this guide will focus on how a user can deploy almost any model from HuggingFace with the Triton Inference Server. For this example, the [ViT](https://arxiv.org/abs/2010.11929) model available on [HuggingFace](https://huggingface.co/docs/transformers/v4.24.0/en/model_doc/vit#transformers.ViTModel) is being used.
 
 There are two primary methods of deploying a model pipeline on the Triton Inference Server:
 * **Approach 1:** Deploy the pipeline without explicitly breaking apart model from a pipeline. The core advantage of this approach is that users can quickly deploy their pipeline. This can be achieved with the use of Triton's ["Python Backend"](https://github.com/triton-inference-server/python_backend). Refer [this example](https://github.com/triton-inference-server/python_backend#usage) for more information.
@@ -60,7 +60,7 @@ mv python_model_repository model_repository
 docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:yy.mm-py3 bash
 
 # Install dependencies
-pip install torch torchvision torchaudio
+pip install torch torchvision
 pip install transformers
 pip install Image
 
@@ -78,7 +78,7 @@ python3 python_backend_client.py
 
 ### Deploying using a Triton Ensemble
 
-Before the specifics around deploying the models can be discussed, the first step is to download the model. It is recommended to run the following inside the [PyTorch container available on NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch). If this is your first try at setting up a model ensemble in Triton, it is highly recommended to review [this guide](../Conceptual_Guide/Part_5-Model_Ensembles/README.md) before proceeding.
+Before the specifics around deploying the models can be discussed, the first step is to download and export the model. It is recommended to run the following inside the [PyTorch container available on NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch). If this is your first try at setting up a model ensemble in Triton, it is highly recommended to review [this guide](../Conceptual_Guide/Part_5-Model_Ensembles/README.md) before proceeding. The key advantages of breaking down the pipeline is improved performance and access to a multitude of acceleration options. Explore [Part-4](../Conceptual_Guide/Part_4-inference_acceleration/README.md) of the conceptual guide for details about model acceleration.
   
 ```
 # Pull the PyTorch Container from NGC
@@ -112,7 +112,7 @@ In this approach, there are three points to consider.
 * **The ViT model**: Simply place the model in the repository as described above. The Triton Inference Server will auto generate the required configurations files. If you wish to see the generated config, append `--log-verbose=1` while launching the server.
 * **Ensemble Configuration**: In this configuration we map the input and output layers of the two pieces in the ensemble, `preprocessing` which is handled on the python backend, and the ViT model which is deployed on the ONNX backend.
 
-The key advantages of breaking down the pipeline is improved performance and access to a multitude of acceleration options. To run this example, similar to the previous flow, make use of two terminals:
+To run this example, similar to the previous flow, make use of two terminals:
 * **Terminal 1**: This terminal will be used to launch the Triton Inference Server.
 
 ```

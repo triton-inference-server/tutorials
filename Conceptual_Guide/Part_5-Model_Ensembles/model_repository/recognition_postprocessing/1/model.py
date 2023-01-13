@@ -55,7 +55,7 @@ class TritonPythonModel:
         """
 
         # You must parse model_config. JSON string is not parsed here
-        self.model_config = model_config = json.loads(args['model_config'])
+        model_config = json.loads(args['model_config'])
 
         # Get OUTPUT0 configuration
         output0_config = pb_utils.get_output_config_by_name(

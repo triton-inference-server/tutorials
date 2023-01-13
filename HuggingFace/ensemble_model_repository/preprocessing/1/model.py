@@ -1,9 +1,5 @@
-import json
 import numpy as np
-import torch
 import triton_python_backend_utils as pb_utils
-
-import requests
 from transformers import ViTFeatureExtractor
 
 
