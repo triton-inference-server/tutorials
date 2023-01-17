@@ -13,7 +13,10 @@ There are two primary methods of deploying a model pipeline on the Triton Infere
 
 ## Examples
 
-For the purposes of this explanation, the `ViT` model([Link to HuggingFace](https://huggingface.co/docs/transformers/v4.24.0/en/model_doc/vit#transformers.ViTModel)) is being used. A good practice while deploying models is to understand the and explore the structure of the model if you are unfamiliar with it. An easy way to see the structure with a graphical interface is by using tools like [Netron](https://netron.app/). While Triton autogenerates configuration files for the models, the users may still require names of the input and output layers to build clients/model ensembles. 
+For the purposes of this explanation, the `ViT` model([Link to HuggingFace](https://huggingface.co/docs/transformers/v4.24.0/en/model_doc/vit#transformers.ViTModel)) is being used. This specific ViT model doesn't have an application head (like image classification) but [HuggingFace provides](https://huggingface.co/models?search=google/vit) ViT models with different heads which users can utilize. 
+
+
+A good practice while deploying models is to understand the and explore the structure of the model if you are unfamiliar with it. An easy way to see the structure with a graphical interface is by using tools like [Netron](https://netron.app/). While Triton autogenerates configuration files for the models, the users may still require names of the input and output layers to build clients/model ensembles for which we can use this tool. 
 
 ![multiple models](./img/netron.PNG)
 
@@ -73,7 +76,7 @@ tritonserver --model-repository=/models
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:yy.mm-py3-sdk bash
 
 # Run the client
-python3 python_backend_client.py 
+python3 client.py --model_name "python_vit"
 ```
 
 ### Deploying using a Triton Ensemble
@@ -140,7 +143,7 @@ tritonserver --model-repository=/models
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:yy.mm-py3-sdk bash
 
 # Run the client
-python3 ensemble_backend_client.py 
+python3 client.py --model_name "ensemble_model"
 ```
 
 ## Summary

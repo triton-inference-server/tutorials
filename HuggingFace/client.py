@@ -4,12 +4,14 @@ from tritonclient.utils import *
 from PIL import Image
 import tritonclient.http as httpclient
 import requests
+import argparse
 
-def main():
+
+def main(model_name):
     client = httpclient.InferenceServerClient(url="localhost:8000")
 
     # Inputs
-    url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+    url = "http://images.cocodataset.org/val2017/000000161642.jpg"
     image = np.asarray(Image.open(requests.get(url, stream=True).raw)).astype(np.float32)
     image = np.expand_dims(image, axis=0)
 
@@ -25,7 +27,7 @@ def main():
     ]
 
     # Query
-    query_response = client.infer(model_name="ensemble_model",
+    query_response = client.infer(model_name=model_name,
                                   inputs=input_tensors,
                                   outputs=outputs)
 
@@ -34,4 +36,7 @@ def main():
     print(last_hidden_state.shape)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_name", default="Select between enemble_model and python_vit")
+    args = parser.parse_args()
+    main(args.model_name)
