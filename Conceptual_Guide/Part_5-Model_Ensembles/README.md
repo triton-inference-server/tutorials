@@ -1,8 +1,37 @@
+<!-- 
+# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+
 # Executing Multiple Models with Model Ensembles
 
-Modern machine learning systems often involve the execution of several models, whether that is because of pre- and post-processing steps, aggregating the prediction of multiple models, or having different models executing different tasks.  In this example, we'll be exploring the use of Model Ensembles for executing multiple models serverside with only a single network call. This offers the benefit of reducing the number of times we need to copy data between the client and the server, and eliminating some of the latency inherent to network calls.
+Modern machine learning systems often involve the execution of several models, whether that is because of pre- and post-processing steps, aggregating the prediction of multiple models, or having different models executing different tasks.  In this example, we'll be exploring the use of Model Ensembles for executing multiple models server side with only a single network call. This offers the benefit of reducing the number of times we need to copy data between the client and the server, and eliminating some of the latency inherent to network calls.
 
-To illustrate the process of creating a model ensemble, we'll be reusing the model pipeline first introduced in [Part 1](../Part_1-model_deployment/README.md). In the previous examples, we've executed the text detection and recognition models seperately, with our client making two different network calls and performing various processing steps -- such as cropping and resizing images, or decoding tensors into text -- in between. Below is a simplified diagram of the pipeline, with some steps occuring on the client and some on the server.
+To illustrate the process of creating a model ensemble, we'll be reusing the model pipeline first introduced in [Part 1](../Part_1-model_deployment/README.md). In the previous examples, we've executed the text detection and recognition models separately, with our client making two different network calls and performing various processing steps -- such as cropping and resizing images, or decoding tensors into text -- in between. Below is a simplified diagram of the pipeline, with some steps occurring on the client and some on the server.
 
 ```mermaid
 sequenceDiagram
@@ -67,7 +96,7 @@ Then, we had a second client, [`client2.py`](../Part_1-model_deployment/clients/
 1. Read in the cropped images from `client.py`
 2. Performed scaling and normalization on the images
 3. Sent the cropped images to the Triton server
-4. Decoded the tensor returned by the text recogntion model into text
+4. Decoded the tensor returned by the text recognition model into text
 5. Printed the decoded text
 
 In order to move many of these steps to the Triton server, we can create a set of scripts that will run in the [Python Backend for Triton](https://github.com/triton-inference-server/python_backend). The Python backend can be used to execute any Python code, so we can port our client code directly over to Triton with only a few changes.
@@ -81,7 +110,7 @@ my_python_model/
 └── config.pbtxt
 ```
 
-In total, we'll create 3 different python backend models to go with our existing onnx models to serve with Triton:
+In total, we'll create 3 different python backend models to go with our existing ONNX models to serve with Triton:
 1. `detection_preprocessing`
 2. `detection_postprocessing`
 3. `recognition_postprocessing`
@@ -147,7 +176,7 @@ return responses
 
 
 ## Tying the models together with Model Ensembles
-Now that we have every individal part of our pipeline ready to deploy individually, we can create an ensemble "model" that can execute each model in order, and pass the various inputs and outputs between each model.
+Now that we have every individual part of our pipeline ready to deploy individually, we can create an ensemble "model" that can execute each model in order, and pass the various inputs and outputs between each model.
 
 To do this, we'll create another entry in our model repository
 ```
@@ -328,4 +357,4 @@ python client.py
 You should see the parsed text printed out to your console.
 
 ## What's Next
-In this example, we showed how you can use Model Ensembles to execute multiple models on Triton with a single network call. Model Ensembles are a geat solution when your model pipelines are in the form of a Directed Acyclic Graph. However, not all pipelines can be expressed this way. For example, if your pipeline logic requires conditional branching or looped execution, you might need a more expressive way to define your pipeline. In the [next example](../Part_6-building_complex_pipelines/), we'll explore how you can create define more complex pipelines in Python using [Business Logic Scripting](https://github.com/triton-inference-server/python_backend#business-logic-scripting).
+In this example, we showed how you can use Model Ensembles to execute multiple models on Triton with a single network call. Model Ensembles are a great solution when your model pipelines are in the form of a Directed Acyclic Graph. However, not all pipelines can be expressed this way. For example, if your pipeline logic requires conditional branching or looped execution, you might need a more expressive way to define your pipeline. In the [next example](../Part_6-building_complex_pipelines/), we'll explore how you can create define more complex pipelines in Python using [Business Logic Scripting](https://github.com/triton-inference-server/python_backend#business-logic-scripting).
