@@ -20,13 +20,13 @@ transformed_img = rn50_preprocess()
 # Setting up client
 client = httpclient.InferenceServerClient(url="localhost:8000")
 
-inputs = httpclient.InferInput("input", transformed_img.shape, datatype="FP32")
+inputs = httpclient.InferInput("data_0", transformed_img.shape, datatype="FP32")
 inputs.set_data_from_numpy(transformed_img, binary_data=True)
 
-outputs = httpclient.InferRequestedOutput("output", binary_data=True, class_count=1000)
+outputs = httpclient.InferRequestedOutput("fc6_1", binary_data=True, class_count=1000)
 
 # Querying the server
-results = client.infer(model_name="resnet", inputs=[inputs], outputs=[outputs])
-inference_output = results.as_numpy('output').astype(str)
+results = client.infer(model_name="densenet_onnx", inputs=[inputs], outputs=[outputs])
+inference_output = results.as_numpy('fc6_1').astype(str)
 
 print(np.squeeze(inference_output)[:5])
