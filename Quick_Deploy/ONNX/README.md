@@ -4,13 +4,13 @@ This README showcases how to deploy a simple ResNet model on Triton Inference Se
 
 ## Step 1: Export the model
 
-Export the ONNX model.
+Export the ONNX model or keep your ONNX model ready.
 
 ```
 # <xx.xx> is the yy:mm for the publishing tag for NVIDIA's PyTorch 
 # container; eg. 22.04
 
-docker run -it --gpus all -v ${PWD}:/workspace nvcr.io/nvidia/pytorch:<xx.xx>-py3
+docker run -it --rm --gpus all -v ${PWD}:/workspace nvcr.io/nvidia/pytorch:<xx.xx>-py3
 python export.py
 ```
 
@@ -30,6 +30,13 @@ model_repository
 
 A sample model configuration of the model is included with this demo as `config.pbtxt`. If you are new to Triton, it is highly recommended to [review Part 1](../../Conceptual_Guide/Part_1-model_deployment/README.md) of the conceptual guide.
 ```
+# Note: If you have your own model, do not copy the config.pbtxt file
+# Triton will auto generate the config file.
+
+mkdir -p model_repository/resnet/1
+mv config.pbtxt model_repository/resnet/
+mv model.onnx model_repository/resnet/1/
+
 docker run --gpus all --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:<xx.yy>-py3 tritonserver --model-repository=/models
 ```
 
@@ -38,7 +45,7 @@ docker run --gpus all --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 -v ${PWD}/mode
 Install dependencies & download an example image to test inference.
 
 ```
-docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:<yy.mm>-py3-sdk bash
+docker run -it --rm --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:<yy.mm>-py3-sdk bash
 pip install torchvision
 
 wget  -O img1.jpg "https://www.hakaimagazine.com/wp-content/uploads/header-gulf-birds.jpg"
@@ -47,7 +54,7 @@ Building a client requires three basic points. Firstly, we setup a connection wi
 ```
 client = httpclient.InferenceServerClient(url="localhost:8000")
 ```
-Secondly, we specify the names of the input and output layer(s) of our model.
+Secondly, we specify the names of the input and output layer(s) of our model as well as describe the shape and datatype of the expected input.
 ```
 inputs = httpclient.InferInput("input", transformed_img.shape, datatype="FP32")
 inputs.set_data_from_numpy(transformed_img, binary_data=True)

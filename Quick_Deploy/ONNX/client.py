@@ -27,5 +27,6 @@ outputs = httpclient.InferRequestedOutput("output", binary_data=True, class_coun
 
 # Querying the server
 results = client.infer(model_name="resnet", inputs=[inputs], outputs=[outputs])
-inference_output = results.as_numpy('output')
+inference_output = results.as_numpy('output').astype(str)
+
 print(np.squeeze(inference_output)[:5])
