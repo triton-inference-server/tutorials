@@ -1,3 +1,32 @@
+
+<!-- 
+# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
 # Deploying HuggingFace models
 
 **Note**: If you are new to the Triton Inference Server, it is recommended to review [Part 1 of the Conceptual Guide](../Conceptual_Guide/Part_1-model_deployment/README.md). This tutorial assumes basic understanding about the Triton Inference Server.
@@ -13,10 +42,7 @@ There are two primary methods of deploying a model pipeline on the Triton Infere
 
 ## Examples
 
-For the purposes of this explanation, the `ViT` model([Link to HuggingFace](https://huggingface.co/docs/transformers/v4.24.0/en/model_doc/vit#transformers.ViTModel)) is being used. This specific ViT model doesn't have an application head (like image classification) but [HuggingFace provides](https://huggingface.co/models?search=google/vit) ViT models with different heads which users can utilize. 
-
-
-A good practice while deploying models is to understand the and explore the structure of the model if you are unfamiliar with it. An easy way to see the structure with a graphical interface is by using tools like [Netron](https://netron.app/). While Triton autogenerates configuration files for the models, the users may still require names of the input and output layers to build clients/model ensembles for which we can use this tool. 
+For the purposes of this explanation, the `ViT` model([Link to HuggingFace](https://huggingface.co/docs/transformers/v4.24.0/en/model_doc/vit#transformers.ViTModel)) is being used. This specific ViT model doesn't have an application head (like image classification) but [HuggingFace provides](https://huggingface.co/models?search=google/vit) ViT models with different heads which users can utilize. A good practice while deploying models is to understand the and explore the structure of the model if you are unfamiliar with it. An easy way to see the structure with a graphical interface is by using tools like [Netron](https://netron.app/). While Triton autogenerates configuration files for the models, the users may still require names of the input and output layers to build clients/model ensembles for which we can use this tool. 
 
 ![multiple models](./img/netron.PNG)
 
@@ -76,6 +102,7 @@ tritonserver --model-repository=/models
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:yy.mm-py3-sdk bash
 
 # Run the client
+
 python3 client.py --model_name "python_vit"
 ```
 

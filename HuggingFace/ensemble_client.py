@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -24,48 +24,40 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-name: "text_recognition"
-backend: "onnxruntime"
-max_batch_size : 16
-input [
-  {
-    name: "input.1"
-    data_type: TYPE_FP32
-    dims: [ 1, 32, 100 ]
-  }
-]
-output [
-  {
-    name: "308"
-    data_type: TYPE_FP32
-    dims: [ 26, 37 ]
-  }
-]
+import numpy as np
+import time
+from tritonclient.utils import *
+from PIL import Image
+import tritonclient.http as httpclient
+import requests
 
-model_warmup {
-   name: "text_recognition"
-   batch_size: 16
-   inputs: {
-       key: "input.1"
-       value: {
-           data_type: TYPE_FP32
-           dims: 1
-           dims: 32
-           dims: 100
-           zero_data: true
-       }
-   }
-}
+def main():
+    client = httpclient.InferenceServerClient(url="localhost:8000")
 
-optimization {
-  graph : {
-    level : 1
-  }
- execution_accelerators {
-    gpu_execution_accelerator : [ {
-      name : "tensorrt",
-      parameters { key: "precision_mode" value: "FP16" },
-      parameters { key: "max_workspace_size_bytes" value: "1073741824" }
-    }]
-  }
-}
+    # Inputs
+    url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+    image = np.asarray(Image.open(requests.get(url, stream=True).raw)).astype(np.float32)
+    image = np.expand_dims(image, axis=0)
+
+    # Set Inputs
+    input_tensors = [
+        httpclient.InferInput("image", image.shape, datatype="FP32")
+    ]
+    input_tensors[0].set_data_from_numpy(image)
+
+    # Set outputs
+    outputs = [
+        httpclient.InferRequestedOutput("last_hidden_state")
+    ]
+
+    # Query
+    query_response = client.infer(model_name="ensemble_model",
+                                  inputs=input_tensors,
+                                  outputs=outputs)
+
+    # Output
+    last_hidden_state = query_response.as_numpy("last_hidden_state")
+    print(last_hidden_state.shape)
+
+if __name__ == "__main__":
+    main()

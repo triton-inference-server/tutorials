@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -24,48 +24,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-name: "text_recognition"
+name: "resnet"
 backend: "onnxruntime"
-max_batch_size : 16
-input [
-  {
-    name: "input.1"
-    data_type: TYPE_FP32
-    dims: [ 1, 32, 100 ]
-  }
+max_batch_size: 8
+input: [
+    {
+        name: "input"
+        data_type: TYPE_FP32
+        dims: [3, 224, 224]
+    }
 ]
-output [
-  {
-    name: "308"
-    data_type: TYPE_FP32
-    dims: [ 26, 37 ]
-  }
+output: [
+    {
+        name: "output"
+        data_type: TYPE_FP32
+        dims: [1000]
+    }
 ]
-
-model_warmup {
-   name: "text_recognition"
-   batch_size: 16
-   inputs: {
-       key: "input.1"
-       value: {
-           data_type: TYPE_FP32
-           dims: 1
-           dims: 32
-           dims: 100
-           zero_data: true
-       }
-   }
-}
-
-optimization {
-  graph : {
-    level : 1
-  }
- execution_accelerators {
-    gpu_execution_accelerator : [ {
-      name : "tensorrt",
-      parameters { key: "precision_mode" value: "FP16" },
-      parameters { key: "max_workspace_size_bytes" value: "1073741824" }
-    }]
-  }
-}

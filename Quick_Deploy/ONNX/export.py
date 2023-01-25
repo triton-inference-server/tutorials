@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -24,48 +24,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-name: "text_recognition"
-backend: "onnxruntime"
-max_batch_size : 16
-input [
-  {
-    name: "input.1"
-    data_type: TYPE_FP32
-    dims: [ 1, 32, 100 ]
-  }
-]
-output [
-  {
-    name: "308"
-    data_type: TYPE_FP32
-    dims: [ 26, 37 ]
-  }
-]
+import torch
+import torchvision.models as models
 
-model_warmup {
-   name: "text_recognition"
-   batch_size: 16
-   inputs: {
-       key: "input.1"
-       value: {
-           data_type: TYPE_FP32
-           dims: 1
-           dims: 32
-           dims: 100
-           zero_data: true
-       }
-   }
-}
+torch.hub._validate_not_a_forked_repo=lambda a,b,c: True
 
-optimization {
-  graph : {
-    level : 1
-  }
- execution_accelerators {
-    gpu_execution_accelerator : [ {
-      name : "tensorrt",
-      parameters { key: "precision_mode" value: "FP16" },
-      parameters { key: "max_workspace_size_bytes" value: "1073741824" }
-    }]
-  }
-}
+# load model; We are going to use a pretrained resnet model
+model = models.resnet50(pretrained=True).eval()
+x = torch.randn(1, 3, 224, 224, requires_grad=True)
+
+# Export the model
+torch.onnx.export(model,                        # model being run
+    x,                            # model input (or a tuple for multiple inputs)
+    "model.onnx",              # where to save the model (can be a file or file-like object)
+    export_params=True,           # store the trained parameter weights inside the model file
+    input_names = ['input'],      # the model's input names
+    output_names = ['output'],    # the model's output names
+    dynamic_axes = {
+        "input": {
+            0: "batch"
+        }
+    }
+)
