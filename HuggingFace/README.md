@@ -41,7 +41,7 @@ There are two primary methods of deploying a model pipeline on the Triton Infere
 
 ## Examples
 
-For the purposes of this explanation, the `ViT` model([Link to HuggingFace](https://huggingface.co/docs/transformers/v4.24.0/en/model_doc/vit#transformers.ViTModel)) is being used. A good practice while deploying models is to understand the and explore the structure of the model if you are unfamiliar with it. An easy way to see the structure with a graphical interface is by using tools like [Netron](https://netron.app/). While Triton autogenerates configuration files for the models, the users may still require names of the input and output layers to build clients/model ensembles. 
+For the purposes of this explanation, the `ViT` model([Link to HuggingFace](https://huggingface.co/docs/transformers/v4.24.0/en/model_doc/vit#transformers.ViTModel)) is being used. This specific ViT model doesn't have an application head (like image classification) but [HuggingFace provides](https://huggingface.co/models?search=google/vit) ViT models with different heads which users can utilize. A good practice while deploying models is to understand the and explore the structure of the model if you are unfamiliar with it. An easy way to see the structure with a graphical interface is by using tools like [Netron](https://netron.app/). While Triton autogenerates configuration files for the models, the users may still require names of the input and output layers to build clients/model ensembles for which we can use this tool. 
 
 ![multiple models](./img/netron.PNG)
 
@@ -101,9 +101,8 @@ tritonserver --model-repository=/models
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:yy.mm-py3-sdk bash
 
 # Run the client
-python3 python_backend_client.py 
+python3 client.py --model_name "python_vit"
 ```
-
 ### Deploying using a Triton Ensemble
 
 Before the specifics around deploying the models can be discussed, the first step is to download and export the model. It is recommended to run the following inside the [PyTorch container available on NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch). If this is your first try at setting up a model ensemble in Triton, it is highly recommended to review [this guide](../Conceptual_Guide/Part_5-Model_Ensembles/README.md) before proceeding. The key advantages of breaking down the pipeline is improved performance and access to a multitude of acceleration options. Explore [Part-4](../Conceptual_Guide/Part_4-inference_acceleration/README.md) of the conceptual guide for details about model acceleration.
@@ -168,9 +167,8 @@ tritonserver --model-repository=/models
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:yy.mm-py3-sdk bash
 
 # Run the client
-python3 ensemble_backend_client.py 
+python3 client.py --model_name "ensemble_model"
 ```
-
 ## Summary
 
 In summary, there are two methods in which most HuggingFace models can be deployed, either deploy the entire pipeline on a python backend, or construct and ensemble.
