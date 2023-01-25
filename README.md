@@ -9,7 +9,7 @@ For users experiencing the "Tensor in" & "Tensor out" approach to Deep Learning 
 
 The focus of these examples is to demonstrate deployment for models trained with various frameworks. These are quick demonstrations made with an understanding that the user is somewhat familiar with Triton. **It is highly recommended to review [Part 1 of the Conceptual Guide](Conceptual_Guide/Part_1-model_deployment/README.md) for a complete understanding**.
 
-| Deploy a | [PyTorch Model](./Quick_Deploy/PyTorch/README.md) | [TensorFlow Model](./Quick_Deploy/TensorFlow/README.md) | [ONNX Model]() | [TensorRT Accelerated Model](https://github.com/NVIDIA/TensorRT/tree/main/quickstart/deploy_to_triton) |
+| Deploy a | [PyTorch Model](./Quick_Deploy/PyTorch/README.md) | [TensorFlow Model](./Quick_Deploy/TensorFlow/README.md) | [ONNX Model](./Quick_Deploy/ONNX/README.md) | [TensorRT Accelerated Model](https://github.com/NVIDIA/TensorRT/tree/main/quickstart/deploy_to_triton) |
 | ------------ | --------------- | ------------ | --------------- | --------------- |
 
 ## Navigating Triton Inference Server Resources
