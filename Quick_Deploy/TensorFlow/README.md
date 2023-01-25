@@ -44,10 +44,9 @@ docker run --gpus all --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 -v ${PWD}/mode
 Install dependencies & download an example image to test inference.
 
 ```
+docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:<yy.mm>-py3-sdk bash
 pip install --upgrade tensorflow
-pip install pillow
-pip install nvidia-pyindex
-pip install tritonclient[all]
+pip install image
 
 wget  -O img1.jpg "https://www.hakaimagazine.com/wp-content/uploads/header-gulf-birds.jpg"
 ```
