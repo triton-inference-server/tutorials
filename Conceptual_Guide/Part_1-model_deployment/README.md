@@ -29,7 +29,7 @@
 
 # Deploy models using Triton
 
-| Navigate to | [Part 2: Improving Resource Utilization](Part_2-improving_resource_utilization/) | [Documentation: Model Repository](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_repository.md) | [Documentation: Model Configuration](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md) |
+| Navigate to | [Part 2: Improving Resource Utilization](../Part_2-improving_resource_utilization/) | [Documentation: Model Repository](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_repository.md) | [Documentation: Model Configuration](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md) |
 | ------------ | --------------- | --------------- | --------------- |
 
 Any deep learning inference serving solution needs to tackle two fundamental challenges:
