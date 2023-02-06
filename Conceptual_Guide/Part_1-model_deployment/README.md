@@ -38,7 +38,7 @@ Any deep learning inference serving solution needs to tackle two fundamental cha
 
 ## Before we begin
 
-The conceptual guide aims to educate developers about the challenges faced whilst building inference infrastructure for deploying deep learning pipelines. `Part 1 - Part 5` of this guide build towards solving a simple problem: Transcribing text from images. This challenge is addressed in 5 steps:
+The conceptual guide aims to educate developers about the challenges faced whilst building inference infrastructure for deploying deep learning pipelines. `Part 1 - Part 5` of this guide build towards solving a simple problem: deploying a performant and scalable pipeline for transcribing text from images. This pipeline includes 5 steps:
 * Pre-process the raw image
 * Detect "Text boxes" (Text Detection Model)
 * Crop and pre-process text
@@ -331,6 +331,6 @@ The policies can also be set via command line arguments whilst launching the ser
 
 # What's next?
 
-In this tutorial, we covered the very basics of setting up and querying a Triton Inference Server. This is Part 1 of a 6 part tutorial series that covers the challenges faced in deploying Deep Learning models to production. Part 2 covers `Concurrent Model Execution and Dynamic Batching`. Depending on your workload and experience you might want to jump to Part 5 with covers `Building an Ensemble Pipeline with multiple models, pre and post processing steps, and adding business logic`.
+In this tutorial, we covered the very basics of setting up and querying a Triton Inference Server. This is Part 1 of a 6 part tutorial series that covers the challenges faced in deploying Deep Learning models to production. [Part 2](../Part_2-improving_resource_utilization/) covers `Concurrent Model Execution and Dynamic Batching`. Depending on your workload and experience you might want to jump to [Part 5](../Part_5-Model_Ensembles/) which covers `Building an Ensemble Pipeline with multiple models, pre and post processing steps, and adding business logic`.
 
 
