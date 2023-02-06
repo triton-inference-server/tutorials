@@ -28,7 +28,7 @@
 
 # Building Complex Pipelines: Stable Diffusion
 
-| Navigate to | [Part 5: Building Model Ensembles](./Part_5-Model_Ensembles/)  | [Documentation: BLS](https://github.com/triton-inference-server/python_backend#business-logic-scripting) |
+| Navigate to | [Part 5: Building Model Ensembles](../Part_5-Model_Ensembles/)  | [Documentation: BLS](https://github.com/triton-inference-server/python_backend#business-logic-scripting) |
 | ------------ | --------------- | --------------- |
 
 **Watch [this explainer video](https://youtu.be/JgP2WgNIq_w) with discusses the pipeline, before proceeding with the example**. This example focuses on showcasing two of Triton Inference Server's features:

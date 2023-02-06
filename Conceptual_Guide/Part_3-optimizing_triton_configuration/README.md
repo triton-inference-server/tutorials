@@ -28,7 +28,7 @@
 
 
 # Customizing deployment with Model Analyzer
-| Navigate to | [Part 2: Improving Resource Utilization](Part_2-improving_resource_utilization/) | [Part 4: Accelerating Models](Part_4-inference_acceleration/) | 
+| Navigate to | [Part 2: Improving Resource Utilization](../Part_2-improving_resource_utilization/) | [Part 4: Accelerating Models](../Part_4-inference_acceleration/) | 
 | ------------ | --------------- | --------------- |
 
 

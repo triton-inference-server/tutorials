@@ -29,7 +29,7 @@
 
 # Accelerating Inference for Deep Learning Models
 
-| Navigate to | [Part 3: Optimizing Triton Configuration](Part_3-optimizing_triton_configuration/)  | [Part 5: Building Model Ensembles](./Part_5-Model_Ensembles/) | 
+| Navigate to | [Part 3: Optimizing Triton Configuration](../Part_3-optimizing_triton_configuration/)  | [Part 5: Building Model Ensembles](../Part_5-Model_Ensembles/) | 
 | ------------ | --------------- | --------------- |
 
 Model acceleration is a complex nuanced topic. The viability of techniques like graph optimizations for models, pruning, knowledge distillation, quantization, and more, highly depend on the structure of the model. Each of these topics are vast fields of research in their own right and building custom tools requires massive engineering investment. 
