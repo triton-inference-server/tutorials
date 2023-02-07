@@ -29,12 +29,23 @@
 
 # Deploy models using Triton
 
-|Related Pages | [Model Repository](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_repository.md) | [Model Configuration](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md) |
-| ------------ | --------------- | --------------- |
+| Navigate to | [Part 2: Improving Resource Utilization](../Part_2-improving_resource_utilization/) | [Documentation: Model Repository](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_repository.md) | [Documentation: Model Configuration](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md) |
+| ------------ | --------------- | --------------- | --------------- |
 
 Any deep learning inference serving solution needs to tackle two fundamental challenges:
 * Managing multiple models.
 * Versioning, loading, and unloading models.
+
+## Before we begin
+
+The conceptual guide aims to educate developers about the challenges faced whilst building inference infrastructure for deploying deep learning pipelines. `Part 1 - Part 5` of this guide build towards solving a simple problem: deploying a performant and scalable pipeline for transcribing text from images. This pipeline includes 5 steps:
+* Pre-process the raw image
+* Detect "Text boxes" (Text Detection Model)
+* Crop and pre-process text
+* Recognize Text (Text Recognition Model)
+* Final post-processing
+
+**In `Part 1`, we start by deploying both the models on Triton but the pre/post processing steps are done on client side.**
 
 ## Managing multiple models
 
@@ -320,6 +331,6 @@ The policies can also be set via command line arguments whilst launching the ser
 
 # What's next?
 
-In this tutorial, we covered the very basics of setting up and querying a Triton Inference Server. This is Part 1 of a 5 part tutorial series that covers the challenges faced in deploying Deep Learning models to production. Part 2 covers `Concurrent Model Execution and Dynamic Batching`. Depending on your workload and experience you might want to jump to Part 5 with covers `Building an Ensemble Pipeline with multiple models, pre and post processing steps, and adding business logic`.
+In this tutorial, we covered the very basics of setting up and querying a Triton Inference Server. This is Part 1 of a 6 part tutorial series that covers the challenges faced in deploying Deep Learning models to production. [Part 2](../Part_2-improving_resource_utilization/) covers `Concurrent Model Execution and Dynamic Batching`. Depending on your workload and experience you might want to jump to [Part 5](../Part_5-Model_Ensembles/) which covers `Building an Ensemble Pipeline with multiple models, pre and post processing steps, and adding business logic`.
 
 

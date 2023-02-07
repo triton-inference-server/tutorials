@@ -28,8 +28,9 @@
 
 
 # Customizing deployment with Model Analyzer
-|Related Pages | [Model Analyzer](https://github.com/triton-inference-server/model_analyzer) | [Model Navigator](https://github.com/triton-inference-server/model_navigator) |
+| Navigate to | [Part 2: Improving Resource Utilization](../Part_2-improving_resource_utilization/) | [Part 4: Accelerating Models](../Part_4-inference_acceleration/) | 
 | ------------ | --------------- | --------------- |
+
 
 Every inference deployment has its unique set of challenges. These challenges may arise from Service Level Agreements about maintaining latency, limited hardware resources, unique requirements of individual models, the nature and the volume of requests, or something completely different. Additionally, the Triton Inference Server has many features which can be leveraged be make tradeoffs between memory consumption and performance. 
 
@@ -130,4 +131,4 @@ Sample reports can be found in the `reports` folder.
 
 # What's next?
 
-In this tutorial, we covered the use of Model Analyzer, which is a tool to select the best possible deployment configuration with respect to resource utilization. This is Part 3 of a 5 part tutorial series which covers the challenges faced in deploying Deep Learning models to production. Part 4 covers `Inference Accelerations`, which will talk about framework level optimizations to accelerate your models!
+In this tutorial, we covered the use of Model Analyzer, which is a tool to select the best possible deployment configuration with respect to resource utilization. This is Part 3 of a 6 part tutorial series which covers the challenges faced in deploying Deep Learning models to production. Part 4 covers `Inference Accelerations`, which will talk about framework level optimizations to accelerate your models!

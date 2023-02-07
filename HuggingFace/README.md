@@ -31,12 +31,15 @@
 
 **Note**: If you are new to the Triton Inference Server, it is recommended to review [Part 1 of the Conceptual Guide](../Conceptual_Guide/Part_1-model_deployment/README.md). This tutorial assumes basic understanding about the Triton Inference Server.
 
+|Related Pages | HuggingFace model exporting guide: [ONNX](https://huggingface.co/docs/transformers/serialization), [TorchScript](https://huggingface.co/docs/transformers/torchscript) |
+| ------------ | --------------- |
+
 Developers often work with open source models. HuggingFace is a popular source of many open source models. The discussion in this guide will focus on how a user can deploy almost any model from HuggingFace with the Triton Inference Server. For this example, the [ViT](https://arxiv.org/abs/2010.11929) model available on [HuggingFace](https://huggingface.co/docs/transformers/v4.24.0/en/model_doc/vit#transformers.ViTModel) is being used.
 
 There are two primary methods of deploying a model pipeline on the Triton Inference Server:
-* **Approach 1:** Deploy the pipeline without explicitly breaking apart model from a pipeline. The core advantage of this approach is that users can quickly deploy their pipeline. This can be achieved with the use of Triton's ["Python Backend"](https://github.com/triton-inference-server/python_backend). Refer [this example](https://github.com/triton-inference-server/python_backend#usage) for more information.
+* **Approach 1:** Deploy the pipeline without explicitly breaking apart model from a pipeline. The core advantage of this approach is that users can quickly deploy their pipeline. This can be achieved with the use of Triton's ["Python Backend"](https://github.com/triton-inference-server/python_backend). Refer [this example](https://github.com/triton-inference-server/python_backend#usage) for more information. In summary, we deploy the model/pipeline using the Python Backend.
 
-* **Approach 2:** Break apart the pipeline, use a different backends for pre/post processing and deploying the core model on a framework backend. The advantage in this case is that running the core network on a dedicated framework backend provides higher performance. Additionally, many framework specific optimizations can be leveraged. See [Part 4](../Conceptual_Guide/Part_4-inference_acceleration/README.md) of the conceptual guide for more information. This is achieved with Triton's Ensembles. An explanation for the same can be found in [Part 5](../Conceptual_Guide/Part_5-Model_Ensembles/README.md) of the Conceptual Guide. Refer to the documentation for more [information](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/architecture.md#ensemble-models).
+* **Approach 2:** Break apart the pipeline, use a different backends for pre/post processing and deploying the core model on a framework backend. The advantage in this case is that running the core network on a dedicated framework backend provides higher performance. Additionally, many framework specific optimizations can be leveraged. See [Part 4](../Conceptual_Guide/Part_4-inference_acceleration/README.md) of the conceptual guide for more information. This is achieved with Triton's Ensembles. An explanation for the same can be found in [Part 5](../Conceptual_Guide/Part_5-Model_Ensembles/README.md) of the Conceptual Guide. Refer to the documentation for more [information](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/architecture.md#ensemble-models). In summary, we build an ensemble with a preprocessing step and the exported model.
 
 ![multiple models](./img/Approach.PNG)
 
@@ -46,7 +49,7 @@ For the purposes of this explanation, the `ViT` model([Link to HuggingFace](http
 
 ![multiple models](./img/netron.PNG)
 
-### Deploying on the Python Backend
+### Deploying on the Python Backend (Approach 1)
 
 Making use of Triton's python backend requires users to define up to three functions of the `TritonPythonModel` class:
 * `initialize()`: This function runs when Triton loads the model. It is recommended to use this function to initialize/load any models and/or data objects. Defining this function is optional.
@@ -106,7 +109,7 @@ docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:yy.m
 python3 client.py --model_name "python_vit"
 ```
 
-### Deploying using a Triton Ensemble
+### Deploying using a Triton Ensemble (Approach 2)
 
 Before the specifics around deploying the models can be discussed, the first step is to download and export the model. It is recommended to run the following inside the [PyTorch container available on NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch). If this is your first try at setting up a model ensemble in Triton, it is highly recommended to review [this guide](../Conceptual_Guide/Part_5-Model_Ensembles/README.md) before proceeding. The key advantages of breaking down the pipeline is improved performance and access to a multitude of acceleration options. Explore [Part-4](../Conceptual_Guide/Part_4-inference_acceleration/README.md) of the conceptual guide for details about model acceleration.
   

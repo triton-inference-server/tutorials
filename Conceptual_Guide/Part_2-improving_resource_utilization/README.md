@@ -29,7 +29,7 @@
 
 # Dynamic Batching & Concurrent Model Execution
 
-|Related Pages | [Performance Analyzer](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/perf_analyzer.md) | [Model Configuration](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md) |
+| Navigate to | [Part 1: Model Deployment](../Part_1-model_deployment/) | [Part 3: Optimizing Triton Configuration](../Part_3-optimizing_triton_configuration/) | 
 | ------------ | --------------- | --------------- |
 
 Part-1 of this series introduced the mechanisms to set up a Triton Inference Server. This iteration discusses the concept of dynamic batching and concurrent model execution. These are important features that can be used to reduce latency as well as increase throughput via higher resource utilization. 
@@ -269,4 +269,4 @@ This is a perfect example of "simply enabling all the features" isn't a one-size
 
 # What's next?
 
-In this tutorial, we covered the two key concepts, `dynamic batching` and `concurrent model execution`, which can be used to improve resource utilization. This is Part 2 of a 5 part tutorial series which covers the challenges faced in deploying Deep Learning models to production. As you may have figured, there are many possible combinations to use the features discussed in this tutorial, especially with nodes having multiple GPUs. Part 3 covers `Model Analyzer`, a tool which helps to find the best possible deployment configuration.
+In this tutorial, we covered the two key concepts, `dynamic batching` and `concurrent model execution`, which can be used to improve resource utilization. This is Part 2 of a 6 part tutorial series which covers the challenges faced in deploying Deep Learning models to production. As you may have figured, there are many possible combinations to use the features discussed in this tutorial, especially with nodes having multiple GPUs. Part 3 covers `Model Analyzer`, a tool which helps to find the best possible deployment configuration.

@@ -29,6 +29,9 @@
 
 # Executing Multiple Models with Model Ensembles
 
+| Navigate to | [Part 4: Accelerating Models](../Part_4-inference_acceleration/)  | [Part 6: Using the BLS API to build complex pipelines](../Part_6-building_complex_pipelines/) | [Documentation: Ensembles](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/architecture.html#ensemble-models)
+| ------------ | --------------- | --------------- | --------------- |
+
 Modern machine learning systems often involve the execution of several models, whether that is because of pre- and post-processing steps, aggregating the prediction of multiple models, or having different models executing different tasks.  In this example, we'll be exploring the use of Model Ensembles for executing multiple models server side with only a single network call. This offers the benefit of reducing the number of times we need to copy data between the client and the server, and eliminating some of the latency inherent to network calls.
 
 To illustrate the process of creating a model ensemble, we'll be reusing the model pipeline first introduced in [Part 1](../Part_1-model_deployment/README.md). In the previous examples, we've executed the text detection and recognition models separately, with our client making two different network calls and performing various processing steps -- such as cropping and resizing images, or decoding tensors into text -- in between. Below is a simplified diagram of the pipeline, with some steps occurring on the client and some on the server.
