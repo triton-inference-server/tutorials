@@ -1,6 +1,6 @@
 # Migrating to the Triton Inference Server
 
-Migrating to a new inference stack may seem challenging, but the task can be understood by breaking down the challenges and understanding the best practices. In this guide, we make a case for using a dedicated infernce serving solution like the Triton Inference Serve and cover which path may best suite your Triton Adoption.
+Migrating to a new inference stack may seem challenging, but the task can be understood by breaking down the challenges and understanding the best practices. In this guide, we make a case for using a dedicated infernce serving solution like the Triton Inference Server and cover which path may best suite your Triton Adoption.
 
 ## Why do we need a dedicated inference solution?
 
@@ -92,7 +92,7 @@ Every existing inference pipeline is unique, thus a there is no "one size fits a
 
 * **Loosely coupled, modular pipeline**: With increasing complexity of pipelines, there is often a case where there are sizable overlaps in a deep learning pipeline, i.e., multiple pipelines are using a common set of models or pre/post processing steps. In these cases, it is extremely beneficial deploy all the components of the pipelines on the Triton Inference Server and then [build model ensembles](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/architecture.md#ensemble-models). Even for a case where there aren't overlaps, using Triton's model ensembles to manage pipelines provides scaling and performance benefits. For an in-depth explanation, refer [this guide](../Conceptual_Guide/Part_5-Model_Ensembles/README.md).
 
-* **Deploying individual models without pre/post processing**: In many cases, the pipeline logic exists in the for of extremely optimized low level scripts that have been built over years of development. In this case, users may prefer to deploy just the models. In this case, users may want to avoid the HTTP/gRPC calls as the model is being consumed by a larger applications. For this case, the models can be accessed using Triton's [shared memory extensions](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_shared_memory.md#shared-memory-extension) and the [C API](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/inference_protocols.md#in-process-triton-server-api) removing the need for a network interface.
+* **Deploying individual models without pre/post processing**: In many cases, the pipeline logic exists in the for of extremely optimized low level scripts that have been built over years of development. In this case, users may prefer to deploy just the models. In this case, users may want to avoid the HTTP/gRPC calls as the model is being consumed by a larger applications. For this case, the models can be accessed using Triton's [shared memory extensions](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_shared_memory.md#shared-memory-extension) and the [C API](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/inference_protocols.md#in-process-triton-server-api), removing the need for a network interface.
 
 ## Conclusion
 
