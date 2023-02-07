@@ -33,7 +33,7 @@ This README showcases how to deploy a simple ResNet model on Triton Inference Se
 
 ## Step 1: Export the model
 
-Save the PyTorch model.
+Save the PyTorch model. This model needs to be traced/scripted to obtain a torchscript model.
 
 ```
 # <xx.xx> is the yy:mm for the publishing tag for NVIDIA's PyTorch 

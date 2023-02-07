@@ -29,8 +29,8 @@
 
 # Accelerating Inference for Deep Learning Models
 
-|Related Pages | [TensorRT](https://github.com/NVIDIA/TensorRT) | [Model Navigator](https://github.com/triton-inference-server/model_navigator) | [Optimization Summary](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/optimization.md) |
-| ------------ | --------------- | --------------- | --------------- |
+| Navigate to | [Part 3: Optimizing Triton Configuration](../Part_3-optimizing_triton_configuration/)  | [Part 5: Building Model Ensembles](../Part_5-Model_Ensembles/) | 
+| ------------ | --------------- | --------------- |
 
 Model acceleration is a complex nuanced topic. The viability of techniques like graph optimizations for models, pruning, knowledge distillation, quantization, and more, highly depend on the structure of the model. Each of these topics are vast fields of research in their own right and building custom tools requires massive engineering investment. 
 
@@ -225,4 +225,4 @@ The sections above describe converting models and using different accelerators a
 
 # What's next?
 
-In this tutorial, we covered a plethora of optimization options available to accelerate models while using the Triton Inference Server. This is Part 4 of a 10 part tutorial series which covers the challenges faced in deploying Deep Learning models to production. Part 5 covers `Building a model ensemble`. Part 3 and Part 4 focus on two different aspects, resource utilizations and framework level model acceleration respectively. Using both of these techniques in conjunction will lead to the best performance possible. Since the specific selections are highly dependent on workloads, models, SLAs, and hardware resources, this process varies for each user. We highly encourage users to experiment with all these features to find our the best deployment configuration for their use case.
+In this tutorial, we covered a plethora of optimization options available to accelerate models while using the Triton Inference Server. This is Part 4 of a 6 part tutorial series which covers the challenges faced in deploying Deep Learning models to production. Part 5 covers `Building a model ensemble`. Part 3 and Part 4 focus on two different aspects, resource utilizations and framework level model acceleration respectively. Using both of these techniques in conjunction will lead to the best performance possible. Since the specific selections are highly dependent on workloads, models, SLAs, and hardware resources, this process varies for each user. We highly encourage users to experiment with all these features to find our the best deployment configuration for their use case.
