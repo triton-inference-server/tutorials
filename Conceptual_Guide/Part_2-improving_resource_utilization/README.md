@@ -150,7 +150,7 @@ tritonserver --model-repository=/models
 
 ### Measuring Performance
 
-Having made some improvements to the model's serving capabilities by enabling `dynamic batching` and the use of `multiple model instances`, the next step is to measure the impact of these features. To that end, the Triton Inference Server comes packaged with the [Performance Analyzer](https://github.com/triton-inference-server/server/blob/main/docs/perf_analyzer.md) which is a tool specifically designed to measure performance for Triton Inference Servers. For ease of use, it is recommended that users run this inside the same container used to run client code in Part 1 of this series.
+Having made some improvements to the model's serving capabilities by enabling `dynamic batching` and the use of `multiple model instances`, the next step is to measure the impact of these features. To that end, the Triton Inference Server comes packaged with the [Performance Analyzer](https://github.com/triton-inference-server/client/blob/main/src/c++/perf_analyzer/README.md) which is a tool specifically designed to measure performance for Triton Inference Servers. For ease of use, it is recommended that users run this inside the same container used to run client code in Part 1 of this series.
 ```
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:yy.mm-py3-sdk bash
 ```
