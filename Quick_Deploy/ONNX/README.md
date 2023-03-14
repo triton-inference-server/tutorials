@@ -53,7 +53,7 @@ wget -O model_repository/densenet_onnx/1/model.onnx \
 docker run --gpus all --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:<xx.yy>-py3 tritonserver --model-repository=/models
 ```
 
-## Step 3: Using a Triton Client to Query the Server
+## Step 2: Using a Triton Client to Query the Server
 
 Install dependencies & download an example image to test inference.
 
