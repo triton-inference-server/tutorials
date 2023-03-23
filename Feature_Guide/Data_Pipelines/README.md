@@ -223,7 +223,7 @@ ensemble_scheduling {
   ]
 ```
 
-Let's break it down: First we define the input and output of the overall ensemble.
+Let's break it down: First, we define the input and output of the overall ensemble.
 ```
 input [
   {
@@ -299,7 +299,7 @@ ensemble_scheduling {
     }
   ]
 ```
-Before proceeding let's build an intuition about how to define the `key` and the `value` fields. The `key` field is populated using the names of the layers the model require. The field `value` is recognized by the ensemble. This field is used to define the flow of the tensors. So if you want to move the output of one of the layers of a model to input of another model, you need to use the `value` in the `output_map` of `model1` as the `value` in the `input_map` of `model2`.
+Before proceeding let's build an intuition about how to define the `key` and the `value` fields. The `key` field is populated using the names of the layers the models require. The field `value` is recognized by the ensemble. This field is used to define the flow of the tensors. So if you want to move the output of one of the layers of a model to input of another model, you need to use the `value` in the `output_map` of `model1` as the `value` in the `input_map` of `model2`.
 
 With the individual configurations understood let's briefly look at the structure of the model repository for this example. Essentially we have two models 
 ```
@@ -438,4 +438,4 @@ pip install image
 python3 client.py
 ```
 
-Does your ensemble have a conditional flow? Checkout [this example](https://github.com/triton-inference-server/tutorials/tree/main/Conceptual_Guide/Part_6-building_complex_pipelines) and the [documentation](https://github.com/triton-inference-server/python_backend#business-logic-scripting) for Business Logic Scripting API!
+Does your ensemble have a conditional flow? Check out [this example](https://github.com/triton-inference-server/tutorials/tree/main/Conceptual_Guide/Part_6-building_complex_pipelines) and the [documentation](https://github.com/triton-inference-server/python_backend#business-logic-scripting) for Business Logic Scripting API!
