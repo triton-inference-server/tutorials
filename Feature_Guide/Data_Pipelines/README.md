@@ -370,7 +370,7 @@ def main():
     print(query_response.as_numpy("ensemble_output_bool"))
 ```
 
-There are two moving parts in the client code that need to be understood. First, let's look at setting the input and output.
+Let's look at setting the input and output.
 ```
 # Input
 input_tensors = [
@@ -413,8 +413,6 @@ print(query_response.as_numpy("ensemble_output_INT8_array"))
 print(query_response.as_numpy("ensemble_output_FP32_image"))
 print(query_response.as_numpy("ensemble_output_bool"))
 ```
-
-The second part to look at is understanding the Triton client API.
 
 ## Using the example
 
