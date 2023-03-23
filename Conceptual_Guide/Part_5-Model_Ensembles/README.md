@@ -74,6 +74,8 @@ sequenceDiagram
 ```
 Let's go over how to create a Triton model ensemble.
 
+**Note:** If you are looking for an example to understand how the data flows through the ensemble, [refer this tutorial](../../Feature_Guide/Data_Pipelines/README.md)!
+
 ## Deploy Base Models
 The first step is to deploy the text detection and text recognition models as regular Triton models, just as we've done in the past. For a detailed overview of deploying models to Triton, see [Part 1](../Part_1-model_deployment/README.md) of this tutorial. For convenience, we've included two shell scripts for exporting these models.
 
