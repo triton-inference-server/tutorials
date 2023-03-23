@@ -1,0 +1,9 @@
+{
+    "grammarly.selectors": [
+        {
+            "language": "python",
+            "scheme": "file",
+            "pattern": "Feature_Guide/Data_Pipelines/client.py"
+        }
+    ]
+}

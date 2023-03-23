@@ -33,11 +33,11 @@ Learning about moving tensors from the client to the backends, and or moving it 
 * The API used to move data between the client and server
 * How to be proficient with the ensemble scheduler
 
-**Note:** This example assumes that the reader has a basic understanding of how to use Triton Inference Server. If you are new to Triton Inference Server, refer to the [Part 1 of the conceptual guide](https://github.com/triton-inference-server/tutorials/tree/main/Conceptual_Guide/Part_1-model_deployment) before proceeding.
+**Note:** This example assumes that the reader has a basic understanding of how to use Triton Inference Server. If you are new to Triton Inference Server, refer to [Part 1 of the conceptual guide](https://github.com/triton-inference-server/tutorials/tree/main/Conceptual_Guide/Part_1-model_deployment) before proceeding.
 
 ## Overview of a dummy pipeline
 
-The type of data you want to move, depends on the type of pipeline you are building. Therefore there isn't a clean real world example which can be used to cater to a wide audience. Therefore, this tutorial is will simply demonstrate how to move a String, UINT8 & INT8 arrays, a FP32 image, and a Boolean through a dummy pipeline.
+The type of data you want to move depends on the type of pipeline you are building. Therefore there isn't a clean real-world example that can be used to cater to a wide audience. Therefore, this tutorial will simply demonstrate how to move a String, UINT8 & INT8 arrays, an FP32 image, and a Boolean through a dummy pipeline.
 
 <p align="center" width="100%">
     <img src="./img/Flow.PNG" width="75%">
@@ -45,7 +45,7 @@ The type of data you want to move, depends on the type of pipeline you are build
 
 ### Setting the Models & Ensemble
 
-Before we go any further, let us set up the models. For the purposes of this demonstration, we are making use of a ["Python Model"](https://github.com/triton-inference-server/python_backend#python-backend). Python models in Triton are basically classes with three Triton specific functions: `initialize`, `execute` and `finalize`. Users can customize this class to serve any python function they write or any model they want as long as it can be loaded in python runtime. The `initialize`, function runs when the python model is loaded into memory, and the `finalize` functions gets executed when the model is unloaded from memory. Both of these functions are optional to define. Again, to keep things simple for this example, we will just use the `execute` function to print the tensors they received by the "python model". Let's take a look at how it is done:
+Before we go any further, let us set up the models. For the purposes of this demonstration, we are making use of a ["Python Model"](https://github.com/triton-inference-server/python_backend#python-backend). Python models in Triton are basically classes with three Triton-specific functions: `initialize`, `execute` and `finalize`. Users can customize this class to serve any python function they write or any model they want as long as it can be loaded in python runtime. The `initialize` function runs when the python model is loaded into memory, and the `finalize` function gets executed when the model is unloaded from memory. Both of these functions are optional to define. Again, to keep things simple for this example, we will just use the `execute` function to print the tensors they received by the "python model". Let's take a look at how it is done:
 
 ```
 def execute(self, requests):
@@ -90,7 +90,7 @@ def execute(self, requests):
     return responses
 ```
 
-There are two key points to note in this case: the `pb_utils.get_input_tensor_by_name(...)` and the `pb_utils.InferenceResponse(...)` function. These functions, as the name implies are used to receive and send tensors. Triton Inference Server supports a wide range of datatypes. In this example we showcase 5 of them, but for a full list of supported datatypes, refer to the [documentation here](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#datatypes). 
+There are two key points to note in this case: the `pb_utils.get_input_tensor_by_name(...)` and the `pb_utils.InferenceResponse(...)` function. These functions, as the name implies are used to receive and send tensors. Triton Inference Server supports a wide range of datatypes. In this example, we showcase 5 of them, but for a full list of supported datatypes, refer to the [documentation here](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#datatypes). 
 
 In the case of this model, the "input layers" are `model_1_input_string`, `model_1_input_UINT8_array`, `model_1_input_INT8_array`, `model_1_input_FP32_image` and `model_1_input_bool`. We define these along with the expected dimension and datatype in `config.pbtxt` for this model.
 ```
@@ -155,13 +155,15 @@ output [
 ]
 ```
 
-**Note**: For a regular `onnx`, `torchscript`, `tensorflow` or any other model, we just need to define the input and output layers in `config.pbtxt`. The interaction with the ensemble and the client will remain the same. If you are unsure about the layers, dimensions and datatypes for your model, you can use tools like [Netron](https://netron.app/) or [Polygraphy](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy) to get the required information.
+**Note**: For a regular `onnx`, `torchscript`, `tensorflow` or any other model, we just need to define the input and output layers in `config.pbtxt`. The interaction between the ensemble and the client will remain the same. If you are unsure about the layers, dimensions and datatypes for your model, you can use tools like [Netron](https://netron.app/) or [Polygraphy](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy) to get the required information.
 
 The second model in this example is identical to the one above. We will use that model for showcasing the data flow in a [model ensemble](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/architecture.md#ensemble-models). If you have already referred [Part-5 of the conceptual guide](https://github.com/triton-inference-server/tutorials/tree/main/Conceptual_Guide/Part_5-Model_Ensembles), then the following explanation of the ensembles might seem familiar. 
 
-With the model setup discussed, let's discuss setting up an ensemble. Ensembles are used to build pipelines which two or more models. The benifit of using an ensemble is that the Triton Inference Server handles all the tensor/memory movement required between two models. Additionally, users can define a model flow using simple configuration files. This feature is specially useful for situations where users are setting up multiple pipelines which have models which are common amongst them. 
+With the model setup discussed, let's discuss setting up an ensemble. Ensembles are used to build pipelines with two or more models. The benefit of using an ensemble is that the Triton Inference Server handles all the tensor/memory movement required between two models. Additionally, users can define a model flow using simple configuration files. This feature is especially useful for situations where users are setting up multiple pipelines with some common models shared among them.  
 
-We will discuss the structure of the model repository a bit later, first, let us now jump into the configuration for the ensemble. Since the flow is the same for all tensors, for the purposes for explanation, let's just focus on the input string. The full configuration for the same looks something like below:
+We will discuss the structure of the model repository a bit later. Let's jump into the configuration for the ensemble.
+
+Since the flow is the same for all tensors, let's focus on the input string. The full configuration for the ensemble model looks something like below:
 
 ```
 name: "ensemble_model"
@@ -221,7 +223,7 @@ ensemble_scheduling {
   ]
 ```
 
-Let's break it down: The first step is to define the input and output of the overall ensemble.
+Let's break it down: First we define the input and output of the overall ensemble.
 ```
 input [
   {
@@ -240,7 +242,7 @@ output [
   ...
 ]
 ```
-This step is similar to the process of defining the input and output layers in a regular model. The next step is to define a scheduler with the exact flow of the ensemble.
+This is similar to defining the input and output layers in a regular model. Next. we define the exact flow of the ensemble. The flow is composed of "steps", where each step defines the inputs/outputs and the model to execute at this step.
 ```
 ensemble_scheduling {
   step [
@@ -258,7 +260,7 @@ ensemble_scheduling {
     }
   ]
 ```
-The first layer that a user needs to understand is the process of defining the general flow, basically, which model to run first? We can then move to how to move the tensors from different "layers" of different models and the ensemble's input and output. For this step we use `input_map` and `output_map`.
+The first part that a user needs to understand is how to define the general flow of their ensemble pipeline. For example, which model needs to run first? Then, how do the tensors flow between each model/step? To define this, we use `input_map` and `output_map`.
 
 ```
 ensemble_scheduling {
@@ -303,7 +305,7 @@ With the individual configurations understood let's briefly look at the structur
 ```
 model_repository/
 ├── ensemble_model
-│   ├── 1
+│   ├── 1               # Empty version folder required for ensemble models
 │   └── config.pbtxt    # Config for the Ensemble
 ├── model1
 │   ├── 1
@@ -368,7 +370,7 @@ def main():
     print(query_response.as_numpy("ensemble_output_bool"))
 ```
 
-There are two moving parts in the client code that need to be understood. First, let's look at seting the input and output.
+There are two moving parts in the client code that need to be understood. First, let's look at setting the input and output.
 ```
 # Input
 input_tensors = [
@@ -394,7 +396,7 @@ output = [
 ]
 
 ```
-In this case we are using the `http` client, and specifying the names of the input and outputs along with the expected datatype. Notice that in this case we are using the ensemble inputs/outputs, for instance `ensemble_input_string` for the string input to the ensemble. If you want to just query a singluar model, you can switch these for the layers for the model and fire the query to the specific model in the `client.infer(...)` function. 
+In this case, we are using the `http` client, and specifying the names of the inputs and outputs along with the expected datatype. Notice that in this case, we are using the ensemble inputs/outputs, for instance `ensemble_input_string` for the string input to the ensemble. If you want to query one of the composing models individually, you can change the input names, output names, and model name to match the desired model.
 
 ```
 # Creating a client for the server
@@ -412,7 +414,7 @@ print(query_response.as_numpy("ensemble_output_FP32_image"))
 print(query_response.as_numpy("ensemble_output_bool"))
 ```
 
-The second part to look at is the general client API. This is the same as any Triton Client, simply use the python client API to query the server.
+The second part to look at is understanding the Triton client API.
 
 ## Using the example
 
@@ -424,7 +426,9 @@ cd /path/to/this/folder
 # Replace yy.mm with year and month of release. Eg. 23.02
 docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:yy.mm-py3 bash
 tritonserver --model-repository=/models
-
+```
+The above will launch the Triton Inference Server. In the second terminal, we will run our client script:
+```
 # Client
 
 cd /path/to/this/folder
@@ -434,4 +438,4 @@ pip install image
 python3 client.py
 ```
 
-Does your ensemble have a conditional flow? Checkout [this example](https://github.com/triton-inference-server/tutorials/tree/main/Conceptual_Guide/Part_6-building_complex_pipelines) for Business Logic Scripting API!
+Does your ensemble have a conditional flow? Checkout [this example](https://github.com/triton-inference-server/tutorials/tree/main/Conceptual_Guide/Part_6-building_complex_pipelines) and the [documentation](https://github.com/triton-inference-server/python_backend#business-logic-scripting) for Business Logic Scripting API!
