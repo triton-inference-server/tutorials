@@ -149,7 +149,7 @@ mkdir -p model_repository/text_detection/1
 mv detection.onnx model_repository/text_detection/1/model.onnx
 
 mkdir -p model_repository/text_recognition/1
-mv str.onnx model_repository/text_detection/1/model.onnx
+mv str.onnx model_repository/text_recognition/1/model.onnx
 ```
 
 These commands should give you a repository that looks this:
