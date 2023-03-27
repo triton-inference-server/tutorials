@@ -26,11 +26,9 @@
 
 import triton_python_backend_utils as pb_utils
 import jax
-import jax.numpy as jnp
 import flaxmodels as fm
 
 import numpy as np
-from flax.jax_utils import replicate
 
 class TritonPythonModel:
 
