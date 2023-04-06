@@ -25,7 +25,7 @@ def predict():
 
 Voila, in just a few lines of code, we have our model up and running. Anyone can send a request and use the model! But wait, what happens when we start receiving multiple requests? We need a way to queue these tasks/requests. Fret not, we can just use one of many task queues. Let's say we make use of [Celery](https://docs.celeryq.dev/en/stable/getting-started/introduction.html) and solve this queuing challenge. While we are at it, we can also build a response cache to address repeat queries.
 
-![Flask flow diagram](./arch.PNG)
+![Flask flow diagram](./img/arch.PNG)
 
 While the above set up does work, it is very restrictive and resource inefficient. How? Let's say that we were working with an image classification model which has a maximum batch size of `64`, and our server receives `50` requests every `100 ms`. Without implementing any form of batching strategy, all these requests will have to be processed sequentially, wasting GPU resources. This is just the tip of the iceberg. Consider the following cases:
 * What if we want to support multiple models. Do we need to restart the server every time we have to update a model?
