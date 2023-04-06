@@ -32,13 +32,13 @@ class TritonPythonModel:
     def execute(self, requests):
         responses = []
         for request in requests:
-            inp = pb_utils.get_input_tensor_by_name(request, "model_2_input_string")
-            inp2 = pb_utils.get_input_tensor_by_name(request, "model_2_input_UINT8_array")
-            inp3 = pb_utils.get_input_tensor_by_name(request, "model_2_input_INT8_array")
-            inp4 = pb_utils.get_input_tensor_by_name(request, "model_2_input_FP32_image")
-            inp5 = pb_utils.get_input_tensor_by_name(request, "model_2_input_bool")
+            inp = pb_utils.get_input_tensor_by_name(request, "model_1_input_string")
+            inp2 = pb_utils.get_input_tensor_by_name(request, "model_1_input_UINT8_array")
+            inp3 = pb_utils.get_input_tensor_by_name(request, "model_1_input_INT8_array")
+            inp4 = pb_utils.get_input_tensor_by_name(request, "model_1_input_FP32_image")
+            inp5 = pb_utils.get_input_tensor_by_name(request, "model_1_input_bool")
 
-            print("Model 2 received", flush=True)
+            print("Model 1 received", flush=True)
             print(inp.as_numpy(), flush=True)
             print(inp2.as_numpy(), flush=True)
             print(inp3.as_numpy(), flush=True)
@@ -47,23 +47,23 @@ class TritonPythonModel:
 
             inference_response = pb_utils.InferenceResponse(output_tensors=[
                 pb_utils.Tensor(
-                    "model_2_output_string",
+                    "model_1_output_string",
                     inp.as_numpy(),
                 ),
                 pb_utils.Tensor(
-                    "model_2_output_UINT8_array",
+                    "model_1_output_UINT8_array",
                     inp2.as_numpy(),
                 ),
                 pb_utils.Tensor(
-                    "model_2_output_INT8_array",
+                    "model_1_output_INT8_array",
                     inp3.as_numpy(),
                 ),
                 pb_utils.Tensor(
-                    "model_2_output_FP32_image",
+                    "model_1_output_FP32_image",
                     inp4.as_numpy(),
                 ),
                 pb_utils.Tensor(
-                    "model_2_output_bool",
+                    "model_1_output_bool",
                     inp5.as_numpy(),
                 )
             ])
