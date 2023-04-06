@@ -5,8 +5,6 @@ For users experiencing the "Tensor in" & "Tensor out" approach to Deep Learning 
 | Getting Started Checklist | [Overview Video](https://www.youtube.com/watch?v=NQDtfSi5QF4) | [Conceptual Guide: Deploying Models](Conceptual_Guide/Part_1-model_deployment/README.md) |
 | ------------ | ------------ | --------------- |
 
-**Upcoming Event:** Join us in the ["Connect with the Experts session"](https://www.nvidia.com/gtc/session-catalog/?tab.catalogallsessionstab=16566177511100015Kus&search.sessiontype=1600813769132003bc9Q&search=#/session/1667516169334001kNRL) at GTC!
-
 ## Quick Deploy
 
 The focus of these examples is to demonstrate deployment for models trained with various frameworks. These are quick demonstrations made with an understanding that the user is somewhat familiar with Triton.
@@ -20,6 +18,7 @@ This repository contains the following resources:
 * [Quick Deploy](#quick-deploy): These are a set of guides about deploying a model from your preferred framework to Triton Inference Server. These guides assume basic understanding of the Triton Inference Server. It is recommended to review the getting started material for a complete understanding.
 * [HuggingFace Guide](./HuggingFace/): The focus of this guide is to walk the user through different methods in which a HuggingFace model can be deployed using the Triton Inference Server.
 * [Migration Guide](./migration_guide.md): Migrating from an existing solution to Triton Inference Server? Get an understanding of the general architecture that might best fit your use case.
+* [Feature Guides](./Feature_Guide/): This folder is meant to house Triton's feature specific examples.
 
 ## Navigating Triton Inference Server Resources
 
