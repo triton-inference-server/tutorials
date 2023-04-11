@@ -305,7 +305,7 @@ Let's examine the contents of this file:
 * Now, we'll create the `InferInput` that we'll be sending to Triton from our data.
 
   ```python
-  raw_image = cv2.imread("./img2.jpg")
+  raw_image = cv2.imread("./img1.jpg")
   preprocessed_image = detection_preprocessing(raw_image)
 
   detection_input = httpclient.InferInput("input_images:0", preprocessed_image.shape, datatype="FP32")
