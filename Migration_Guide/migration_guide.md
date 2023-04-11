@@ -33,7 +33,7 @@ While the above set up does work, it is very restrictive and resource inefficien
 * Can we serve a PyTorch and a TensorFlow model on the same server?
 * What if one model needs to run on CPU and the other needs a GPU. How do we optimize for execution?
 * How do we manage multiple GPUs on the same node?
-* Is our execution rune time optimized? Are we handling the I/O efficiently?
+* Is our execution run time optimized? Are we handling the I/O efficiently?
 * How do we work with a model ensemble?
 * What is the best way to monitor server metrics?
 
