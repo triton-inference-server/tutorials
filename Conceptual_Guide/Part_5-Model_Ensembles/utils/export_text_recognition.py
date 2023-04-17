@@ -45,5 +45,5 @@ torch.onnx.export(
     trace_input,
     model_directory / "model.onnx",
     verbose=True,
-    dynamic_axes={"input.1": [0], "308": [0]},
+    dynamic_axes={"input.1": [0], "307": [0]},
 )

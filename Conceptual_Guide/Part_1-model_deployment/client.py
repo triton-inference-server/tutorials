@@ -207,6 +207,6 @@ if __name__ == "__main__":
     )
 
     # Process response from recognition model
-    final_text = recognition_postprocessing(recognition_response.as_numpy("308"))
+    final_text = recognition_postprocessing(recognition_response.as_numpy("307"))
 
     print(final_text)
