@@ -54,7 +54,7 @@ With these broad categories considered, let's drill down into the specific scena
 
 As mentioned before, acceleration for deep learning models can be achieved in many ways. Graph level optimizations like fusing layers can reduce the number of GPU kernels that are needed to be launched for execution. Fusing layers makes the model execution more memory efficient and increases the density of operations. Once fused, a kernel auto tuner can pick the correct combination of kernels to maximize utilization of GPU resources. Similarly, use of lower precision (FP16, INT8, etc.) with techniques like quantization can drastically reduce memory requirements and increase throughput. 
 
-The exact nature of performance optimization tactics differs differs with each GPU based on its hardware design. These are a few of many challenges we solve for Deep Learning Practitioners with [NVIDIA TensorRT](https://developer.nvidia.com/tensorrt) which is an SDK focused on deep learning inference optimization.
+The exact nature of performance optimization tactics differs with each GPU based on its hardware design. These are a few of many challenges we solve for Deep Learning Practitioners with [NVIDIA TensorRT](https://developer.nvidia.com/tensorrt) which is an SDK focused on deep learning inference optimization.
 
 While TensorRT works with popular deep learning frameworks like PyTorch, TensorFlow, MxNET, ONNX Runtime and more, it also has framework level integrations with PyTorch([Torch-TensorRT](https://github.com/pytorch/TensorRT)) and TensorFlow([TensorFlow-TensorRT](https://github.com/tensorflow/tensorrt)) to provide their respective developers with flexibility and fallback mechanisms. 
 
