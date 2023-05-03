@@ -211,7 +211,7 @@ For details of all supported fields and their values, refer to the [model config
 
 ### Launching the server
 
-With our repository created and our models configured, we're ready to launch the server. While the Triton Inference Server can be [built from source](https://github.com/triton-inference-server/server/blob/main/docs/build.md), the use of [pre-built Docker containers](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) freely available from NGC is highly recommended for this example.
+With our repository created and our models configured, we're ready to launch the server. While the Triton Inference Server can be [built from source]([https://github.com/triton-inference-server/server/blob/main/docs/build.md](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/build.md#building-triton)), the use of [pre-built Docker containers](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) freely available from NGC is highly recommended for this example.
 
 ```bash
 # Replace the yy.mm in the image name with the release year and month
