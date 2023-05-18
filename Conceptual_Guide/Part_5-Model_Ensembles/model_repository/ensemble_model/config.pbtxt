@@ -100,7 +100,7 @@ ensemble_scheduling {
         value: "cropped_images"
       }
       output_map {
-        key: "308"
+        key: "307"
         value: "recognition_output"
       }
     },

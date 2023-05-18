@@ -110,7 +110,7 @@ model.load_state_dict(state)
 
 # Create ONNX file by tracing model
 trace_input = torch.randn(1, 1, 32, 100)
-torch.onnx.export(model, trace_input, "str.onnx", verbose=True, dynamic_axes={'input.1':[0],'308':[0]})
+torch.onnx.export(model, trace_input, "str.onnx", verbose=True, dynamic_axes={'input.1':[0],'307':[0]})
 ```
 
 ### Launching the server
@@ -231,7 +231,7 @@ Request concurrency: 16
 ```
 As each of the requests had a batch size (of 2), while the maximum batch size of the model was 8, dynamically batching these requests resulted in considerably improved throughput. Another consequence is a reduction in the latency. This reduction can be primarily attributed to reduced wait time in queue wait time. As the requests are batched together, multiple requests can be processed in parallel.
 
-* **Dynamic Batching with multiple model instances**: To set up the Triton Server in this configuration, add `instance_group` in `config.pbtxt` and make sure to include `--gpus=1` and make sure to include `--gpus=1` in the `docker run` command to set up the server. Include `dynamic_batching` per instructions of the previous section in the model configuration. A point to note is that peak GPU utilization on the GPU shot up to 74% (A100 in this case) while just using a single model instance with dynamic batching. Adding one more instance will definitely improve performance but linear perf scaling will not be achieved in this case.
+* **Dynamic Batching with multiple model instances**: To set up the Triton Server in this configuration, add `instance_group` in `config.pbtxt` and make sure to include `--gpus=1` in the `docker run` command to set up the server. Include `dynamic_batching` per instructions of the previous section in the model configuration. A point to note is that peak GPU utilization on the GPU shot up to 74% (A100 in this case) while just using a single model instance with dynamic batching. Adding one more instance will definitely improve performance but linear perf scaling will not be achieved in this case.
 
 ```
 # Query

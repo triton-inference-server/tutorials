@@ -40,11 +40,6 @@ output [
         name: "last_hidden_state"
         data_type: TYPE_FP32
         dims: [-1, -1]
-    },
-    {
-        name: "1519"
-        data_type: TYPE_FP32
-        dims: [768]
     }
 ]
 ensemble_scheduling {
@@ -71,10 +66,6 @@ ensemble_scheduling {
             output_map {
                 key: "last_hidden_state"
                 value: "last_hidden_state"
-            }
-            output_map {
-                key: "1519"
-                value: "1519"
             }
         }
     ]

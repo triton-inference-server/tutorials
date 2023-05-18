@@ -39,7 +39,7 @@ def rn50_preprocess(img_path="img1.jpg"):
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
-    return np.expand_dims(preprocess(img).numpy(),axis=0)
+    return np.expand_dims(preprocess(img).numpy(), axis=0).squeeze()
 
 transformed_img = rn50_preprocess()
 
