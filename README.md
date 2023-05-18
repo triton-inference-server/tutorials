@@ -20,7 +20,7 @@ This repository contains the following resources:
 * [Quick Deploy](#quick-deploy): These are a set of guides about deploying a model from your preferred framework to the Triton Inference Server. These guides assume a basic understanding of the Triton Inference Server. It is recommended to review the getting started material for a complete understanding.
 * [HuggingFace Guide](./HuggingFace/): The focus of this guide is to walk the user through different methods in which a HuggingFace model can be deployed using the Triton Inference Server.
 * [Feature Guides](./Feature_Guide/): This folder is meant to house Triton's feature-specific examples.
-* [Migration Guide](./migration_guide.md): Migrating from an existing solution to Triton Inference Server? Get an understanding of the general architecture that might best fit your use case.
+* [Migration Guide](./Migration_Guide/migration_guide.md): Migrating from an existing solution to Triton Inference Server? Get an understanding of the general architecture that might best fit your use case.
 
 ## Navigating Triton Inference Server Resources
 
