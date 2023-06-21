@@ -88,7 +88,7 @@ To run this example open two terminals and use the following commands:
 mv python_model_repository model_repository
 
 # Pull and run the Triton container & replace yy.mm 
-# with year and month of release. Eg. 22.12
+# with year and month of release. Eg. 23.05
 docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:yy.mm-py3 bash
 
 # Install dependencies
@@ -115,7 +115,7 @@ Before the specifics around deploying the models can be discussed, the first ste
   
 ```
 # Pull the PyTorch Container from NGC
-docker run -it --gpus=all -v ${PWD}:/workspace nvcr.io/nvidia/pytorch:22.12-py3
+docker run -it --gpus=all -v ${PWD}:/workspace nvcr.io/nvidia/pytorch:23.05-py3
 
 # Install dependencies
 pip install transformers
@@ -156,7 +156,7 @@ mv vit/model.onnx model_repository/vit/1/
 mkdir model_repository/ensemble_model/1
 
 # Pull and run the Triton container & replace yy.mm 
-# with year and month of release. Eg. 22.12
+# with year and month of release. Eg. 23.05
 docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:yy.mm-py3 bash
 
 # Install dependencies

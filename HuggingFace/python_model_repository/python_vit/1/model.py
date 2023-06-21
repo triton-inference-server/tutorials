@@ -24,14 +24,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import torch
 import numpy as np
 import triton_python_backend_utils as pb_utils
-from transformers import ViTFeatureExtractor, ViTModel
+from transformers import ViTImageProcessor, ViTModel
 
 class TritonPythonModel:
     def initialize(self, args):
-        self.feature_extractor = ViTFeatureExtractor.from_pretrained('google/vit-base-patch16-224-in21k').to("cuda")
-        self.model = ViTModel.from_pretrained("google/vit-base-patch16-224-in21k").to("cuda")
+        self.feature_extractor = ViTImageProcessor.from_pretrained('google/vit-base-patch16-224-in21k')
+        self.model = ViTModel.from_pretrained("google/vit-base-patch16-224-in21k")
 
     def execute(self, requests):
         responses = []
@@ -44,8 +45,8 @@ class TritonPythonModel:
 
             inference_response = pb_utils.InferenceResponse(output_tensors=[
                 pb_utils.Tensor(
-                    "label",
-                    outputs.last_hidden_state.numpy()
+                    "last_hidden_state",
+                    outputs.last_hidden_state.detach().numpy()
                 )
             ])
             responses.append(inference_response)

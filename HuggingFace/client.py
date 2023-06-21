@@ -25,7 +25,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
-import time
 from tritonclient.utils import *
 from PIL import Image
 import tritonclient.http as httpclient
