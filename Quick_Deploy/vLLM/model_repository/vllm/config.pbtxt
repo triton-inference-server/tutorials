@@ -1,0 +1,52 @@
+name: "vllm"
+backend: "python"
+max_batch_size: 0
+# We need to use decoupled transaction policy for saturating
+# vLLM engine for max throughtput.
+# TODO [DLIS:5233]: Allow asychronous execution to lift this
+# restriction for cases there is exactly a single response to
+# a single request.
+model_transaction_policy {
+  decoupled: True
+}
+
+# VLLM_ENGINE_ARGS_JSON parameters is serialized
+# json with VLLMAsyncEngineConfig settings. Look
+# at VLLMAsyncEngineConfig in model.py for supported
+# settings.
+parameters {
+  key: "VLLM_ENGINE_ARGS_JSON"
+  value: {
+    string_value: "{\"model\":\"facebook/opt-125m\"}"
+  }
+}
+
+# A string input that stores the vLLM json request.
+# See CompletionRequests in model.py for supported
+# request fields.
+input [
+  {
+    name: "serialized_request_json"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+
+# A serialized output response from vLLM. See
+# CompletionResponse in model.py for supported
+# response fields.
+output [
+  {
+    name: "serialized_response_json"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+
+# The usage of device is deferred to the vLLM engine
+instance_group [
+  {
+    count: 1
+    kind: KIND_MODEL
+  }
+]
