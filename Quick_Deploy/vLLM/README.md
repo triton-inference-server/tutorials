@@ -98,7 +98,7 @@ python3 client.py
 
 ```
 
-The output of the same should look like below:
+The output of the client should look like below:
 ```
 ===========
 prompt => 'T h e   f u t u r e   o f   A I   i s'
@@ -128,8 +128,7 @@ PASS: vLLM example
 
 ```
 
-When you run the client in verbose mode - with --verbose flag, the client will print more details about current and average inflight request counts. This demonstrate that Triton was able to transfer the full request
-load to vLLM engine.
+When you run the client in verbose mode - with `--verbose` flag, the client will print more details about current and average inflight request counts. This demonstrates that Triton was able to transfer all the four request prompts to vLLM engine.
 
 ```
 [VERBOSE RESPONSE]: {'request_id': '4_1', 'finished': True, 'prompt': 'The future of AI is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': ' changing the future.\n\nMicrosoft, Facebook and Google have all pledged to create', 'gen_token_count': 16, 'cumulative_logprob': -38.57662500068545, 'finish_reason': 'length'}], 'current_inflight_count': 4, 'average_inflight_count': 4.0}
