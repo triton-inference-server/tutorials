@@ -56,12 +56,21 @@ model_repository
 +-- vllm
     |
     +-- config.pbtxt
+    +-- vllm_engine_args.json
     +-- 1
         |
         +-- model.py
 ```
 
-A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton is included with this demo as `model_repository` directory.
+A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton is included with this demo as `model_repository` directory. The content of `vllm_engine_args.json` is:
+
+```json
+{
+    "model":"facebook/opt-125m"
+}
+```
+This file can be modified to provide further settings to the vLLM engine. Look at VLLMAsyncEngineConfig in [model.py](model_repository/vllm/1/model.py) for supported fields.
+
 Read through the documentation in [`config.pbtxt`](model_repository/vllm/config.pbtxt) and [`model.py`](model_repository/vllm/1/model.py) to
 understand how to configure this sample for your use-case.
 

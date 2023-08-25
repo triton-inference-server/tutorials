@@ -2,6 +2,7 @@ import asyncio
 import json
 import numpy as np
 import threading
+import os
 
 from typing import Tuple, Optional, Union, List, Literal
 
@@ -15,6 +16,8 @@ from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm import SamplingParams
 from vllm.outputs import RequestOutput as VLLMOutput
 
+
+_VLLM_ENGINE_ARGS_FILENAME = "vllm_engine_args.json"
 
 class VLLMAsyncEngineConfig(BaseModel):
     # required model
@@ -90,16 +93,17 @@ class TritonPythonModel:
     def initialize(self, args):
         # load triton model config from args
         self.logger = pb_utils.Logger
-        config = self.model_config = json.loads(args["model_config"])
+        self.model_config = json.loads(args["model_config"])
 
         # assert are in decoupled mode
         self.using_decoupled = pb_utils.using_decoupled_model_transaction_policy(self.model_config)
         assert self.using_decoupled, "VLLM Triton backend must be configured to use decoupled model transaction policy"
 
-        assert "VLLM_ENGINE_ARGS_JSON" in config["parameters"], "VLLM_ENGINE_ARGS_JSON must be specified as model config parameter for this backend"
-        vllm_engine_args_json = config["parameters"]["VLLM_ENGINE_ARGS_JSON"]["string_value"]
-        vllm_engine_config = VLLMAsyncEngineConfig(**json.loads(vllm_engine_args_json))
-        
+        engine_args_filepath = os.path.join(args['model_repository'], _VLLM_ENGINE_ARGS_FILENAME)
+        assert os.path.isfile(engine_args_filepath), f"'{_VLLM_ENGINE_ARGS_FILENAME}' containing vllm engine args must be provided in '{args['model_repository']}'"
+        with open(engine_args_filepath) as file:
+            vllm_engine_config = VLLMAsyncEngineConfig(**json.load(file))
+
         # create the vllm engine
         engine_args = AsyncEngineArgs(
             vllm_engine_config.model, disable_log_requests=vllm_engine_config.disable_log_requests, max_num_batched_tokens=vllm_engine_config.max_num_batched_tokens, max_num_seqs=vllm_engine_config.max_num_seqs

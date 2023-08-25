@@ -10,17 +10,6 @@ model_transaction_policy {
   decoupled: True
 }
 
-# VLLM_ENGINE_ARGS_JSON parameters is serialized
-# json with VLLMAsyncEngineConfig settings. Look
-# at VLLMAsyncEngineConfig in model.py for supported
-# settings.
-parameters {
-  key: "VLLM_ENGINE_ARGS_JSON"
-  value: {
-    string_value: "{\"model\":\"facebook/opt-125m\"}"
-  }
-}
-
 # A string input that stores the vLLM json request.
 # See CompletionRequests in model.py for supported
 # request fields.
