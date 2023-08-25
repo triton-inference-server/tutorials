@@ -27,7 +27,7 @@
 -->
 
 
-# Deploying a vLLM models in Triton
+# Deploying a vLLM model in Triton
 
 *NOTE*: This tutorial is just for demonstration purpose. There is more follow-up work
 that needs to be performed in Triton for more streamline integration with vLLM. 
