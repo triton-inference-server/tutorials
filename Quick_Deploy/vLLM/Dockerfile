@@ -24,7 +24,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Currently, vllm supports only cuda 10.8. The latest Triton container release with cuda 10.8 is 22.12. 
+# Currently, vllm supports only cuda 11.8. The latest Triton container release with cuda 11.8 is 22.12.
 FROM nvcr.io/nvidia/tritonserver:22.12-py3
 
 # install python dependencies

@@ -24,14 +24,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import asyncio
 import argparse
+import asyncio
+import json
 import queue
 import sys
 import uuid
 
 import numpy as np
-import json
 import tritonclient.grpc.aio as grpcclient
 from tritonclient.utils import *
 
@@ -40,8 +40,14 @@ class UserData:
     def __init__(self):
         self._completed_requests = queue.Queue()
 
+
 def get_request_data(prompt, temperature, top_p):
-    request_json = {"prompt": prompt, "temperature":temperature, "top_p":top_p, "echo": True}
+    request_json = {
+        "prompt": prompt,
+        "temperature": temperature,
+        "top_p": top_p,
+        "echo": True,
+    }
     return np.array([json.dumps(request_json).encode("utf-8")], dtype=np.object_)
 
 
@@ -53,7 +59,11 @@ async def async_stream_yield(
         # Create the tensor for INPUT
         request_data = get_request_data(token, temperature, top_p)
         inputs = []
-        inputs.append(grpcclient.InferInput("serialized_request_json", request_data.shape, "BYTES"))
+        inputs.append(
+            grpcclient.InferInput(
+                "serialized_request_json", request_data.shape, "BYTES"
+            )
+        )
         # Initialize the data
         inputs[0].set_data_from_numpy(request_data)
         outputs = []
@@ -75,7 +85,12 @@ async def main(FLAGS):
     model_name = "vllm"
     temperature = 0.8
     top_p = 0.95
-    prompt_list = [["Hello, my name is"], ["The president of the United States is"], ["The capital of France is"], ["The future of AI is"]]
+    prompt_list = [
+        ["Hello, my name is"],
+        ["The president of the United States is"],
+        ["The capital of France is"],
+        ["The future of AI is"],
+    ]
 
     async with grpcclient.InferenceServerClient(
         url=FLAGS.url, verbose=FLAGS.verbose
@@ -86,11 +101,8 @@ async def main(FLAGS):
             for prompt in prompt_list:
                 prompt_id = prompt_id + 1
                 async for request in async_stream_yield(
-                    prompt,
-                    temperature,
-                    top_p,
-                    prompt_id,
-                    model_name):
+                    prompt, temperature, top_p, prompt_id, model_name
+                ):
                     yield request
 
         try:
@@ -125,18 +137,17 @@ async def main(FLAGS):
             results.append(json.loads(response[0]))
             if FLAGS.verbose:
                 print(f"[VERBOSE RESPONSE]: {results[-1]}")
-            prompt = results[-1]['prompt']
+            prompt = results[-1]["prompt"]
             if prompt not in results_dict:
                 results_dict[prompt] = []
-            for completion in results[-1]['completions']:
-                results_dict[prompt].append(completion['text'])
+            for completion in results[-1]["completions"]:
+                results_dict[prompt].append(completion["text"])
         if results[-1]["finished"]:
             recv_count = recv_count + 1
 
-
-    for prompt in results_dict:
+    for prompt in results_dict.keys():
         print("===========")
-        print(f"prompt => {' '.join(prompt)!r}")
+        print(f"prompt => {prompt!r}")
         print("===========")
         print(f"response => {' '.join(results_dict[prompt])!r}")
         print("=========== \n")

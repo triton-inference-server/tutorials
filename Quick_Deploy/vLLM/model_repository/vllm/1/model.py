@@ -1,23 +1,45 @@
+# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import asyncio
 import json
-import numpy as np
-import threading
 import os
+import threading
+from typing import List, Literal, Optional, Tuple, Union
 
-from typing import Tuple, Optional, Union, List, Literal
-
-from pydantic import BaseModel, Field
-
+import numpy as np
 import triton_python_backend_utils as pb_utils
-
-
+from pydantic import BaseModel, Field
+from vllm import SamplingParams
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
-from vllm import SamplingParams
 from vllm.outputs import RequestOutput as VLLMOutput
 
-
 _VLLM_ENGINE_ARGS_FILENAME = "vllm_engine_args.json"
+
 
 class VLLMAsyncEngineConfig(BaseModel):
     # required model
@@ -89,30 +111,44 @@ class OutputOptions:
         """
         return self._stream
 
+
 class TritonPythonModel:
     def initialize(self, args):
-        # load triton model config from args
         self.logger = pb_utils.Logger
+
+        # load triton model config from args
         self.model_config = json.loads(args["model_config"])
 
         # assert are in decoupled mode
-        self.using_decoupled = pb_utils.using_decoupled_model_transaction_policy(self.model_config)
-        assert self.using_decoupled, "VLLM Triton backend must be configured to use decoupled model transaction policy"
+        self.using_decoupled = pb_utils.using_decoupled_model_transaction_policy(
+            self.model_config
+        )
+        assert (
+            self.using_decoupled
+        ), "vLLM Triton backend must be configured to use decoupled model transaction policy"
 
-        engine_args_filepath = os.path.join(args['model_repository'], _VLLM_ENGINE_ARGS_FILENAME)
-        assert os.path.isfile(engine_args_filepath), f"'{_VLLM_ENGINE_ARGS_FILENAME}' containing vllm engine args must be provided in '{args['model_repository']}'"
+        engine_args_filepath = os.path.join(
+            args["model_repository"], _VLLM_ENGINE_ARGS_FILENAME
+        )
+        assert os.path.isfile(
+            engine_args_filepath
+        ), f"'{_VLLM_ENGINE_ARGS_FILENAME}' containing vllm engine args must be provided in '{args['model_repository']}'"
         with open(engine_args_filepath) as file:
             vllm_engine_config = VLLMAsyncEngineConfig(**json.load(file))
 
         # create the vllm engine
         engine_args = AsyncEngineArgs(
-            vllm_engine_config.model, disable_log_requests=vllm_engine_config.disable_log_requests, max_num_batched_tokens=vllm_engine_config.max_num_batched_tokens, max_num_seqs=vllm_engine_config.max_num_seqs
+            vllm_engine_config.model,
+            disable_log_requests=vllm_engine_config.disable_log_requests,
+            max_num_batched_tokens=vllm_engine_config.max_num_batched_tokens,
+            max_num_seqs=vllm_engine_config.max_num_seqs,
         )
         self.llm = AsyncLLMEngine.from_engine_args(engine_args)
 
-        # TODO: triton should support asyncio natively; this is a workaround
         self._loop = asyncio.get_event_loop()
-        self._loop_thread = threading.Thread(target=self.engine_loop, args=(self._loop,))
+        self._loop_thread = threading.Thread(
+            target=self.engine_loop, args=(self._loop,)
+        )
         self._shutdown_event = asyncio.Event()
         self._loop_thread.start()
 
@@ -123,7 +159,9 @@ class TritonPythonModel:
         """
         Creates a task on the engine's event loop which is running on a separate thread.
         """
-        assert self._shutdown_event.is_set() is False, "Cannot create tasks after shutdown has been requested"
+        assert (
+            self._shutdown_event.is_set() is False
+        ), "Cannot create tasks after shutdown has been requested"
 
         async def _wrapped_coro(coro):
             """
@@ -154,7 +192,9 @@ class TritonPythonModel:
 
         # then wait for all in-flight tasks to complete
         while self._inflight_counter > 0:
-            self.logger.log_info("Awaiting remaining {} inflight requests".format(self._inflight_counter))
+            self.logger.log_info(
+                "Awaiting remaining {} inflight requests".format(self._inflight_counter)
+            )
             await asyncio.sleep(5)
 
         self.logger.log_info("Shutdown complete")
@@ -163,7 +203,6 @@ class TritonPythonModel:
         """
         Creates a vLLM SamplingParams object from the given arguments.
         """
-        # todo(ryan): make more defaults configurable via the intialized args
         return SamplingParams(
             n=1,
             best_of=1,
@@ -179,7 +218,6 @@ class TritonPythonModel:
         """
         Creates an OutputOptions object from the given arguments.
         """
-        # todo(ryan): make more defaults configurable via the intialized args
         return OutputOptions(
             echo=req.echo,
             stream=req.stream,
@@ -191,9 +229,9 @@ class TritonPythonModel:
         """
         # deserialize the VLLM request from the Triton InferRequest
         try:
-            serialized_json = (
-                pb_utils.get_input_tensor_by_name(request, "serialized_request_json").as_numpy()[0]
-            )
+            serialized_json = pb_utils.get_input_tensor_by_name(
+                request, "serialized_request_json"
+            ).as_numpy()[0]
             request = CompletionRequest(**json.loads(serialized_json))
 
             return (
@@ -205,11 +243,13 @@ class TritonPythonModel:
             self.logger.log_info(f"Error parsing request: {e}")
             raise e
 
-    def postprocess(self, output: VLLMOutput, output_options: OutputOptions, inflight_avg: float):
+    def postprocess(
+        self, output: VLLMOutput, output_options: OutputOptions, inflight_avg: float
+    ):
         """
         Converts a VLLM output into a Triton response.
         """
-        # create a Triton Response from the VLLM output
+        # create a Triton Response from the vLLM output
         response = CompletionResponse()
         response.request_id = output.request_id
         response.finished = output.finished
@@ -220,7 +260,6 @@ class TritonPythonModel:
         # optionally echo the prompt back to the client
         if output_options.echo:
             response.prompt = output.prompt
-            # response.prompt_token_ids = output.prompt_token_ids
 
         for completion in output.outputs:
             completion_output = Completion(
@@ -231,7 +270,6 @@ class TritonPythonModel:
                 gen_token_count=len(completion.token_ids),
             )
             response.completions.append(completion_output)
-            # todo(ryan): add per token logprobs
 
         response.current_inflight_count = self._inflight_counter
         response.average_inflight_count = inflight_avg
@@ -260,7 +298,9 @@ class TritonPythonModel:
                 inflight_total += self._inflight_counter
                 inflight_avg = inflight_total / forward_passes
                 if output_options.stream or output.finished:
-                    response_sender.send(self.postprocess(output, output_options, inflight_avg))
+                    response_sender.send(
+                        self.postprocess(output, output_options, inflight_avg)
+                    )
 
             # TODO: Improve the API for sending FINAL flag; perhaps .complete() or .finalize()
             response_sender.send(flags=pb_utils.TRITONSERVER_RESPONSE_COMPLETE_FINAL)

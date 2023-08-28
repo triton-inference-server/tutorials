@@ -1,4 +1,4 @@
-<!-- 
+<!--
 # Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,22 +30,26 @@
 # Deploying a vLLM model in Triton
 
 *NOTE*: This tutorial is just for demonstration purpose. There is more follow-up work
-that needs to be performed in Triton for more streamline integration with vLLM. 
+that needs to be performed in Triton for more streamline integration with vLLM.
 These implementations can change in future for a better developer experience.
 
 This README showcases how to deploy a simple [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model on Triton Inference Server with [vLLM](https://github.com/vllm-project/vllm). We will be using Triton's [Python backend](https://github.com/triton-inference-server/python_backend) to host vLLM integration.
 
 ## Step 1: Build a Triton Container Image with vLLM
 
-vLLM with all its dependencies is quite large hence it is not feasible to ship these dependencies in a [custom environment](https://github.com/triton-inference-server/python_backend#creating-custom-execution-environments).
-We will build a new container image derived from tritonserver:22.12-py3 with all the dependencies needed to run the model.
-The dependencies that will be installed in the container image are listed in requirements.txt
+
+We will build a new container image derived from `tritonserver:22.12-py3` with all the dependencies needed to run the model.
+The dependencies that will be installed in the container image are listed in `requirements.txt`.
 
 ```
 docker build -t tritonserver_vllm:22.12-py3 .
 ```
 
-The above command should create tritonserver_vllm:22.12-py3 image with all the dependencies.
+The above command should create `tritonserver_vllm:22.12-py3` image with all the dependencies.
+
+*NOTE*: A [custom execution environment](https://github.com/triton-inference-server/python_backend#creating-custom-execution-environments) with vLLM and all the dependencies
+specified in `requirement.txt` can be created and shipped along with the model instead of
+building a new container image.
 
 ## Step 2: Set Up Triton Inference Server
 
@@ -104,25 +108,25 @@ The output of the client should look like below:
 prompt => 'T h e   f u t u r e   o f   A I   i s'
 ===========
 response => ' not as simple as you think, and you have to understand it in order to'
-=========== 
+===========
 
 ===========
 prompt => 'T h e   p r e s i d e n t   o f   t h e   U n i t e d   S t a t e s   i s'
 ===========
 response => ' about to be arrested in Europe for allegedly meddling in the 2016 election.\n\n'
-=========== 
+===========
 
 ===========
 prompt => 'T h e   c a p i t a l   o f   F r a n c e   i s'
 ===========
 response => ' becoming a state of chaos with a significant urban and industrial boom. France’'
-=========== 
+===========
 
 ===========
 prompt => 'H e l l o ,   m y   n a m e   i s'
 ===========
 response => " Joel. I'm from Massachusetts and live in Melbourne, Australia.\nI'm"
-=========== 
+===========
 
 PASS: vLLM example
 
@@ -144,4 +148,4 @@ When you run the client in verbose mode - with `--verbose` flag, the client will
 - We are explicitly serializing/deserializing the request/response json objects.
 - The asyncio implementation is exposed to model.py.
 - Does not support multi-GPU systems.
-- Can not use latest Triton containers as vLLM only supports cuda 10.8
+- Can not use latest Triton containers as vLLM only supports cuda 11.8.
