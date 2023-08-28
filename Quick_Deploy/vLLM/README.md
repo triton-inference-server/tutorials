@@ -105,31 +105,30 @@ python3 client.py
 The output of the client should look like below:
 ```
 ===========
-prompt => 'T h e   f u t u r e   o f   A I   i s'
+prompt => 'The future of AI is'
 ===========
 response => ' not as simple as you think, and you have to understand it in order to'
-===========
+=========== 
 
 ===========
-prompt => 'T h e   p r e s i d e n t   o f   t h e   U n i t e d   S t a t e s   i s'
-===========
-response => ' about to be arrested in Europe for allegedly meddling in the 2016 election.\n\n'
-===========
-
-===========
-prompt => 'T h e   c a p i t a l   o f   F r a n c e   i s'
+prompt => 'The capital of France is'
 ===========
 response => ' becoming a state of chaos with a significant urban and industrial boom. France’'
-===========
+=========== 
 
 ===========
-prompt => 'H e l l o ,   m y   n a m e   i s'
+prompt => 'The president of the United States is'
+===========
+response => ' about to be arrested in Europe for allegedly meddling in the 2016 election.\n\n'
+=========== 
+
+===========
+prompt => 'Hello, my name is'
 ===========
 response => " Joel. I'm from Massachusetts and live in Melbourne, Australia.\nI'm"
-===========
+=========== 
 
 PASS: vLLM example
-
 ```
 
 When you run the client in verbose mode - with `--verbose` flag, the client will print more details about current and average inflight request counts. This demonstrates that Triton was able to transfer all the four request prompts to vLLM engine.
