@@ -87,7 +87,7 @@ async def main(FLAGS):
     top_p = 0.95
     prompt_list = [
         ["Hello, my name is"],
-        ["The president of the United States is"],
+        ["The most dangerous animal is"],
         ["The capital of France is"],
         ["The future of AI is"],
     ]

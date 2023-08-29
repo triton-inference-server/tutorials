@@ -111,15 +111,15 @@ response => ' not as simple as you think, and you have to understand it in order
 =========== 
 
 ===========
-prompt => 'The capital of France is'
+prompt => 'The most dangerous animal is'
 ===========
-response => ' becoming a state of chaos with a significant urban and industrial boom. France’'
+response => ' the devil.\nThe devil is the devil that steals you and steals your life'
 =========== 
 
 ===========
-prompt => 'The president of the United States is'
+prompt => 'The capital of France is'
 ===========
-response => ' about to be arrested in Europe for allegedly meddling in the 2016 election.\n\n'
+response => ' becoming a state of chaos with a significant urban and industrial boom. France’'
 =========== 
 
 ===========
@@ -134,10 +134,10 @@ PASS: vLLM example
 When you run the client in verbose mode - with `--verbose` flag, the client will print more details about current and average inflight request counts. This demonstrates that Triton was able to transfer all the four request prompts to vLLM engine.
 
 ```
-[VERBOSE RESPONSE]: {'request_id': '4_1', 'finished': True, 'prompt': 'The future of AI is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': ' changing the future.\n\nMicrosoft, Facebook and Google have all pledged to create', 'gen_token_count': 16, 'cumulative_logprob': -38.57662500068545, 'finish_reason': 'length'}], 'current_inflight_count': 4, 'average_inflight_count': 4.0}
-[VERBOSE RESPONSE]: {'request_id': '1_1', 'finished': True, 'prompt': 'Hello, my name is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': ' Tyler and I have a family, I love to take care of people and to', 'gen_token_count': 16, 'cumulative_logprob': -37.73788612172939, 'finish_reason': 'length'}], 'current_inflight_count': 3, 'average_inflight_count': 3.857142857142857}
-[VERBOSE RESPONSE]: {'request_id': '2_1', 'finished': True, 'prompt': 'The president of the United States is', 'prompt_token_count': 8, 'completions': [{'index': 0, 'text': " a psychopath.  I mean, he's a psychopath.  I'd rather", 'gen_token_count': 16, 'cumulative_logprob': -29.792226254940033, 'finish_reason': 'length'}], 'current_inflight_count': 3, 'average_inflight_count': 3.8333333333333335}
-[VERBOSE RESPONSE]: {'request_id': '3_1', 'finished': True, 'prompt': 'The capital of France is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': ' in danger of being swallowed up in the Parisian and British forces as the French', 'gen_token_count': 16, 'cumulative_logprob': -37.89636680483818, 'finish_reason': 'length'}], 'current_inflight_count': 1, 'average_inflight_count': 3.5714285714285716}
+[VERBOSE RESPONSE]: {'request_id': '4_1', 'finished': True, 'prompt': 'The future of AI is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': ' an exciting project, but it is still in its infancy\nWhen the world of', 'gen_token_count': 16, 'cumulative_logprob': -37.039882481098175, 'finish_reason': 'length'}], 'current_inflight_count': 4, 'average_inflight_count': 4.0}
+[VERBOSE RESPONSE]: {'request_id': '3_1', 'finished': True, 'prompt': 'The capital of France is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': " full of golfers who haven't played a day of golf.\n\nI", 'gen_token_count': 16, 'cumulative_logprob': -41.49192576855421, 'finish_reason': 'length'}], 'current_inflight_count': 3, 'average_inflight_count': 3.888888888888889}
+[VERBOSE RESPONSE]: {'request_id': '2_1', 'finished': True, 'prompt': 'The most dangerous animal is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': " literally the neckbeard\nIt's not like the neckbeard is actually a neck", 'gen_token_count': 16, 'cumulative_logprob': -33.853203788399696, 'finish_reason': 'length'}], 'current_inflight_count': 3, 'average_inflight_count': 3.888888888888889}
+[VERBOSE RESPONSE]: {'request_id': '1_1', 'finished': True, 'prompt': 'Hello, my name is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': ' Ben and I am a very graphic designer and I am very happy when you say', 'gen_token_count': 16, 'cumulative_logprob': -39.22391840815544, 'finish_reason': 'length'}], 'current_inflight_count': 2, 'average_inflight_count': 3.8}
 
 ```
 
