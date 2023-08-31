@@ -29,11 +29,16 @@
 
 # Deploying a vLLM model in Triton
 
-*NOTE*: This tutorial is just for demonstration purpose. There is more follow-up work
-that needs to be performed in Triton for more streamline integration with vLLM.
-These implementations can change in future for a better developer experience.
+The following tutorial demonstrates how to deploy a simple
+[facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model on
+Triton Inference Server using Triton's [Python backend]
+(https://github.com/triton-inference-server/python_backend) and the
+[vLLM](https://github.com/vllm-project/vllm) library.
 
-This README showcases how to deploy a simple [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model on Triton Inference Server with [vLLM](https://github.com/vllm-project/vllm). We will be using Triton's [Python backend](https://github.com/triton-inference-server/python_backend) to host vLLM integration.
+*NOTE*: The tutorial is a work in progress with known limitations and
+is expected to change and improve over time. It is not intended to be
+used in production.
+
 
 ## Step 1: Build a Triton Container Image with vLLM
 
@@ -73,7 +78,7 @@ A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton
     "model":"facebook/opt-125m"
 }
 ```
-This file can be modified to provide further settings to the vLLM engine. Look at VLLMAsyncEngineConfig in [model.py](model_repository/vllm/1/model.py) for supported fields.
+This file can be modified to provide further settings to the vLLM engine. See vLLM EngineArgs for options..
 
 Read through the documentation in [`config.pbtxt`](model_repository/vllm/config.pbtxt) and [`model.py`](model_repository/vllm/1/model.py) to
 understand how to configure this sample for your use-case.
@@ -109,24 +114,10 @@ prompt => 'The future of AI is'
 ===========
 response => ' not as simple as you think, and you have to understand it in order to'
 =========== 
+...
 
-===========
-prompt => 'The most dangerous animal is'
-===========
-response => ' the devil.\nThe devil is the devil that steals you and steals your life'
-=========== 
-
-===========
-prompt => 'The capital of France is'
-===========
-response => ' becoming a state of chaos with a significant urban and industrial boom. France’'
-=========== 
-
-===========
-prompt => 'Hello, my name is'
-===========
-response => " Joel. I'm from Massachusetts and live in Melbourne, Australia.\nI'm"
-=========== 
+<SNIP>
+...
 
 PASS: vLLM example
 ```
@@ -135,15 +126,13 @@ When you run the client in verbose mode - with `--verbose` flag, the client will
 
 ```
 [VERBOSE RESPONSE]: {'request_id': '4_1', 'finished': True, 'prompt': 'The future of AI is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': ' an exciting project, but it is still in its infancy\nWhen the world of', 'gen_token_count': 16, 'cumulative_logprob': -37.039882481098175, 'finish_reason': 'length'}], 'current_inflight_count': 4, 'average_inflight_count': 4.0}
-[VERBOSE RESPONSE]: {'request_id': '3_1', 'finished': True, 'prompt': 'The capital of France is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': " full of golfers who haven't played a day of golf.\n\nI", 'gen_token_count': 16, 'cumulative_logprob': -41.49192576855421, 'finish_reason': 'length'}], 'current_inflight_count': 3, 'average_inflight_count': 3.888888888888889}
-[VERBOSE RESPONSE]: {'request_id': '2_1', 'finished': True, 'prompt': 'The most dangerous animal is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': " literally the neckbeard\nIt's not like the neckbeard is actually a neck", 'gen_token_count': 16, 'cumulative_logprob': -33.853203788399696, 'finish_reason': 'length'}], 'current_inflight_count': 3, 'average_inflight_count': 3.888888888888889}
-[VERBOSE RESPONSE]: {'request_id': '1_1', 'finished': True, 'prompt': 'Hello, my name is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': ' Ben and I am a very graphic designer and I am very happy when you say', 'gen_token_count': 16, 'cumulative_logprob': -39.22391840815544, 'finish_reason': 'length'}], 'current_inflight_count': 2, 'average_inflight_count': 3.8}
+...
 
 ```
 
 ## Limitations
 
-- We are restricted to use decoupled streaming protocol even if there is exactly 1 response for each request.
+- We use decoupled streaming protocol even if there is exactly 1 response for each request.
 - We are explicitly serializing/deserializing the request/response json objects.
 - The asyncio implementation is exposed to model.py.
 - Does not support multi-GPU systems.
