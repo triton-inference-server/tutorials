@@ -31,8 +31,7 @@
 
 The following tutorial demonstrates how to deploy a simple
 [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model on
-Triton Inference Server using Triton's [Python backend]
-(https://github.com/triton-inference-server/python_backend) and the
+Triton Inference Server using Triton's [Python backend](https://github.com/triton-inference-server/python_backend) and the
 [vLLM](https://github.com/vllm-project/vllm) library.
 
 *NOTE*: The tutorial is a work in progress with known limitations and
