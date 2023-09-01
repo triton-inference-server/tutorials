@@ -36,23 +36,27 @@ model_transaction_policy {
   decoupled: True
 }
 
-# A string input that stores the vLLM json request.
-# See CompletionRequests in model.py for supported
-# request fields.
+parameters: {
+  key: "EXECUTION_ENV_PATH",
+  value: {string_value: "$$TRITON_MODEL_DIRECTORY/vllm_env.tar.gz"}
+}
+
 input [
   {
-    name: "serialized_request_json"
+    name: "PROMPT"
     data_type: TYPE_STRING
-    dims: [ -1 ]
+    dims: [ 1 ]
+  },
+  {
+    name: "STREAM"
+    data_type: TYPE_BOOL
+    dims: [ 1 ]
   }
 ]
 
-# A serialized output response from vLLM. See
-# CompletionResponse in model.py for supported
-# response fields.
 output [
   {
-    name: "serialized_response_json"
+    name: "TEXT"
     data_type: TYPE_STRING
     dims: [ -1 ]
   }

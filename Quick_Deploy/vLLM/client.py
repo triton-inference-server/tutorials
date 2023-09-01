@@ -26,10 +26,9 @@
 
 import argparse
 import asyncio
-import json
 import queue
 import sys
-import uuid
+from os import system
 
 import numpy as np
 import tritonclient.grpc.aio as grpcclient
@@ -40,71 +39,69 @@ class UserData:
     def __init__(self):
         self._completed_requests = queue.Queue()
 
-
-def get_request_data(prompt, temperature, top_p):
-    request_json = {
-        "prompt": prompt,
-        "temperature": temperature,
-        "top_p": top_p,
-        "echo": True,
-    }
-    return np.array([json.dumps(request_json).encode("utf-8")], dtype=np.object_)
-
-
-async def async_stream_yield(
-    prompt_tokens, temperature, top_p, sequence_id, model_name
+def create_request(
+    prompt, stream, sequence_id, sampling_parameters, model_name
 ):
-    count = 1
-    for token in prompt_tokens:
-        # Create the tensor for INPUT
-        request_data = get_request_data(token, temperature, top_p)
-        inputs = []
+    inputs = []
+    prompt_data = np.array([prompt.encode("utf-8")], dtype=np.object_)
+    try:
         inputs.append(
             grpcclient.InferInput(
-                "serialized_request_json", request_data.shape, "BYTES"
+                "PROMPT", [1], "BYTES"
             )
         )
-        # Initialize the data
-        inputs[0].set_data_from_numpy(request_data)
-        outputs = []
-        outputs.append(grpcclient.InferRequestedOutput("serialized_response_json"))
-        # Issue the asynchronous sequence inference.
-        yield {
-            "model_name": model_name,
-            "inputs": inputs,
-            "outputs": outputs,
-            "request_id": "{}_{}".format(sequence_id, count),
-            "sequence_id": sequence_id,
-            "sequence_start": (count == 1),
-            "sequence_end": (count == len(prompt_tokens)),
-        }
-        count = count + 1
+        inputs[-1].set_data_from_numpy(prompt_data)
+    except Exception as e:
+        print(f"Encountered an error {e}")
+    
+    stream_data = np.array([stream], dtype=bool)
+    inputs.append(
+        grpcclient.InferInput(
+           "STREAM", [1], "BOOL"
+        )
+    )
+    inputs[-1].set_data_from_numpy(stream_data)
+
+    # Add requested outputs
+    outputs = []
+    outputs.append(grpcclient.InferRequestedOutput("TEXT"))
+
+    # Issue the asynchronous sequence inference.
+    return {
+        "model_name": model_name,
+        "inputs": inputs,
+        "outputs": outputs,
+        "request_id": str(sequence_id),
+        "sequence_id": sequence_id,
+        "sequence_start": True,
+        "sequence_end": True,
+        "parameters": sampling_parameters
+    }
 
 
 async def main(FLAGS):
     model_name = "vllm"
-    temperature = 0.8
-    top_p = 0.95
-    prompt_list = [
-        ["Hello, my name is"],
-        ["The most dangerous animal is"],
-        ["The capital of France is"],
-        ["The future of AI is"],
-    ]
+    sampling_parameters = {"temperature": "0.8", "top_p": "0.95"}
+    stream = FLAGS.streaming_mode
+    with open(FLAGS.input_prompts, 'r') as file:
+        print(f"Loading inputs from `{FLAGS.input_prompts}`...")
+        prompts = file.readlines()
+
+    results_dict = {}
 
     async with grpcclient.InferenceServerClient(
         url=FLAGS.url, verbose=FLAGS.verbose
     ) as triton_client:
         # Request iterator that yields the next request
         async def async_request_iterator():
-            prompt_id = FLAGS.offset
-            for prompt in prompt_list:
-                prompt_id = prompt_id + 1
-                async for request in async_stream_yield(
-                    prompt, temperature, top_p, prompt_id, model_name
-                ):
-                    yield request
-
+            try:
+                for iter in range(FLAGS.iterations):
+                    for i, prompt in enumerate(prompts):
+                        prompt_id = FLAGS.offset + (len(prompts) * iter) + i
+                        results_dict[str(prompt_id)] = []
+                        yield create_request(prompt, stream, prompt_id, sampling_parameters, model_name)
+            except Exception as error:
+                print(f"caught error in request iterator:  {error}")
         try:
             # Start streaming
             response_iterator = triton_client.stream_infer(
@@ -112,45 +109,30 @@ async def main(FLAGS):
                 stream_timeout=FLAGS.stream_timeout,
             )
             # Read response from the stream
-            user_data = UserData()
             async for response in response_iterator:
                 result, error = response
                 if error:
-                    user_data._completed_requests.put(error)
+                    print(f"Encountered error while processing: {error}")
                 else:
-                    user_data._completed_requests.put(result)
+                    output = result.as_numpy("TEXT")
+                    for i in output:
+                        results_dict[result.get_response().id].append(i)
+    
         except InferenceServerException as error:
             print(error)
             sys.exit(1)
+    
+    with open(FLAGS.results_file, 'w') as file:
+        for id in results_dict.keys():
+            for result in results_dict[id]:
+                file.write(result.decode("utf-8"))
+                file.write("\n")
+            file.write('\n=========\n\n')
+        print(f"Storing results into `{FLAGS.results_file}`...")
 
-    # Retrieve results
-    results = []
-    results_dict = {}
-    recv_count = 0
-    while recv_count < len(prompt_list):
-        data_item = user_data._completed_requests.get()
-        if type(data_item) == InferenceServerException:
-            print(data_item)
-            sys.exit(1)
-        else:
-            response = data_item.as_numpy("serialized_response_json")
-            results.append(json.loads(response[0]))
-            if FLAGS.verbose:
-                print(f"[VERBOSE RESPONSE]: {results[-1]}")
-            prompt = results[-1]["prompt"]
-            if prompt not in results_dict:
-                results_dict[prompt] = []
-            for completion in results[-1]["completions"]:
-                results_dict[prompt].append(completion["text"])
-        if results[-1]["finished"]:
-            recv_count = recv_count + 1
-
-    for prompt in results_dict.keys():
-        print("===========")
-        print(f"prompt => {prompt!r}")
-        print("===========")
-        print(f"response => {' '.join(results_dict[prompt])!r}")
-        print("=========== \n")
+    if FLAGS.verbose:
+        print(f"\nContents of `{FLAGS.results_file}` ===>")
+        system(f"cat {FLAGS.results_file}")
 
     print("PASS: vLLM example")
 
@@ -182,12 +164,40 @@ if __name__ == "__main__":
         help="Stream timeout in seconds. Default is None.",
     )
     parser.add_argument(
-        "-o",
         "--offset",
         type=int,
         required=False,
         default=0,
         help="Add offset to sequence ID used",
+    )
+    parser.add_argument(
+        "--input-prompts",
+        type=str,
+        required=False,
+        default="prompts.txt",
+        help="Text file with input prompts",
+    )
+    parser.add_argument(
+        "--results-file",
+        type=str,
+        required=False,
+        default="results.txt",
+        help="The file with output results",
+    )
+    parser.add_argument(
+        "--iterations",
+        type=int,
+        required=False,
+        default=1,
+        help="Number of iterations through the prompts file",
+    )
+    parser.add_argument(
+        "-s",
+        "--streaming-mode",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Enable streaming mode",
     )
     FLAGS = parser.parse_args()
     asyncio.run(main(FLAGS))

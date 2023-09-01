@@ -28,98 +28,27 @@ import asyncio
 import json
 import os
 import threading
-from typing import List, Literal, Optional, Tuple, Union
+from typing import AsyncGenerator
 
 import numpy as np
 import triton_python_backend_utils as pb_utils
-from pydantic import BaseModel, Field
-from vllm import SamplingParams
+
 from vllm.engine.arg_utils import AsyncEngineArgs
+from vllm import SamplingParams
 from vllm.engine.async_llm_engine import AsyncLLMEngine
-from vllm.outputs import RequestOutput as VLLMOutput
+from vllm.utils import random_uuid
 
 _VLLM_ENGINE_ARGS_FILENAME = "vllm_engine_args.json"
-
-
-class VLLMAsyncEngineConfig(BaseModel):
-    # required model
-    model: str
-
-    # arguments from vLLM engine
-    max_num_batched_tokens: int = 2560
-    max_num_seqs: int = 256
-    disable_log_requests: bool = True
-
-
-class CompletionRequest(BaseModel):
-    # required prompt
-    prompt: str
-
-    # generation parameters
-    max_tokens: Optional[int] = 16
-    stop: Optional[Union[str, List[str]]] = None
-
-    # sampling parameters
-    temperature: Optional[float] = 1.0
-    top_k: Optional[int] = -1
-    top_p: Optional[float] = 1.0
-    ignore_eos: Optional[bool] = False
-
-    # output options
-    echo: Optional[bool] = False
-    stream: Optional[bool] = False
-
-
-class Completion(BaseModel):
-    index: int
-    text: str
-    gen_token_count: Optional[int] = None
-    cumulative_logprob: Optional[float] = None
-    finish_reason: Optional[Literal["stop", "length"]] = None
-
-
-class CompletionResponse(BaseModel):
-    request_id: Optional[str] = None
-    finished: bool = False
-
-    prompt: Optional[str] = None
-    prompt_token_count: Optional[int] = None
-
-    completions: List[Completion] = []
-
-    # inflight request stats
-    current_inflight_count: Optional[int] = None
-    average_inflight_count: Optional[float] = None
-
-
-class OutputOptions:
-    def __init__(self, *, echo: bool = False, stream: bool = False):
-        self._echo = echo
-        self._stream = stream
-
-    @property
-    def echo(self) -> bool:
-        """
-        If true, the prompt and prompt token ids will be echoed back to the client in the response.
-        """
-        return self._echo
-
-    @property
-    def stream(self) -> bool:
-        """
-        If true, the response will be streamed back to the client as it is generated.
-        """
-        return self._stream
 
 
 class TritonPythonModel:
     def initialize(self, args):
         self.logger = pb_utils.Logger
-
-        # load triton model config from args
         self.model_config = json.loads(args["model_config"])
 
-        # assert are in decoupled mode
+        # assert are in decoupled mode. Currently, Triton needs to use
+        # decoupled policy for asynchronously forwarding requests to
+        # vLLM engine.
         self.using_decoupled = pb_utils.using_decoupled_model_transaction_policy(
             self.model_config
         )
@@ -134,26 +63,27 @@ class TritonPythonModel:
             engine_args_filepath
         ), f"'{_VLLM_ENGINE_ARGS_FILENAME}' containing vllm engine args must be provided in '{args['model_repository']}'"
         with open(engine_args_filepath) as file:
-            vllm_engine_config = VLLMAsyncEngineConfig(**json.load(file))
+            vllm_engine_config = json.load(file)
+        
+        # Create an AsyncLLMEngine from the config from JSON
+        self.llm_engine = AsyncLLMEngine.from_engine_args(AsyncEngineArgs(**vllm_engine_config))
 
-        # create the vllm engine
-        engine_args = AsyncEngineArgs(
-            vllm_engine_config.model,
-            disable_log_requests=vllm_engine_config.disable_log_requests,
-            max_num_batched_tokens=vllm_engine_config.max_num_batched_tokens,
-            max_num_seqs=vllm_engine_config.max_num_seqs,
+
+        output_config = pb_utils.get_output_config_by_name(self.model_config, "TEXT")
+        self.output_dtype = pb_utils.triton_string_to_numpy(
+            output_config["data_type"]
         )
-        self.llm = AsyncLLMEngine.from_engine_args(engine_args)
 
+        # Counter to keep track of ongoing request counts
+        self.ongoing_request_count = 0
+
+        # Starting asyncio event loop to process the received requests asynchronously.
         self._loop = asyncio.get_event_loop()
         self._loop_thread = threading.Thread(
             target=self.engine_loop, args=(self._loop,)
         )
         self._shutdown_event = asyncio.Event()
         self._loop_thread.start()
-
-        # local counters to track inflight requests
-        self._inflight_counter = 0
 
     def create_task(self, coro):
         """
@@ -163,16 +93,7 @@ class TritonPythonModel:
             self._shutdown_event.is_set() is False
         ), "Cannot create tasks after shutdown has been requested"
 
-        async def _wrapped_coro(coro):
-            """
-            Wraps the given coroutine in a new coroutine and decrements the in-flight counter after awaiting the original coroutine.
-            """
-            await coro
-            self._inflight_counter -= 1
-
-        # locally increment the in-flight counter
-        self._inflight_counter += 1
-        return asyncio.run_coroutine_threadsafe(_wrapped_coro(coro), self._loop)
+        return asyncio.run_coroutine_threadsafe(coro, self._loop)
 
     def engine_loop(self, loop):
         """
@@ -190,123 +111,93 @@ class TritonPythonModel:
         while self._shutdown_event.is_set() is False:
             await asyncio.sleep(5)
 
-        # then wait for all in-flight tasks to complete
-        while self._inflight_counter > 0:
+        # Wait for the ongoing_requests
+        while self.ongoing_request_count > 0:
             self.logger.log_info(
-                "Awaiting remaining {} inflight requests".format(self._inflight_counter)
+                "Awaiting remaining {} requests".format(self.ongoing_request_count)
             )
             await asyncio.sleep(5)
 
         self.logger.log_info("Shutdown complete")
+    
+    def get_sampling_params_dict(self, params_json):
+        """
+        This functions parses the dictionary values into their
+        expected format.
+        """
 
-    def make_sample_params(self, request: CompletionRequest) -> SamplingParams:
-        """
-        Creates a vLLM SamplingParams object from the given arguments.
-        """
-        return SamplingParams(
-            n=1,
-            best_of=1,
-            temperature=request.temperature,
-            top_p=request.top_p,
-            top_k=request.top_k,
-            stop=request.stop,
-            ignore_eos=request.ignore_eos,
-            max_tokens=request.max_tokens,
-        )
+        dict = json.loads(params_json)
 
-    def make_output_options(self, req: CompletionRequest) -> OutputOptions:
-        """
-        Creates an OutputOptions object from the given arguments.
-        """
-        return OutputOptions(
-            echo=req.echo,
-            stream=req.stream,
-        )
+        # Special parsing for the supported sampling parameters
+        # TODO: Add more parameters if needed
+        dict["temperature"] = float(dict["temperature"])
+        dict["top_p"] = float(dict["top_p"])
 
-    def preprocess(self, request) -> Tuple[str, SamplingParams, OutputOptions]:
+        return dict
+
+    def postprocess(self, request_output):
         """
-        Converts a Triton request into a VLLM input by extracting the prompt and sampling parameters.
+        Parses the output from the vLLM engine into text
+        response.
         """
-        # deserialize the VLLM request from the Triton InferRequest
+        prompt = request_output.prompt
+        text_outputs = [ (prompt + output.text).encode("utf-8") for output in request_output.outputs]
+        return  text_outputs
+
+    async def generate(self, request):
+        """
+        Forwards single request to LLM engine and returns responses.
+        """
+        response_sender = request.get_response_sender()
+        self.ongoing_request_count += 1
         try:
-            serialized_json = pb_utils.get_input_tensor_by_name(
-                request, "serialized_request_json"
-            ).as_numpy()[0]
-            request = CompletionRequest(**json.loads(serialized_json))
+            request_id = random_uuid()
+            prompt = pb_utils.get_input_tensor_by_name(request, "PROMPT").as_numpy()[0]
+            stream = pb_utils.get_input_tensor_by_name(request, "STREAM").as_numpy()[0]
+            sampling_params_dict = self.get_sampling_params_dict(request.parameters())
+            sampling_params = SamplingParams(**sampling_params_dict)
+            results_generator = self.llm_engine.generate(str(prompt), sampling_params, request_id)
 
-            return (
-                request.prompt,
-                self.make_sample_params(request),
-                self.make_output_options(request),
-            )
-        except Exception as e:
-            self.logger.log_info(f"Error parsing request: {e}")
-            raise e
+            # Streaming case
+            async def stream_results() -> AsyncGenerator[bytes, None]:
+                async for request_output in results_generator:
+                    if self._shutdown_event.is_set():
+                        await self.llm_engine.abort(request_id)
+                        yield None
+                    else:
+                        output = self.postprocess(request_output)
+                        triton_output_tensor = pb_utils.Tensor("TEXT", np.asarray(output, dtype=self.output_dtype))
+                        yield pb_utils.InferenceResponse(output_tensors=[triton_output_tensor])
 
-    def postprocess(
-        self, output: VLLMOutput, output_options: OutputOptions, inflight_avg: float
-    ):
-        """
-        Converts a VLLM output into a Triton response.
-        """
-        # create a Triton Response from the vLLM output
-        response = CompletionResponse()
-        response.request_id = output.request_id
-        response.finished = output.finished
-
-        # number of tokens in the prompt and total number of tokens generated across all completions
-        response.prompt_token_count = len(output.prompt_token_ids)
-
-        # optionally echo the prompt back to the client
-        if output_options.echo:
-            response.prompt = output.prompt
-
-        for completion in output.outputs:
-            completion_output = Completion(
-                index=completion.index,
-                text=completion.text,
-                finish_reason=completion.finish_reason,
-                cumulative_logprob=completion.cumulative_logprob,
-                gen_token_count=len(completion.token_ids),
-            )
-            response.completions.append(completion_output)
-
-        response.current_inflight_count = self._inflight_counter
-        response.average_inflight_count = inflight_avg
-
-        # serialize the NemoResponse into a tensor packed into Triton InferenceResponse
-        serialized_response = response.json().encode("utf-8")
-        triton_output_tensor = pb_utils.Tensor(
-            "serialized_response_json", np.array([serialized_response], dtype=np.object)
-        )
-
-        return pb_utils.InferenceResponse(output_tensors=[triton_output_tensor])
-
-    async def generate_stream(self, request):
-        """
-        Generates a stream of parital outputs from a single request.
-        """
-        try:
-            request_id = request.request_id()
-            prompt, sampling_params, output_options = self.preprocess(request)
-            response_sender = request.get_response_sender()
-            forward_passes = 0
-            inflight_total = 0
-
-            async for output in self.llm.generate(prompt, sampling_params, request_id):
-                forward_passes += 1
-                inflight_total += self._inflight_counter
-                inflight_avg = inflight_total / forward_passes
-                if output_options.stream or output.finished:
-                    response_sender.send(
-                        self.postprocess(output, output_options, inflight_avg)
-                    )
-
-            # TODO: Improve the API for sending FINAL flag; perhaps .complete() or .finalize()
-            response_sender.send(flags=pb_utils.TRITONSERVER_RESPONSE_COMPLETE_FINAL)
+            if stream:
+                async for response in stream_results():
+                    if response:
+                        response_sender.send(response)
+            # Non-Streaming case
+            else:
+                final_output = None
+                async for request_output in results_generator:
+                    if self._shutdown_event.is_set():
+                        await self.llm_engine.abort(request_id)
+                    else:
+                        final_output = request_output
+                if final_output:
+                    output = self.postprocess(final_output)
+                    triton_output_tensor = pb_utils.Tensor("TEXT", np.asarray(output, dtype=self.output_dtype)) 
+                    response = pb_utils.InferenceResponse(output_tensors=[triton_output_tensor])
+                    response_sender.send(response)
         except Exception as e:
             self.logger.log_info(f"Error generating stream: {e}")
+            error = pb_utils.TritonError(f"Error generating stream: {e}")
+            triton_output_tensor = pb_utils.Tensor("TEXT", np.asarray(["N/A"], dtype=self.output_dtype))
+            response = pb_utils.InferenceResponse(
+                output_tensors=[triton_output_tensor], error=error
+            )
+            response_sender.send(response)
             raise e
+        finally:
+            response_sender.send(flags=pb_utils.TRITONSERVER_RESPONSE_COMPLETE_FINAL)
+            self.ongoing_request_count -= 1
 
     def execute(self, requests):
         """
@@ -316,7 +207,7 @@ class TritonPythonModel:
         We are pushing all the requests on vllm and let it handle the full traffic.
         """
         for request in requests:
-            self.create_task(self.generate_stream(request))
+            self.create_task(self.generate(request))
         return None
 
     def finalize(self):

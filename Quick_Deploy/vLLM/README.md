@@ -39,55 +39,53 @@ is expected to change and improve over time. It is not intended to be
 used in production.
 
 
-## Step 1: Build a Triton Container Image with vLLM
+## Step 1: Build a Custom Execution Environment with vLLM and other Dependencies
 
+WIP: Add the instructions to run `gen_vllm_env.sh` script.
 
-We will build a new container image derived from `tritonserver:22.12-py3` with all the dependencies needed to run the model.
-The dependencies that will be installed in the container image are listed in `requirements.txt`.
-
-```
-docker build -t tritonserver_vllm:22.12-py3 .
-```
-
-The above command should create `tritonserver_vllm:22.12-py3` image with all the dependencies.
-
-*NOTE*: A [custom execution environment](https://github.com/triton-inference-server/python_backend#creating-custom-execution-environments) with vLLM and all the dependencies
-specified in `requirement.txt` can be created and shipped along with the model instead of
-building a new container image.
+This step takes a while because it builds and packages cuda and vllm into a conda pack environment.
 
 ## Step 2: Set Up Triton Inference Server
 
-To use Triton, we need to build a model repository. The structure of the repository as follows:
+To use Triton, we need to build a model repository. The structure of the repository as follows after the Step 1 above:
 ```
-model_repository
-|
-+-- vllm
-    |
-    +-- config.pbtxt
-    +-- vllm_engine_args.json
-    +-- 1
-        |
-        +-- model.py
+model_repository/
+`-- vllm
+    |-- 1
+    |   `-- model.py
+    |-- config.pbtxt
+    |-- triton_python_backend_stub
+    |-- vllm_engine_args.json
+    `-- vllm_env.tar.gz
+
 ```
 
 A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton is included with this demo as `model_repository` directory. The content of `vllm_engine_args.json` is:
 
 ```json
 {
-    "model":"facebook/opt-125m"
+    "model":"facebook/opt-125m",
+    "disable_log_requests": "true"
 }
 ```
-This file can be modified to provide further settings to the vLLM engine. See vLLM EngineArgs for options..
+This file can be modified to provide further settings to the vLLM engine. See vLLM EngineArgs for options.
 
-Read through the documentation in [`config.pbtxt`](model_repository/vllm/config.pbtxt) and [`model.py`](model_repository/vllm/1/model.py) to
+Read through the documentation in [`model.py`](model_repository/vllm/1/model.py) to
 understand how to configure this sample for your use-case.
 
+Start the server like below:
 
 ```
-docker run --gpus all --rm --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -p 8000:8000 -p 8001:8001 -p 8002:8002 -v ${PWD}/model_repository:/models tritonserver_vllm:22.12-py3 tritonserver --model-repository=/models
+docker run -p 8000:8000 -p 8001:8001 -p 8002:8002 --privileged --gpus all -it --rm --shm-size=8G --ulimit memlock=-1 --ulimit stack=67108864 v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:23.08-py3 tritonserver --model-store=/models
 ```
 
+Upon successful start of the server, you can see the following in the end.
 
+```
+I0901 23:39:08.729123 1 grpc_server.cc:2451] Started GRPCInferenceService at 0.0.0.0:8001
+I0901 23:39:08.729640 1 http_server.cc:3558] Started HTTPService at 0.0.0.0:8000
+I0901 23:39:08.772522 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8002
+```
 
 ## Step 3: Using a Triton Client to Query the Server
 
@@ -96,7 +94,7 @@ We will run the client within Triton's SDK container to issue multiple async req
 library.
 
 ```
-docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:22.12-py3-sdk bash
+docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:23.08-py3-sdk bash
 ```
 
 Within the container, run the [`client.py`](client.py) as:
@@ -106,33 +104,21 @@ python3 client.py
 
 ```
 
+The client reads prompts from [prompts.txt](prompts.txt) file, sends them to Triton server for inference and stores the results into a file named `results.txt` by default. 
+
 The output of the client should look like below:
 ```
-===========
-prompt => 'The future of AI is'
-===========
-response => ' not as simple as you think, and you have to understand it in order to'
-=========== 
-...
-
-<SNIP>
-...
-
+Loading inputs from `prompts.txt`...
+Storing results into `results.txt`...
 PASS: vLLM example
 ```
 
-When you run the client in verbose mode - with `--verbose` flag, the client will print more details about current and average inflight request counts. This demonstrates that Triton was able to transfer all the four request prompts to vLLM engine.
+You can inspect the contents of the `results.txt` for the response from the server. `--iterations` flag can be used with the client to increase the load on the server my looping through the list of provided prompts in [`prompts.txt`](prompts.txt).
 
-```
-[VERBOSE RESPONSE]: {'request_id': '4_1', 'finished': True, 'prompt': 'The future of AI is', 'prompt_token_count': 6, 'completions': [{'index': 0, 'text': ' an exciting project, but it is still in its infancy\nWhen the world of', 'gen_token_count': 16, 'cumulative_logprob': -37.039882481098175, 'finish_reason': 'length'}], 'current_inflight_count': 4, 'average_inflight_count': 4.0}
-...
-
-```
+When you run the client in verbose mode - with `--verbose` flag, the client will print more details about the request/response transactions.
 
 ## Limitations
 
 - We use decoupled streaming protocol even if there is exactly 1 response for each request.
-- We are explicitly serializing/deserializing the request/response json objects.
 - The asyncio implementation is exposed to model.py.
 - Does not support multi-GPU systems.
-- Can not use latest Triton containers as vLLM only supports cuda 11.8.

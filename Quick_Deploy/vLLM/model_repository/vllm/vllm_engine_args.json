@@ -1,3 +1,4 @@
 {
-    "model":"facebook/opt-125m"
+    "model":"facebook/opt-125m",
+    "disable_log_requests": "true"
 }
