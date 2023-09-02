@@ -72,7 +72,7 @@ A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton
     "disable_log_requests": "true"
 }
 ```
-This file can be modified to provide further settings to the vLLM engine. See vLLM EngineArgs for options.
+This file can be modified to provide further settings to the vLLM engine. See vLLM [AsyncEngineArgs](https://github.com/vllm-project/vllm/blob/32b6816e556f69f1672085a6267e8516bcb8e622/vllm/engine/arg_utils.py#L165) for options.
 
 Read through the documentation in [`model.py`](model_repository/vllm/1/model.py) to understand how to configure this sample for your use-case.
 
@@ -104,7 +104,6 @@ Within the container, run the [`client.py`](client.py) as:
 
 ```
 python3 client.py
-
 ```
 
 The client reads prompts from [prompts.txt](prompts.txt) file, sends them to Triton server for inference and stores the results into a file named `results.txt` by default.
