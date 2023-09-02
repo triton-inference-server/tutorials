@@ -41,9 +41,13 @@ used in production.
 
 ## Step 1: Build a Custom Execution Environment with vLLM and other Dependencies
 
-WIP: Add the instructions to run `gen_vllm_env.sh` script.
+Running vLLM within Triton container requires us to provide [custom execution environment](https://github.com/triton-inference-server/python_backend#creating-custom-execution-environments) with vLLM and other package dependencies. The provided script should build the package environment for you which will be used to load the model in Triton.
 
-This step takes a while because it builds and packages cuda and vllm into a conda pack environment.
+```
+docker run --gpus all -it --rm -v ${PWD}:/work -w /work nvcr.io/nvidia/tritonserver:23.08-py3 ./gen_vllm_env.sh
+```
+
+This step might take a while to build the environment packages. Once complete, your model_repository will be populated with `triton_python_backend_stub` and `vllm_env.tar.gz`.
 
 ## Step 2: Set Up Triton Inference Server
 
@@ -107,13 +111,14 @@ python3 client.py
 The client reads prompts from [prompts.txt](prompts.txt) file, sends them to Triton server for inference and stores the results into a file named `results.txt` by default. 
 
 The output of the client should look like below:
+
 ```
 Loading inputs from `prompts.txt`...
 Storing results into `results.txt`...
 PASS: vLLM example
 ```
 
-You can inspect the contents of the `results.txt` for the response from the server. `--iterations` flag can be used with the client to increase the load on the server my looping through the list of provided prompts in [`prompts.txt`](prompts.txt).
+You can inspect the contents of the `results.txt` for the response from the server. `--iterations` flag can be used with the client to increase the load on the server by looping through the list of provided prompts in [`prompts.txt`](prompts.txt).
 
 When you run the client in verbose mode - with `--verbose` flag, the client will print more details about the request/response transactions.
 
