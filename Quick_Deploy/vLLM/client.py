@@ -39,27 +39,18 @@ class UserData:
     def __init__(self):
         self._completed_requests = queue.Queue()
 
-def create_request(
-    prompt, stream, sequence_id, sampling_parameters, model_name
-):
+
+def create_request(prompt, stream, sequence_id, sampling_parameters, model_name):
     inputs = []
     prompt_data = np.array([prompt.encode("utf-8")], dtype=np.object_)
     try:
-        inputs.append(
-            grpcclient.InferInput(
-                "PROMPT", [1], "BYTES"
-            )
-        )
+        inputs.append(grpcclient.InferInput("PROMPT", [1], "BYTES"))
         inputs[-1].set_data_from_numpy(prompt_data)
     except Exception as e:
         print(f"Encountered an error {e}")
-    
+
     stream_data = np.array([stream], dtype=bool)
-    inputs.append(
-        grpcclient.InferInput(
-           "STREAM", [1], "BOOL"
-        )
-    )
+    inputs.append(grpcclient.InferInput("STREAM", [1], "BOOL"))
     inputs[-1].set_data_from_numpy(stream_data)
 
     # Add requested outputs
@@ -75,7 +66,7 @@ def create_request(
         "sequence_id": sequence_id,
         "sequence_start": True,
         "sequence_end": True,
-        "parameters": sampling_parameters
+        "parameters": sampling_parameters,
     }
 
 
@@ -83,7 +74,7 @@ async def main(FLAGS):
     model_name = "vllm"
     sampling_parameters = {"temperature": "0.8", "top_p": "0.95"}
     stream = FLAGS.streaming_mode
-    with open(FLAGS.input_prompts, 'r') as file:
+    with open(FLAGS.input_prompts, "r") as file:
         print(f"Loading inputs from `{FLAGS.input_prompts}`...")
         prompts = file.readlines()
 
@@ -99,9 +90,12 @@ async def main(FLAGS):
                     for i, prompt in enumerate(prompts):
                         prompt_id = FLAGS.offset + (len(prompts) * iter) + i
                         results_dict[str(prompt_id)] = []
-                        yield create_request(prompt, stream, prompt_id, sampling_parameters, model_name)
+                        yield create_request(
+                            prompt, stream, prompt_id, sampling_parameters, model_name
+                        )
             except Exception as error:
                 print(f"caught error in request iterator:  {error}")
+
         try:
             # Start streaming
             response_iterator = triton_client.stream_infer(
@@ -117,17 +111,17 @@ async def main(FLAGS):
                     output = result.as_numpy("TEXT")
                     for i in output:
                         results_dict[result.get_response().id].append(i)
-    
+
         except InferenceServerException as error:
             print(error)
             sys.exit(1)
-    
-    with open(FLAGS.results_file, 'w') as file:
+
+    with open(FLAGS.results_file, "w") as file:
         for id in results_dict.keys():
             for result in results_dict[id]:
                 file.write(result.decode("utf-8"))
                 file.write("\n")
-            file.write('\n=========\n\n')
+            file.write("\n=========\n\n")
         print(f"Storing results into `{FLAGS.results_file}`...")
 
     if FLAGS.verbose:

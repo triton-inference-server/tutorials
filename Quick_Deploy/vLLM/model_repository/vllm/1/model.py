@@ -32,9 +32,8 @@ from typing import AsyncGenerator
 
 import numpy as np
 import triton_python_backend_utils as pb_utils
-
-from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm import SamplingParams
+from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.utils import random_uuid
 
@@ -64,15 +63,14 @@ class TritonPythonModel:
         ), f"'{_VLLM_ENGINE_ARGS_FILENAME}' containing vllm engine args must be provided in '{args['model_repository']}'"
         with open(engine_args_filepath) as file:
             vllm_engine_config = json.load(file)
-        
-        # Create an AsyncLLMEngine from the config from JSON
-        self.llm_engine = AsyncLLMEngine.from_engine_args(AsyncEngineArgs(**vllm_engine_config))
 
+        # Create an AsyncLLMEngine from the config from JSON
+        self.llm_engine = AsyncLLMEngine.from_engine_args(
+            AsyncEngineArgs(**vllm_engine_config)
+        )
 
         output_config = pb_utils.get_output_config_by_name(self.model_config, "TEXT")
-        self.output_dtype = pb_utils.triton_string_to_numpy(
-            output_config["data_type"]
-        )
+        self.output_dtype = pb_utils.triton_string_to_numpy(output_config["data_type"])
 
         # Counter to keep track of ongoing request counts
         self.ongoing_request_count = 0
@@ -119,7 +117,7 @@ class TritonPythonModel:
             await asyncio.sleep(5)
 
         self.logger.log_info("Shutdown complete")
-    
+
     def get_sampling_params_dict(self, params_json):
         """
         This functions parses the dictionary values into their
@@ -141,8 +139,10 @@ class TritonPythonModel:
         response.
         """
         prompt = request_output.prompt
-        text_outputs = [ (prompt + output.text).encode("utf-8") for output in request_output.outputs]
-        return  text_outputs
+        text_outputs = [
+            (prompt + output.text).encode("utf-8") for output in request_output.outputs
+        ]
+        return text_outputs
 
     async def generate(self, request):
         """
@@ -156,7 +156,9 @@ class TritonPythonModel:
             stream = pb_utils.get_input_tensor_by_name(request, "STREAM").as_numpy()[0]
             sampling_params_dict = self.get_sampling_params_dict(request.parameters())
             sampling_params = SamplingParams(**sampling_params_dict)
-            results_generator = self.llm_engine.generate(str(prompt), sampling_params, request_id)
+            results_generator = self.llm_engine.generate(
+                str(prompt), sampling_params, request_id
+            )
 
             # Streaming case
             async def stream_results() -> AsyncGenerator[bytes, None]:
@@ -166,8 +168,12 @@ class TritonPythonModel:
                         yield None
                     else:
                         output = self.postprocess(request_output)
-                        triton_output_tensor = pb_utils.Tensor("TEXT", np.asarray(output, dtype=self.output_dtype))
-                        yield pb_utils.InferenceResponse(output_tensors=[triton_output_tensor])
+                        triton_output_tensor = pb_utils.Tensor(
+                            "TEXT", np.asarray(output, dtype=self.output_dtype)
+                        )
+                        yield pb_utils.InferenceResponse(
+                            output_tensors=[triton_output_tensor]
+                        )
 
             if stream:
                 async for response in stream_results():
@@ -183,13 +189,19 @@ class TritonPythonModel:
                         final_output = request_output
                 if final_output:
                     output = self.postprocess(final_output)
-                    triton_output_tensor = pb_utils.Tensor("TEXT", np.asarray(output, dtype=self.output_dtype)) 
-                    response = pb_utils.InferenceResponse(output_tensors=[triton_output_tensor])
+                    triton_output_tensor = pb_utils.Tensor(
+                        "TEXT", np.asarray(output, dtype=self.output_dtype)
+                    )
+                    response = pb_utils.InferenceResponse(
+                        output_tensors=[triton_output_tensor]
+                    )
                     response_sender.send(response)
         except Exception as e:
             self.logger.log_info(f"Error generating stream: {e}")
             error = pb_utils.TritonError(f"Error generating stream: {e}")
-            triton_output_tensor = pb_utils.Tensor("TEXT", np.asarray(["N/A"], dtype=self.output_dtype))
+            triton_output_tensor = pb_utils.Tensor(
+                "TEXT", np.asarray(["N/A"], dtype=self.output_dtype)
+            )
             response = pb_utils.InferenceResponse(
                 output_tensors=[triton_output_tensor], error=error
             )
