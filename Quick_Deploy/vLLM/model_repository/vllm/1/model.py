@@ -203,7 +203,7 @@ class TritonPythonModel:
         """
         Triton core issues requests to the backend via this method.
 
-        When this method retruns, new requested can be issued to the backend.
+        When this method returns, new requests can be issued to the backend.
         We are pushing all the requests on vllm and let it handle the full traffic.
         """
         for request in requests:
