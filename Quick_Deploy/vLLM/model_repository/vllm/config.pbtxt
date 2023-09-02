@@ -26,7 +26,10 @@
 
 name: "vllm"
 backend: "python"
+
+# Disabling batching in Triton, let vLLM handle the batching on its own.
 max_batch_size: 0
+
 # We need to use decoupled transaction policy for saturating
 # vLLM engine for max throughtput.
 # TODO [DLIS:5233]: Allow asychronous execution to lift this
