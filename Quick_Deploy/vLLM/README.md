@@ -47,11 +47,11 @@ Running vLLM within Triton container requires us to provide [custom execution en
 docker run --gpus all -it --rm -v ${PWD}:/work -w /work nvcr.io/nvidia/tritonserver:23.08-py3 ./gen_vllm_env.sh
 ```
 
-This step might take a while to build the environment packages. Once complete, your model_repository will be populated with `triton_python_backend_stub` and `vllm_env.tar.gz`.
+This step might take a while to build the environment packages. Once complete, the provided sample [model_repository](model_repository) will be populated with `triton_python_backend_stub` and `vllm_env.tar.gz`.
 
 ## Step 2: Set Up Triton Inference Server
 
-To use Triton, we need to build a model repository. The structure of the repository as follows after the Step 1 above:
+The structure of the sample model repository as follows after the Step 1 above:
 ```
 model_repository/
 `-- vllm
@@ -74,8 +74,7 @@ A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton
 ```
 This file can be modified to provide further settings to the vLLM engine. See vLLM EngineArgs for options.
 
-Read through the documentation in [`model.py`](model_repository/vllm/1/model.py) to
-understand how to configure this sample for your use-case.
+Read through the documentation in [`model.py`](model_repository/vllm/1/model.py) to understand how to configure this sample for your use-case.
 
 Start the server like below:
 
