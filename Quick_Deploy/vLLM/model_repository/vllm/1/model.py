@@ -133,14 +133,14 @@ class TritonPythonModel:
 
         return dict
 
-    def postprocess(self, request_output):
+    def create_response(self, vllm_output):
         """
         Parses the output from the vLLM engine into Triton
         response.
         """
-        prompt = request_output.prompt
+        prompt = vllm_output.prompt
         text_outputs = [
-            (prompt + output.text).encode("utf-8") for output in request_output.outputs
+            (prompt + output.text).encode("utf-8") for output in vllm_output.outputs
         ]
         triton_output_tensor = pb_utils.Tensor(
             "TEXT", np.asarray(text_outputs, dtype=self.output_dtype)
@@ -159,26 +159,18 @@ class TritonPythonModel:
             stream = pb_utils.get_input_tensor_by_name(request, "STREAM").as_numpy()[0]
             sampling_params_dict = self.get_sampling_params_dict(request.parameters())
             sampling_params = SamplingParams(**sampling_params_dict)
-            results_generator = self.llm_engine.generate(
+
+            final_response = None
+            async for output in self.llm_engine.generate(
                 str(prompt), sampling_params, request_id
-            )
+            ):
+                final_response = self.create_response(output)
+                if stream:
+                    response_sender.send(final_response)
 
-            # Streaming case
-            async def stream_results() -> AsyncGenerator[bytes, None]:
-                async for request_output in results_generator:
-                    yield self.postprocess(request_output)
+            if not stream:
+                response_sender.send(final_response)
 
-            if stream:
-                async for response in stream_results():
-                    if response:
-                        response_sender.send(response)
-            # Non-Streaming case
-            else:
-                final_output = None
-                async for request_output in results_generator:
-                    final_output = request_output
-
-                response_sender.send(self.postprocess(final_output))
         except Exception as e:
             self.logger.log_info(f"Error generating stream: {e}")
             error = pb_utils.TritonError(f"Error generating stream: {e}")
