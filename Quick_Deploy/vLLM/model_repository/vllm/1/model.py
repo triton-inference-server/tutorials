@@ -135,14 +135,17 @@ class TritonPythonModel:
 
     def postprocess(self, request_output):
         """
-        Parses the output from the vLLM engine into text
+        Parses the output from the vLLM engine into Triton
         response.
         """
         prompt = request_output.prompt
         text_outputs = [
             (prompt + output.text).encode("utf-8") for output in request_output.outputs
         ]
-        return text_outputs
+        triton_output_tensor = pb_utils.Tensor(
+            "TEXT", np.asarray(text_outputs, dtype=self.output_dtype)
+        )
+        return pb_utils.InferenceResponse(output_tensors=[triton_output_tensor])
 
     async def generate(self, request):
         """
@@ -163,17 +166,7 @@ class TritonPythonModel:
             # Streaming case
             async def stream_results() -> AsyncGenerator[bytes, None]:
                 async for request_output in results_generator:
-                    if self._shutdown_event.is_set():
-                        await self.llm_engine.abort(request_id)
-                        yield None
-                    else:
-                        output = self.postprocess(request_output)
-                        triton_output_tensor = pb_utils.Tensor(
-                            "TEXT", np.asarray(output, dtype=self.output_dtype)
-                        )
-                        yield pb_utils.InferenceResponse(
-                            output_tensors=[triton_output_tensor]
-                        )
+                    yield self.postprocess(request_output)
 
             if stream:
                 async for response in stream_results():
@@ -183,19 +176,9 @@ class TritonPythonModel:
             else:
                 final_output = None
                 async for request_output in results_generator:
-                    if self._shutdown_event.is_set():
-                        await self.llm_engine.abort(request_id)
-                    else:
-                        final_output = request_output
-                if final_output:
-                    output = self.postprocess(final_output)
-                    triton_output_tensor = pb_utils.Tensor(
-                        "TEXT", np.asarray(output, dtype=self.output_dtype)
-                    )
-                    response = pb_utils.InferenceResponse(
-                        output_tensors=[triton_output_tensor]
-                    )
-                    response_sender.send(response)
+                    final_output = request_output
+
+                response_sender.send(self.postprocess(final_output))
         except Exception as e:
             self.logger.log_info(f"Error generating stream: {e}")
             error = pb_utils.TritonError(f"Error generating stream: {e}")
@@ -215,7 +198,10 @@ class TritonPythonModel:
         """
         Triton core issues requests to the backend via this method.
 
-        When this method returns, new requests can be issued to the backend.
+        When this method returns, new requests can be issued to the backend. Blocking
+        this function would prevent the backend from pulling additional requests from
+        Triton into the vLLM engine. This can be done if the kv cache within vLLM engine
+        is too loaded.
         We are pushing all the requests on vllm and let it handle the full traffic.
         """
         for request in requests:

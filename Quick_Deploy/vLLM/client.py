@@ -63,9 +63,6 @@ def create_request(prompt, stream, sequence_id, sampling_parameters, model_name)
         "inputs": inputs,
         "outputs": outputs,
         "request_id": str(sequence_id),
-        "sequence_id": sequence_id,
-        "sequence_start": True,
-        "sequence_end": True,
         "parameters": sampling_parameters,
     }
 
