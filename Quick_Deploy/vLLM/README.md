@@ -66,7 +66,7 @@ A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton
 
 ```json
 {
-    "model":"facebook/opt-125m",
+    "model": "facebook/opt-125m",
     "disable_log_requests": "true"
 }
 ```
