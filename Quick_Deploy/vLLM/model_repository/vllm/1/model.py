@@ -160,16 +160,17 @@ class TritonPythonModel:
             sampling_params_dict = self.get_sampling_params_dict(request.parameters())
             sampling_params = SamplingParams(**sampling_params_dict)
 
-            final_response = None
+            last_output = None
             async for output in self.llm_engine.generate(
                 str(prompt), sampling_params, request_id
             ):
-                final_response = self.create_response(output)
                 if stream:
-                    response_sender.send(final_response)
+                    response_sender.send(self.create_response(output))
+                else:
+                    last_output = output
 
             if not stream:
-                response_sender.send(final_response)
+                response_sender.send(self.create_response(last_output))
 
         except Exception as e:
             self.logger.log_info(f"Error generating stream: {e}")
