@@ -124,14 +124,16 @@ class TritonPythonModel:
         expected format.
         """
 
-        dict = json.loads(params_json)
+        params_dict = json.loads(params_json)
 
         # Special parsing for the supported sampling parameters
         # TODO: Add more parameters if needed
-        dict["temperature"] = float(dict["temperature"])
-        dict["top_p"] = float(dict["top_p"])
+        float_keys = ["temperature", "top_p"]
+        for k in float_keys:
+            if k in params_dict:
+                params_dict[k] = float(params_dict[k])
 
-        return dict
+        return params_dict
 
     def create_response(self, vllm_output):
         """
