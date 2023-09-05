@@ -159,7 +159,7 @@ if __name__ == "__main__":
         type=int,
         required=False,
         default=0,
-        help="Add offset to sequence ID used",
+        help="Add offset to request IDs used",
     )
     parser.add_argument(
         "--input-prompts",
