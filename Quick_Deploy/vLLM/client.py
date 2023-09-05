@@ -62,7 +62,7 @@ def create_request(prompt, stream, request_id, sampling_parameters, model_name):
         "model_name": model_name,
         "inputs": inputs,
         "outputs": outputs,
-        "request_id": str(sequence_id),
+        "request_id": str(request_id),
         "parameters": sampling_parameters,
     }
 
