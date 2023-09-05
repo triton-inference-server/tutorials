@@ -40,7 +40,7 @@ class UserData:
         self._completed_requests = queue.Queue()
 
 
-def create_request(prompt, stream, sequence_id, sampling_parameters, model_name):
+def create_request(prompt, stream, request_id, sampling_parameters, model_name):
     inputs = []
     prompt_data = np.array([prompt.encode("utf-8")], dtype=np.object_)
     try:
