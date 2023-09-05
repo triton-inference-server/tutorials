@@ -79,7 +79,7 @@ Read through the documentation in [`model.py`](model_repository/vllm/1/model.py)
 Start the server like below:
 
 ```
-docker run -p 8000:8000 -p 8001:8001 -p 8002:8002 --privileged --gpus all -it --rm --shm-size=8G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:23.08-py3 tritonserver --model-store=/models
+docker run -p 8000:8000 -p 8001:8001 -p 8002:8002 --gpus all -it --rm --shm-size=8G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:23.08-py3 tritonserver --model-store=/models
 ```
 
 Upon successful start of the server, you can see the following in the end.
