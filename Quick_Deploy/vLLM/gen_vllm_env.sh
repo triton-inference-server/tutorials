@@ -32,7 +32,7 @@
 #
 
 # Pick the release tag from the container environment variable
-RELEASE_TAG="r{NVIDIA_TRITON_SERVER_VERSION}"
+RELEASE_TAG="r${NVIDIA_TRITON_SERVER_VERSION}"
 
 # Install and setup conda environment
 file_name="Miniconda3-latest-Linux-x86_64.sh"
