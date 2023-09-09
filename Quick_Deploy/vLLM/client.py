@@ -69,7 +69,7 @@ def create_request(prompt, stream, request_id, sampling_parameters, model_name):
 
 async def main(FLAGS):
     model_name = "vllm"
-    sampling_parameters = {"temperature": "0.8", "top_p": "0.95"}
+    sampling_parameters = {"temperature": "0.1", "top_p": "0.95"}
     stream = FLAGS.streaming_mode
     with open(FLAGS.input_prompts, "r") as file:
         print(f"Loading inputs from `{FLAGS.input_prompts}`...")
