@@ -50,7 +50,7 @@ rm -rf $ENV_DIR $STUB_FILE
 
 # Install and setup conda environment
 FILE_NAME="Miniconda3-latest-Linux-x86_64.sh"
-rm -rf ./miniconda  $FILE_NAME
+rm -rf ./miniconda $FILE_NAME
 wget https://repo.anaconda.com/miniconda/$FILE_NAME
 
 # Install miniconda in silent mode
