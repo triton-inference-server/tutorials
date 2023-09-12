@@ -97,7 +97,7 @@ Using the container you already started, run the following command:
 tritonserver --model-store=model_repository
 ```
 
-Upon successful start of the server, you should see the following at the end of the logs.
+Upon successful start of the server, you should see the following at the end of the output.
 
 ```
 I0901 23:39:08.729123 1 grpc_server.cc:2451] Started GRPCInferenceService at 0.0.0.0:8001
