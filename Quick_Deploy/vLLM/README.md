@@ -121,7 +121,7 @@ Within the container, run [`client.py`](client.py) with:
 python3 client.py
 ```
 
-The client reads prompts from [prompts.txt](prompts.txt) file, sends them to Triton server for
+The client reads prompts from the [prompts.txt](prompts.txt) file, sends them to Triton server for
 inference, and stores the results into a file named `results.txt` by default.
 
 The output of the client should look like below:
