@@ -136,7 +136,7 @@ You can inspect the contents of the `results.txt` for the response from the serv
 flag can be used with the client to increase the load on the server by looping through the list of
 provided prompts in [`prompts.txt`](prompts.txt).
 
-When you run the client in verbose mode - with `--verbose` flag, the client will print more details
+When you run the client in verbose mode with the `--verbose` flag, the client will print more details
 about the request/response transactions.
 
 ## Limitations
