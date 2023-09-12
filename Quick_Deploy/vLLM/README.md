@@ -132,7 +132,7 @@ Storing results into `results.txt`...
 PASS: vLLM example
 ```
 
-You can inspect the contents of the `results.txt` for the response from the server. `--iterations`
+You can inspect the contents of the `results.txt` for the response from the server. The `--iterations`
 flag can be used with the client to increase the load on the server by looping through the list of
 provided prompts in [`prompts.txt`](prompts.txt).
 
