@@ -38,7 +38,7 @@ Triton Inference Server using Triton's [Python backend](https://github.com/trito
 [known limitations](#limitations).
 
 
-## Step 1: Build a Custom Execution Environment with vLLM and other Dependencies
+## Step 1: Build a Custom Execution Environment With vLLM and Other Dependencies
 
 Running vLLM within Triton container requires us to provide
 [custom execution environment](https://github.com/triton-inference-server/python_backend#creating-custom-execution-environments)
