@@ -38,8 +38,9 @@ RELEASE_TAG="r${NVIDIA_TRITON_SERVER_VERSION}"
 ENV_DIR="./model_repository/vllm/vllm_env/"
 STUB_FILE="./model_repository/vllm/triton_python_backend_stub"
 
+# If targets aready exist, print a message and exit.
 if [ -d "$ENV_DIR" ] && [ -f "$STUB_FILE" ]; then
-    echo "The conda environment directory and stub directories already exist."
+    echo "The conda environment directory and Python backend stubs already exist."
     echo "Exiting environment set-up."
     exit 0
 fi
