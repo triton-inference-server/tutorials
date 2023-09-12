@@ -75,15 +75,13 @@ git clone https://github.com/triton-inference-server/python_backend -b $RELEASE_
 cmake -DTRITON_ENABLE_GPU=ON -DTRITON_BACKEND_REPO_TAG=$RELEASE_TAG -DTRITON_COMMON_REPO_TAG=$RELEASE_TAG -DTRITON_CORE_REPO_TAG=$RELEASE_TAG ../ && \
 make -j18 triton-python-backend-stub)
 
-conda-pack -n vllm_env -o vllm_env.tar.gz
-chmod 755 vllm_env.tar.gz
-
-mv vllm_env.tar.gz ./model_repository/vllm/
 mv python_backend/builddir/triton_python_backend_stub ./model_repository/vllm/
+
+cp -r $CONDA_PREFIX/lib/python3.10/site-packages/conda_pack/scripts/posix/activate $CONDA_PREFIX/bin/
 
 conda deactivate
 
 
 # Clean-up
-rm -rf ./miniconda  $file_name
+rm -rf  $file_name
 rm -rf python_backend
