@@ -29,6 +29,7 @@ import asyncio
 import queue
 import sys
 from os import system
+import json
 
 import numpy as np
 import tritonclient.grpc.aio as grpcclient
@@ -53,6 +54,12 @@ def create_request(prompt, stream, request_id, sampling_parameters, model_name):
     inputs.append(grpcclient.InferInput("STREAM", [1], "BOOL"))
     inputs[-1].set_data_from_numpy(stream_data)
 
+    sampling_parameters_data = np.array(
+        [json.dumps(sampling_parameters).encode("utf-8")], dtype=np.object_
+    )
+    inputs.append(grpcclient.InferInput("SAMPLING_PARAMETERS", [1], "BYTES"))
+    inputs[-1].set_data_from_numpy(sampling_parameters_data)
+
     # Add requested outputs
     outputs = []
     outputs.append(grpcclient.InferRequestedOutput("TEXT"))
@@ -62,8 +69,7 @@ def create_request(prompt, stream, request_id, sampling_parameters, model_name):
         "model_name": model_name,
         "inputs": inputs,
         "outputs": outputs,
-        "request_id": str(request_id),
-        "parameters": sampling_parameters,
+        "request_id": str(request_id)
     }
 
 

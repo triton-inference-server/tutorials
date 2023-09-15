@@ -159,7 +159,8 @@ class TritonPythonModel:
             request_id = random_uuid()
             prompt = pb_utils.get_input_tensor_by_name(request, "PROMPT").as_numpy()[0]
             stream = pb_utils.get_input_tensor_by_name(request, "STREAM").as_numpy()[0]
-            sampling_params_dict = self.get_sampling_params_dict(request.parameters())
+            parameters = pb_utils.get_input_tensor_by_name(request, "SAMPLING_PARAMETERS").as_numpy()[0].decode("utf-8")
+            sampling_params_dict = self.get_sampling_params_dict(parameters)
             sampling_params = SamplingParams(**sampling_params_dict)
 
             last_output = None
