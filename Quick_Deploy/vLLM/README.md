@@ -62,7 +62,7 @@ appropriate fields like `gpu_memory_utilization` and other settings via
 Read through the documentation in [`model.py`](model_repository/vllm/1/model.py) to understand how
 to configure this sample for your use-case.
 
-Run the following command to build the image and start the server container:
+Run the following commands to build the image and start the server container:
 
 ```
 docker build -t triton_vllm .
