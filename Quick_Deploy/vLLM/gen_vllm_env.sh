@@ -34,15 +34,29 @@
 # Pick the release tag from the container environment variable
 RELEASE_TAG="r${NVIDIA_TRITON_SERVER_VERSION}"
 
+# Save target directories for conda environment and Python backend stubs
+ENV_DIR="./model_repository/vllm/vllm_env/"
+STUB_FILE="./model_repository/vllm/triton_python_backend_stub"
+
+# If targets aready exist, print a message and exit.
+if [ -d "$ENV_DIR" ] && [ -f "$STUB_FILE" ]; then
+    echo "The conda environment directory and Python backend stubs already exist."
+    echo "Exiting environment set-up."
+    exit 0
+fi
+
+# If this script runs, clean up previous targets.
+rm -rf $ENV_DIR $STUB_FILE
+
 # Install and setup conda environment
-file_name="Miniconda3-latest-Linux-x86_64.sh"
-rm -rf ./miniconda  $file_name
-wget https://repo.anaconda.com/miniconda/$file_name
+FILE_NAME="Miniconda3-latest-Linux-x86_64.sh"
+rm -rf ./miniconda $FILE_NAME
+wget https://repo.anaconda.com/miniconda/$FILE_NAME
 
-# install miniconda in silent mode
-bash $file_name -p ./miniconda -b
+# Install miniconda in silent mode
+bash $FILE_NAME -p ./miniconda -b
 
-# activate conda
+# Activate conda
 eval "$(./miniconda/bin/conda shell.bash hook)"
 
 # Installing cmake and dependencies
@@ -64,7 +78,7 @@ export PYTHONNOUSERSITE=True
 conda install -c conda-forge libstdcxx-ng=12 -y
 conda install -c conda-forge conda-pack -y
 
-# vllm needs cuda 11.8 to run properly
+# vLLM needs cuda 11.8 to run properly
 conda install -c "nvidia/label/cuda-11.8.0" cuda-toolkit -y
 
 pip install numpy vllm
@@ -75,15 +89,15 @@ git clone https://github.com/triton-inference-server/python_backend -b $RELEASE_
 cmake -DTRITON_ENABLE_GPU=ON -DTRITON_BACKEND_REPO_TAG=$RELEASE_TAG -DTRITON_COMMON_REPO_TAG=$RELEASE_TAG -DTRITON_CORE_REPO_TAG=$RELEASE_TAG ../ && \
 make -j18 triton-python-backend-stub)
 
-conda-pack -n vllm_env -o vllm_env.tar.gz
-chmod 755 vllm_env.tar.gz
-
-mv vllm_env.tar.gz ./model_repository/vllm/
 mv python_backend/builddir/triton_python_backend_stub ./model_repository/vllm/
+
+# Prepare and copy the conda environment
+cp -r $CONDA_PREFIX/lib/python3.10/site-packages/conda_pack/scripts/posix/activate $CONDA_PREFIX/bin/
+rm -r $CONDA_PREFIX/nsight*
+cp -r $CONDA_PREFIX ./model_repository/vllm/
 
 conda deactivate
 
-
 # Clean-up
-rm -rf ./miniconda  $file_name
+rm -rf ./miniconda $FILE_NAME
 rm -rf python_backend

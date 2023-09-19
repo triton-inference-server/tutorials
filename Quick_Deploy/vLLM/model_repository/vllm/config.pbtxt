@@ -41,7 +41,7 @@ model_transaction_policy {
 
 parameters: {
   key: "EXECUTION_ENV_PATH",
-  value: {string_value: "$$TRITON_MODEL_DIRECTORY/vllm_env.tar.gz"}
+  value: {string_value: "$$TRITON_MODEL_DIRECTORY/vllm_env"}
 }
 
 input [
