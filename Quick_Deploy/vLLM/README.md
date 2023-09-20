@@ -43,16 +43,27 @@ Triton Inference Server using Triton's [Python backend](https://github.com/trito
 We will build a new container image derived from tritonserver:23.08-py3 with vLLM.
 
 ```
-docker build -t triton_vllm .
+docker build -t tritonserver_vllm .
 ```
 
-The above command should create the triton_vllm image with vLLM and all of its dependencies.
+The above command should create the tritonserver_vllm image with vLLM and all of its dependencies.
 
 
 ## Step 2: Start Triton Inference Server
 
-A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton is included with
-this demo as `model_repository` directory. The content of `vllm_engine_args.json` is:
+A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton is 
+included with this demo as `model_repository` directory. 
+The model repository should look like this:
+```
+model_repository/
+`-- vllm
+    |-- 1
+    |   `-- model.py
+    |-- config.pbtxt
+    |-- vllm_engine_args.json
+```
+
+The content of `vllm_engine_args.json` is:
 
 ```json
 {
@@ -79,7 +90,7 @@ to configure this sample for your use-case.
 Run the following commands to start the server container:
 
 ```
-docker run --gpus all -it --rm -p 8001:8001 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}:/work -w /work triton_vllm tritonserver --model-store ./model_repository
+docker run --gpus all -it --rm -p 8001:8001 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}:/work -w /work tritonserver_vllm tritonserver --model-store ./model_repository
 ```
 
 Upon successful start of the server, you should see the following at the end of the output.
