@@ -68,7 +68,8 @@ The content of `vllm_engine_args.json` is:
 ```json
 {
     "model": "facebook/opt-125m",
-    "disable_log_requests": "true"
+    "disable_log_requests": "true",
+    "gpu_memory_utilization": 0.5
 }
 ```
 This file can be modified to provide further settings to the vLLM engine. See vLLM
