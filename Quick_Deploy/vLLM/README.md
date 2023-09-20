@@ -66,7 +66,7 @@ Run the following commands to build the image and start the server container:
 
 ```
 docker build -t triton_vllm .
-docker run --gpus all -it --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 --shm-size=8G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}:/work -w /work nvcr.io/nvidia/tritonserver:23.08-py3 tritonserver --model-store ./model_repository
+docker run --gpus all -it --rm -p 8001:8001 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}:/work -w /work nvcr.io/nvidia/tritonserver:23.08-py3 tritonserver --model-store ./model_repository
 ```
 
 Upon successful start of the server, you should see the following at the end of the output.
