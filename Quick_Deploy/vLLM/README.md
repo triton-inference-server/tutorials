@@ -55,9 +55,10 @@ and
 [EngineArgs](https://github.com/vllm-project/vllm/blob/32b6816e556f69f1672085a6267e8516bcb8e622/vllm/engine/arg_utils.py#L11)
 for supported key-value pairs.
 
-*Note*: vLLM greedily consumes up to 50% of the GPU's memory under default settings. You can tweak this behavior using
-appropriate fields like `gpu_memory_utilization` and other settings via
-[`vllm_engine_args.json`](model_repository/vllm/vllm_engine_args.json).
+*Note*: vLLM greedily consumes up to 90% of the GPU's memory under default settings.
+This tutorial updates this behavior by setting `gpu_memory_utilization` to 50%.
+You can tweak this behavior using fields like `gpu_memory_utilization` and other settings
+in [`vllm_engine_args.json`](model_repository/vllm/vllm_engine_args.json).
 
 Read through the documentation in [`model.py`](model_repository/vllm/1/model.py) to understand how
 to configure this sample for your use-case.
