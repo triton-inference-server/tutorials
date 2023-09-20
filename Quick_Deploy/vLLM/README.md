@@ -38,7 +38,18 @@ Triton Inference Server using Triton's [Python backend](https://github.com/trito
 [known limitations](#limitations).
 
 
-## Step 1: Set Up Triton Inference Server
+## Step 1: Build a Triton Container Image with vLLM
+
+We will build a new container image derived from tritonserver:23.08-py3 with vLLM.
+
+```
+docker build -t triton_vllm .
+```
+
+The above command should create triton_vllm image with vLLM and all of its dependencies.
+
+
+## Step 2: Start Triton Inference Server
 
 A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton is included with
 this demo as `model_repository` directory. The content of `vllm_engine_args.json` is:
@@ -65,10 +76,9 @@ in [`vllm_engine_args.json`](model_repository/vllm/vllm_engine_args.json).
 Read through the documentation in [`model.py`](model_repository/vllm/1/model.py) to understand how
 to configure this sample for your use-case.
 
-Run the following commands to build the image and start the server container:
+Run the following commands to start the server container:
 
 ```
-docker build -t triton_vllm .
 docker run --gpus all -it --rm -p 8001:8001 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}:/work -w /work triton_vllm tritonserver --model-store ./model_repository
 ```
 
@@ -80,7 +90,7 @@ I0901 23:39:08.729640 1 http_server.cc:3558] Started HTTPService at 0.0.0.0:8000
 I0901 23:39:08.772522 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8002
 ```
 
-## Step 2: Using a Triton Client to Query the Server
+## Step 3: Use a Triton Client to Query the Server
 
 We will run the client within Triton's SDK container to issue multiple async requests using the
 [gRPC asyncio client](https://github.com/triton-inference-server/client/blob/main/src/python/library/tritonclient/grpc/aio/__init__.py)
