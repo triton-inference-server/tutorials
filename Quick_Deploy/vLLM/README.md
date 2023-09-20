@@ -55,7 +55,7 @@ and
 [EngineArgs](https://github.com/vllm-project/vllm/blob/32b6816e556f69f1672085a6267e8516bcb8e622/vllm/engine/arg_utils.py#L11)
 for supported key-value pairs.
 
-*Note*: vLLM greedily consume up to 50% of the GPU's memory under default settings. You can provide
+*Note*: vLLM greedily consumes up to 50% of the GPU's memory under default settings. You can tweak this behavior using
 appropriate fields like `gpu_memory_utilization` and other settings via
 [`vllm_engine_args.json`](model_repository/vllm/vllm_engine_args.json).
 
@@ -66,7 +66,7 @@ Run the following commands to build the image and start the server container:
 
 ```
 docker build -t triton_vllm .
-docker run --gpus all -it --rm -p 8001:8001 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}:/work -w /work nvcr.io/nvidia/tritonserver:23.08-py3 tritonserver --model-store ./model_repository
+docker run --gpus all -it --rm -p 8001:8001 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}:/work -w /work triton_vllm tritonserver --model-store ./model_repository
 ```
 
 Upon successful start of the server, you should see the following at the end of the output.
