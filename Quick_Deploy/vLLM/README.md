@@ -46,7 +46,7 @@ We will build a new container image derived from tritonserver:23.08-py3 with vLL
 docker build -t triton_vllm .
 ```
 
-The above command should create triton_vllm image with vLLM and all of its dependencies.
+The above command should create the triton_vllm image with vLLM and all of its dependencies.
 
 
 ## Step 2: Start Triton Inference Server
