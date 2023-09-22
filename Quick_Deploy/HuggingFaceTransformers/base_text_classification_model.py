@@ -30,7 +30,6 @@ import triton_python_backend_utils as pb_utils
 
 import torch
 import transformers
-from transformers import AutoTokenizer
 
 
 class TritonPythonModel:

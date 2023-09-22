@@ -5,9 +5,8 @@ import json
 import argparse
 import tritonclient
 from functools import partial
-import tritonclient.http
-
 try:
+    import tritonclient.http
     import numpy as np
     from tritonclient.utils import triton_to_np_dtype, InferenceServerException
 

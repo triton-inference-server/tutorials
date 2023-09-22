@@ -63,9 +63,6 @@ class ServerBuilder:
         file_params.append("RUN pip install transformers==4.33.2\n")
         file_params.append("RUN pip install sentencepiece==0.1.99\n")
         file_params.append("RUN pip install accelerate==0.23.0\n")
-        file_params.append(
-            "ADD ./model_repository ./model_repository\n"
-        )  # copy models so they can be cleaned up without root
         self.AppendToDockerFile(file_params)
 
     def AppendToDockerFile(self, parameters: list):
@@ -106,14 +103,14 @@ class ServerBuilder:
         """
         Build the docker image.
         """
-        subprocess.run("docker build -t tritonserver_transformer_server .", shell=True)
+        subprocess.run("docker build -t triton_transformer_server .", shell=True)
 
     def RunDockerImage(self):
         """
         Run the docker image.
         """
         self.server_proc = subprocess.run(
-            "docker run --gpus all -it --rm -p 8000:8000 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 tritonserver_transformer_server tritonserver --model-repository=model_repository",
+            "docker run --gpus all -it --rm -p 8000:8000 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}/model_repository:/opt/tritonserver/model_repository tritonserver_transformer_server tritonserver --model-repository=model_repository",
             shell=True,
         )
 
@@ -137,6 +134,9 @@ class ServerBuilder:
                     "./base_text_classification_model.py",
                     (model_repo_path + "/model.py"),
                 )
+        # Precompile so we can delete files later. Otherwise docker creates
+        # files as root.
+        subprocess.run("python -m compileall ./model_repository/", shell=True)
 
     def GenerateConfigFile(self, config_path, is_gen_model):
         file_path = config_path + "/config.pbtxt"
@@ -175,7 +175,7 @@ if __name__ == "__main__":
         "--gen-max-len",
         type=str,
         required=False,
-        default="100",
+        default="10",
         help="Parameter for the text generator. Specifices the max length of the generated output",
     )
     args = parser.parse_args()

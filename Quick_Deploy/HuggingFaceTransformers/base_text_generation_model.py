@@ -30,7 +30,6 @@ import triton_python_backend_utils as pb_utils
 
 import torch
 import transformers
-from transformers import AutoTokenizer
 
 
 class TritonPythonModel:
@@ -59,7 +58,8 @@ class TritonPythonModel:
                 "string_value", default_hf_model
             )
         )
-
+        
+        self.logger.log_info(f"Max sequence length: {self.max_length}")
         self.logger.log_info(f"Loading HuggingFace model: {hf_model}...")
         self.pipeline = transformers.pipeline(
             "text-generation",
@@ -69,7 +69,6 @@ class TritonPythonModel:
     def execute(self, requests):
         responses = []
         for request in requests:
-            self.logger.log_info(f"Request parameters: {request.parameters()}")
             # Assume input named "prompt", specified in autocomplete above
             prompt_tensor = pb_utils.get_input_tensor_by_name(request, "prompt")
             prompt = prompt_tensor.as_numpy()[0].decode("utf-8")
