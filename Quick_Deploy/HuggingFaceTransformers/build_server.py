@@ -110,7 +110,7 @@ class ServerBuilder:
         Run the docker image.
         """
         self.server_proc = subprocess.run(
-            "docker run --gpus all -it --rm -p 8000:8000 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}/model_repository:/opt/tritonserver/model_repository tritonserver_transformer_server tritonserver --model-repository=model_repository",
+            "docker run --gpus all -it --rm -p 8000:8000 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}/model_repository:/opt/tritonserver/model_repository triton_transformer_server tritonserver --model-repository=model_repository",
             shell=True,
         )
 
