@@ -1,0 +1,27 @@
+backend: "python"
+parameters: {
+	key: "huggingface_model",
+	value: {string_value: "MODEL_TAG"}
+}
+
+input [
+  {
+    name: "prompt"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+  }
+]
+output [
+  {
+    name: "label"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+output [
+  {
+    name: "score"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  }
+]

@@ -33,68 +33,49 @@ import transformers
 
 
 class TritonPythonModel:
-    @classmethod
-    def auto_complete_config(cls, cfg):
-        inputs = [{"name": "prompt", "data_type": "TYPE_STRING", "dims": [1]}]
-        outputs = [{"name": "text", "data_type": "TYPE_STRING", "dims": [-1]}]
-
-        [cfg.add_input(i) for i in inputs]
-        [cfg.add_output(o) for o in outputs]
-        cfg.set_max_batch_size(0)
-        return cfg
 
     def initialize(self, args):
         self.logger = pb_utils.Logger
         self.model_config = json.loads(args["model_config"])
         self.model_params = self.model_config.get("parameters", {})
-        default_hf_model = "facebook/opt-125m"
+        default_hf_model = "distilbert-base-uncased-finetuned-sst-2-english"
         # Check for user-specified model name in model config parameters
         hf_model = self.model_params.get("huggingface_model", {}).get(
             "string_value", default_hf_model
         )
-        # Check for user-specified max length in model config parameters
-        self.max_length = int(
-            self.model_params.get("max_length", {}).get(
-                "string_value", default_hf_model
-            )
-        )
-        
-        self.logger.log_info(f"Max sequence length: {self.max_length}")
+
         self.logger.log_info(f"Loading HuggingFace model: {hf_model}...")
         self.pipeline = transformers.pipeline(
-            "text-generation",
+            "text-classification",
             model=hf_model,
         )
 
     def execute(self, requests):
         responses = []
         for request in requests:
-            # Assume input named "prompt", specified in autocomplete above
+            self.logger.log_info(f"Request parameters: {request.parameters()}")
+            # Assume input named "prompt" for now, specified in autocomplete above
             prompt_tensor = pb_utils.get_input_tensor_by_name(request, "prompt")
             prompt = prompt_tensor.as_numpy()[0].decode("utf-8")
 
-            self.logger.log_info(f"Generating sequences for prompt: {prompt}")
-            response = self.generate(prompt)
+            self.logger.log_info(f"Conducting sentiment analysis of prompt: {prompt}")
+            response = self.classify(prompt)
             responses.append(response)
-
         return responses
 
-    def generate(self, prompt):
-        sequences = self.pipeline(
-            prompt,
-            max_length=self.max_length,
+    def classify(self, prompt):
+        analysis = self.pipeline(prompt)
+        labels = []
+        scores = []
+        for index in range(0, len(analysis)):
+            labels.append(analysis[index]["label"])
+            scores.append(analysis[index]["score"])
+
+        out_tensor_0 = pb_utils.Tensor("label", np.array(labels, dtype=np.object_))
+        out_tensor_1 = pb_utils.Tensor("score", np.array(scores, dtype=np.float32))
+        response = pb_utils.InferenceResponse(
+            output_tensors=[out_tensor_0, out_tensor_1]
         )
-
-        output_tensors = []
-        texts = []
-        for i, seq in enumerate(sequences):
-            text = seq["generated_text"]
-            self.logger.log_info(f"Sequence {i+1}: {text}")
-            texts.append(text)
-
-        tensor = pb_utils.Tensor("text", np.array(texts, dtype=np.object_))
-        output_tensors.append(tensor)
-        response = pb_utils.InferenceResponse(output_tensors=output_tensors)
         return response
 
     def finalize(self):

@@ -1,0 +1,24 @@
+backend: "python"
+parameters: {
+	key: "huggingface_model",
+	value: {string_value: "MODEL_TAG"}
+}
+parameters: {
+	key: "max_length",
+	value: {string_value: "MAX_LENGTH_TAG"}
+}
+
+input [
+  {
+    name: "prompt"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+  }
+]
+output [
+  {
+    name: "text"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
