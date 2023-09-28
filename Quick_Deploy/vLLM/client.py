@@ -41,7 +41,7 @@ class UserData:
         self._completed_requests = queue.Queue()
 
 
-def create_request(prompt, stream, request_id, sampling_parameters, model_name):
+def create_request(prompt, stream, request_id, sampling_parameters, model_name, send_parameters_as_tensor=True):
     inputs = []
     prompt_data = np.array([prompt.encode("utf-8")], dtype=np.object_)
     try:
@@ -54,11 +54,16 @@ def create_request(prompt, stream, request_id, sampling_parameters, model_name):
     inputs.append(grpcclient.InferInput("STREAM", [1], "BOOL"))
     inputs[-1].set_data_from_numpy(stream_data)
 
-    sampling_parameters_data = np.array(
-        [json.dumps(sampling_parameters).encode("utf-8")], dtype=np.object_
-    )
-    inputs.append(grpcclient.InferInput("SAMPLING_PARAMETERS", [1], "BYTES"))
-    inputs[-1].set_data_from_numpy(sampling_parameters_data)
+    # Request parameters are not yet supported via BLS. Provide an
+    # optional mechanism to send serialized parameters as an input
+    # tensor until support is added
+    
+    if send_parameters_as_tensor:
+        sampling_parameters_data = np.array(
+            [json.dumps(sampling_parameters).encode("utf-8")], dtype=np.object_
+        )
+        inputs.append(grpcclient.InferInput("SAMPLING_PARAMETERS", [1], "BYTES"))
+        inputs[-1].set_data_from_numpy(sampling_parameters_data)
 
     # Add requested outputs
     outputs = []
@@ -69,7 +74,8 @@ def create_request(prompt, stream, request_id, sampling_parameters, model_name):
         "model_name": model_name,
         "inputs": inputs,
         "outputs": outputs,
-        "request_id": str(request_id)
+        "request_id": str(request_id),
+        "parameters": sampling_parameters
     }
 
 
