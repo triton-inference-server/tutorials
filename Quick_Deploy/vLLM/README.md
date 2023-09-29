@@ -34,55 +34,67 @@ The following tutorial demonstrates how to deploy a simple
 Triton Inference Server using Triton's [Python backend](https://github.com/triton-inference-server/python_backend) and the
 [vLLM](https://github.com/vllm-project/vllm) library.
 
-*NOTE*: The tutorial is intended to be a reference example only. It is a work in progress with [known limitations](#limitations).
+*NOTE*: The tutorial is intended to be a reference example only. It is a work in progress with
+[known limitations](#limitations).
 
 
-## Step 1: Build a Custom Execution Environment with vLLM and other Dependencies
+## Step 1: Build a Triton Container Image with vLLM
 
-Running vLLM within Triton container requires us to provide [custom execution environment](https://github.com/triton-inference-server/python_backend#creating-custom-execution-environments) with vLLM and other package dependencies. The provided script should build the package environment for you which will be used to load the model in Triton.
+We will build a new container image derived from tritonserver:23.08-py3 with vLLM.
 
 ```
-docker run --gpus all -it --rm -v ${PWD}:/work -w /work nvcr.io/nvidia/tritonserver:23.08-py3 ./gen_vllm_env.sh
+docker build -t tritonserver_vllm .
 ```
 
-This step might take a while to build the environment packages. Once complete, the provided sample [model_repository](model_repository) will be populated with `triton_python_backend_stub` and `vllm_env.tar.gz`.
+The above command should create the tritonserver_vllm image with vLLM and all of its dependencies.
 
-## Step 2: Set Up Triton Inference Server
 
-The structure of the sample model repository as follows after the Step 1 above:
+## Step 2: Start Triton Inference Server
+
+A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton is 
+included with this demo as `model_repository` directory. 
+The model repository should look like this:
 ```
 model_repository/
 `-- vllm
     |-- 1
     |   `-- model.py
     |-- config.pbtxt
-    |-- triton_python_backend_stub
     |-- vllm_engine_args.json
-    `-- vllm_env.tar.gz
-
 ```
 
-A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton is included with this demo as `model_repository` directory. The content of `vllm_engine_args.json` is:
+The content of `vllm_engine_args.json` is:
 
 ```json
 {
     "model": "facebook/opt-125m",
-    "disable_log_requests": "true"
+    "disable_log_requests": "true",
+    "gpu_memory_utilization": 0.5
 }
 ```
-This file can be modified to provide further settings to the vLLM engine. See vLLM [AsyncEngineArgs](https://github.com/vllm-project/vllm/blob/32b6816e556f69f1672085a6267e8516bcb8e622/vllm/engine/arg_utils.py#L165) and [EngineArgs](https://github.com/vllm-project/vllm/blob/32b6816e556f69f1672085a6267e8516bcb8e622/vllm/engine/arg_utils.py#L11) for supported key-value pairs.
+This file can be modified to provide further settings to the vLLM engine. See vLLM
+[AsyncEngineArgs](https://github.com/vllm-project/vllm/blob/32b6816e556f69f1672085a6267e8516bcb8e622/vllm/engine/arg_utils.py#L165)
+and
+[EngineArgs](https://github.com/vllm-project/vllm/blob/32b6816e556f69f1672085a6267e8516bcb8e622/vllm/engine/arg_utils.py#L11)
+for supported key-value pairs.
 
-*Note*: vLLM greedily consume upto 90% of the GPU's memory under default settings. You can provide appropriate fields like `gpu_memory_utilization` and other settings via [`vllm_engine_args.json`](model_repository/vllm/vllm_engine_args.json).
+For multi-GPU support, EngineArgs like `tensor_parallel_size` can be specified in [`vllm_engine_args.json`](model_repository/vllm/vllm_engine_args.json).
 
-Read through the documentation in [`model.py`](model_repository/vllm/1/model.py) to understand how to configure this sample for your use-case.
+*Note*: vLLM greedily consume upto 90% of the GPU's memory under default settings.
+This tutorial updates this behavior by setting `gpu_memory_utilization` to 50%.
+You can tweak this behavior using fields like `gpu_memory_utilization` and other settings
+in [`vllm_engine_args.json`](model_repository/vllm/vllm_engine_args.json).
 
-Start the server like below:
+Read through the documentation in [`model.py`](model_repository/vllm/1/model.py) to understand how
+to configure this sample for your use-case.
+
+Run the following commands to start the server container:
 
 ```
-docker run -p 8000:8000 -p 8001:8001 -p 8002:8002 --gpus all -it --rm --shm-size=8G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:23.08-py3 tritonserver --model-store=/models
+docker run --gpus all -it --rm -p 8001:8001 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}:/work -w /work tritonserver_vllm tritonserver --model-store ./model_repository
 ```
 
-Upon successful start of the server, you can see the following in the end.
+Upon successful start of the server, you should see the following at the end of the output.
 
 ```
 I0901 23:39:08.729123 1 grpc_server.cc:2451] Started GRPCInferenceService at 0.0.0.0:8001
@@ -90,9 +102,9 @@ I0901 23:39:08.729640 1 http_server.cc:3558] Started HTTPService at 0.0.0.0:8000
 I0901 23:39:08.772522 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8002
 ```
 
-## Step 3: Using a Triton Client to Query the Server
+## Step 3: Use a Triton Client to Query the Server
 
-We will run the client within Triton's SDK container to issue multiple async requests using
+We will run the client within Triton's SDK container to issue multiple async requests using the
 [gRPC asyncio client](https://github.com/triton-inference-server/client/blob/main/src/python/library/tritonclient/grpc/aio/__init__.py)
 library.
 
@@ -100,13 +112,14 @@ library.
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:23.08-py3-sdk bash
 ```
 
-Within the container, run the [`client.py`](client.py) as:
+Within the container, run [`client.py`](client.py) with:
 
 ```
 python3 client.py
 ```
 
-The client reads prompts from [prompts.txt](prompts.txt) file, sends them to Triton server for inference and stores the results into a file named `results.txt` by default.
+The client reads prompts from the [prompts.txt](prompts.txt) file, sends them to Triton server for
+inference, and stores the results into a file named `results.txt` by default.
 
 The output of the client should look like below:
 
@@ -116,12 +129,15 @@ Storing results into `results.txt`...
 PASS: vLLM example
 ```
 
-You can inspect the contents of the `results.txt` for the response from the server. `--iterations` flag can be used with the client to increase the load on the server by looping through the list of provided prompts in [`prompts.txt`](prompts.txt).
+You can inspect the contents of the `results.txt` for the response from the server. The `--iterations`
+flag can be used with the client to increase the load on the server by looping through the list of
+provided prompts in [`prompts.txt`](prompts.txt).
 
-When you run the client in verbose mode - with `--verbose` flag, the client will print more details about the request/response transactions.
+When you run the client in verbose mode with the `--verbose` flag, the client will print more details
+about the request/response transactions.
 
 ## Limitations
 
 - We use decoupled streaming protocol even if there is exactly 1 response for each request.
 - The asyncio implementation is exposed to model.py.
-- Does not support multi-GPU systems.
+- Does not support providing specific subset of GPUs to be used.

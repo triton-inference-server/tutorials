@@ -169,7 +169,7 @@ class TritonPythonModel:
                 parameters = parameters_input_tensor.as_numpy()[0].decode("utf-8")
             else:
                 parameters = request.parameters()
-                
+
             sampling_params_dict = self.get_sampling_params_dict(parameters)
             sampling_params = SamplingParams(**sampling_params_dict)
 

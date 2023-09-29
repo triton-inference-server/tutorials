@@ -24,52 +24,5 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-name: "vllm"
-backend: "python"
-
-# Disabling batching in Triton, let vLLM handle the batching on its own.
-max_batch_size: 0
-
-# We need to use decoupled transaction policy for saturating
-# vLLM engine for max throughtput.
-# TODO [DLIS:5233]: Allow asychronous execution to lift this
-# restriction for cases there is exactly a single response to
-# a single request.
-model_transaction_policy {
-  decoupled: True
-}
-
-input [
-  {
-    name: "PROMPT"
-    data_type: TYPE_STRING
-    dims: [ 1 ]
-  },
-  {
-    name: "STREAM"
-    data_type: TYPE_BOOL
-    dims: [ 1 ]
-  },
-  {
-    name: "SAMPLING_PARAMETERS"
-    data_type: TYPE_STRING
-    dims: [ 1 ]
-    optional: true
-  }
-]
-
-output [
-  {
-    name: "TEXT"
-    data_type: TYPE_STRING
-    dims: [ -1 ]
-  }
-]
-
-# The usage of device is deferred to the vLLM engine
-instance_group [
-  {
-    count: 1
-    kind: KIND_MODEL
-  }
-]
+FROM nvcr.io/nvidia/tritonserver:23.08-py3
+RUN pip install vllm==0.1.7
