@@ -159,7 +159,17 @@ class TritonPythonModel:
             request_id = random_uuid()
             prompt = pb_utils.get_input_tensor_by_name(request, "PROMPT").as_numpy()[0]
             stream = pb_utils.get_input_tensor_by_name(request, "STREAM").as_numpy()[0]
-            parameters = pb_utils.get_input_tensor_by_name(request, "SAMPLING_PARAMETERS").as_numpy()[0].decode("utf-8")
+
+            # Request parameters are not yet supported via
+            # BLS. Provide an optional mechanism to receive serialized
+            # parameters as an input tensor until support is added
+
+            parameters_input_tensor = pb_utils.get_input_tensor_by_name(request, "SAMPLING_PARAMETERS")
+            if parameters_input_tensor:
+                parameters = parameters_input_tensor.as_numpy()[0].decode("utf-8")
+            else:
+                parameters = request.parameters()
+
             sampling_params_dict = self.get_sampling_params_dict(parameters)
             sampling_params = SamplingParams(**sampling_params_dict)
 
