@@ -36,10 +36,6 @@ import tritonclient.grpc.aio as grpcclient
 from tritonclient.utils import *
 
 
-class UserData:
-    def __init__(self):
-        self._completed_requests = queue.Queue()
-
 
 def create_request(prompt, stream, request_id, sampling_parameters, model_name, send_parameters_as_tensor=True):
     inputs = []
