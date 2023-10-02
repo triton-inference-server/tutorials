@@ -127,11 +127,20 @@ class TritonPythonModel:
         params_dict = json.loads(params_json)
 
         # Special parsing for the supported sampling parameters
-        # TODO: Add more parameters if needed
-        float_keys = ["temperature", "top_p"]
+        bool_keys = ["ignore_eos", "skip_special_tokens", "use_beam_search"]
+        for k in bool_keys:
+            if k in params_dict:
+                params_dict[k] = bool(params_dict[k])
+
+        float_keys = ["frequency_penalty", "length_penalty", "presence_penalty", "temperature", "top_p"]
         for k in float_keys:
             if k in params_dict:
                 params_dict[k] = float(params_dict[k])
+
+        int_keys = ["best_of", "max_tokens", "n", "top_k"]
+        for k in int_keys:
+            if k in params_dict:
+                params_dict[k] = int(params_dict[k])
 
         return params_dict
 
