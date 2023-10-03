@@ -24,5 +24,5 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM nvcr.io/nvidia/tritonserver:23.08-py3
-RUN pip install vllm==0.1.7
+FROM nvcr.io/nvidia/tritonserver:23.09-py3
+RUN pip install vllm==0.2.0
