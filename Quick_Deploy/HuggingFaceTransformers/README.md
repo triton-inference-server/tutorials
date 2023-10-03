@@ -26,53 +26,55 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-# Deploying a Hugging Face Transformer Models in Triton
+# Deploying Hugging Face Transformer Models in Triton
 
 The following tutorial demonstrates how to deploy an arbitrary hugging face transformer
 model on the Triton Inference Server using Triton's [Python backend](https://github.com/triton-inference-server/python_backend). For the purposes of this example, three transformer
 models will be deployed:
-- [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) for text generation requests.
-- [gpt2](https://huggingface.co/gpt2) for text generation requests.
-- [distilbert-base-uncased-finetuned-sst-2-english](https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english) for text classification requests.
+- [tiiuae/falcon-7b](https://huggingface.co/tiiuae/falcon-7b)
+- [adept/persimmon-8b-base](https://huggingface.co/adept/persimmon-8b-base)
+- [mistralai/Mistral-7B-v0.1](https://huggingface.co/mistralai/Mistral-7B-v0.1)
 
-These models were selected because of their small size and consistent response quality, 
-enabling the tutorial to run on most devices with sensible results. However, this tutorial
-is also generalizable for much larger models provided sufficient infrastructure. 
+These models were selected because of their popularity and consistent response quality.
+However, this tutorial is also generalizable for any transformer model provided 
+sufficient infrastructure. 
 
 *NOTE*: The tutorial is intended to be a reference example only. It is a work in progress.
 
-## Step 1: Build a Model Repository
+## Step 1: Create a Model Repository
 
-The first step is to create a model repository that the Triton Inference Server will use
-for inference processing. We can create a model repository from the provided base files by 
-executing the following python script:
+The first step is to create a model repository containing the models we want the Triton 
+Inference Server to load and use for inference processing. For this tutorial an empty
+directory named `model_repository` has been provided, into which we will copy the 
+`falcon7b` model folder:
 
 ```
-python3 create_repository.py
+cp -r falcon7b/ model_repository/ 
 ```
 
-Without specifying any arguments, this script will create a model repository containing
-the details necessary for Triton to load and serve each of the aforementioned models.
-For the purposes of this tutorial, we provide Triton with simple ```config.pbtxt``` files
-for each model that describe:
-- The the backend to use.
-- Model input and output details.
-- Custom parameters to use for execution.
+The `falcon7b/` folder we copied is organized in the way Triton expects and contains 
+two important files needed to serve models in Triton:
+- **config.pbtxt** - Outlines the backend to use, model input/output details, and custom
+parameters to use for execution. More information on the full range of model configuration
+properties Triton supports can be found [here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html).
+- **model.py** - Implements how Triton should handle the model during the initialization, 
+execution, and finalization stages. More information regarding python backend usage 
+can be found [here](https://github.com/triton-inference-server/python_backend#usage).
 
 ## Step 2: Build a Triton Container Image
 
 The second step is to create an image that includes all the dependencies necessary
 to deploy hugging face transformer models on the Triton Inference Server. This can be done
-by building an image from the provided Dockerfile.
+by building an image from the provided Dockerfile:
 
 ```
 docker build -t triton_transformer_server .
 ```
 
-## Step 3: Run the Triton Inference Server
+## Step 3: Launch the Triton Inference Server
 
-Once the ```triton_transformer_server``` image is created, you can run a container with
-the following command:
+Once the ```triton_transformer_server``` image is created, you can launch the Triton Inference
+Server in a container with the following command:
 
 ```bash
 docker run --gpus all -it --rm -p 8000:8000 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}/model_repository:/opt/tritonserver/model_repository triton_transformer_server tritonserver --model-repository=model_repository
@@ -80,7 +82,7 @@ docker run --gpus all -it --rm -p 8000:8000 --shm-size=1G --ulimit memlock=-1 --
 
 The server has launched successfully when you see the following outputs in your console:
 
-```bash
+```
 I0922 23:28:40.351809 1 grpc_server.cc:2451] Started GRPCInferenceService at 0.0.0.0:8001
 I0922 23:28:40.352017 1 http_server.cc:3558] Started HTTPService at 0.0.0.0:8000
 I0922 23:28:40.395611 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8002
@@ -88,63 +90,91 @@ I0922 23:28:40.395611 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8
 
 ## Step 4: Use a Triton Client to Query the Server
 
-Now we can query the server using the client script provided.
+Now we can query the server using curl, specifying the server address and input details:
 
+```json
+curl -X POST localhost:8000/v2/models/falcon7b/infer -d '{"inputs": [{"name":"prompt","datatype":"BYTES","shape":[1],"data":["I am going"]}]}'
+```
+In our testing, the server returned the following result (formatted for legibility):
+```json
+{
+  "model_name": "falcon7b",
+  "model_version": "1",
+  "outputs": [
+    {
+      "name": "text",
+      "datatype": "BYTES",
+      "shape": [
+        1
+      ],
+      "data": [
+        "I am going to be in the market for a new laptop soon. I"
+      ]
+    }
+  ]
+}
+```
+
+## Step 5: Host Multiple Models in Triton
+
+So far in this tutorial, we have only loaded a single model. However, Triton is capable
+of hosting many models, simultaneously. To accomplish this, first ensure you have
+exited the docker container by invoking `Ctrl+C` and waiting for the container to exit.
+
+Next copy the remaining models provided into the model repository:
+```
+cp -r mistral7b/ model_repository/
+cp -r persimmon8b/ model_repository/
+```
+*NOTE*: The combined size of these three models is large. If your current hardware cannot
+support hosting all three models simultaneously, consider copying only a single additional
+model.
+
+Again, launch the server by invoking the `docker run` command from above and wait for confirmation
+that the server has launched successfully.
+
+Query the server making sure to change the host address for each model:
+```json
+curl -X POST localhost:8000/v2/models/falcon7b/infer -d '{"inputs": [{"name":"prompt","datatype":"BYTES","shape":[1],"data":["How can you be"]}]}'
+curl -X POST localhost:8000/v2/models/mistral7b/infer -d '{"inputs": [{"name":"prompt","datatype":"BYTES","shape":[1],"data":["Where are you going"]}]}'
+curl -X POST localhost:8000/v2/models/persimmon8b/infer -d '{"inputs": [{"name":"prompt","datatype":"BYTES","shape":[1],"data":["Where is the nearest"]}]}'
+```
+In our testing, these queries return the following parsed results:
 ```bash
-python3 client.py -m [model_name] --prompt [prompt_message]
+# falcon7b
+"How can you be sure that you are getting the best deal on your car"
+
+# mistral7b
+"Where are you going? I’m going to the beach."
+
+# persimmon8b
+"Where is the nearest starbucks?"
 ```
-*NOTE*: You may need to install packages for the client to run. See [client.py](client.py)
-for details and run the script in an environment manager if you are concerned about 
-version collisions.
+## 'Hour Zero' Support
 
-In the case of this tutorial, we have included models that are specialized for one of 
-two tasks: text classification or text generation. The ```distilbert-base-uncased-finetuned-sst-2-english```
-model is specialized for text classification and we can query the model in the following way:
-
-```bash
-python3 client.py -m distilbert-base-uncased-finetuned-sst-2-english --prompt "I feel great!"
+At the time of writing this tutorial, transformers version 4.34.0 was not yet released, meaning
+very new models such as Persimmon-8B and Mistral 7B were not yet fully supported by the latest
+transformers releases (4.33.3). Triton is not limited to waiting for official releases and can
+load the latest models by building from source. This can be done by replacing:
+```docker
+RUN pip install transformers==4.34.0
 ```
-
-Which will return a result similar to:
+with:
+```docker
+RUN pip install git+https://github.com/huggingface/transformers.git
 ```
-| Name        | Shape       | Data              |
-| ----------- | ----------- | ----------------- |
-| prompt      | [1]         | ['I feel great!'] |
-| label       | (1,)        | POSITIVE          |
-| score       | (1,)        | [0.99986434]      |
-```
-
-Similarly, we can query our models specialized for text generation in this way:
-
-```bash
-python3 client.py -m opt-125m --prompt "Who am I?"
-python3 client.py -m gpt2 --prompt "Who am I?"
-```
-Which will return a result similar to:
-```
-# facebook/opt-125m response
-
-| Name        | Shape       | Data                  |
-| ----------- | ----------- | --------------------- |
-| prompt      | [1]         | ['Who am I?']         |
-| text        | (1,)        | I am a writer, artist,|
-|             |             | and photographer      |
-
-# gpt2 response
-
-| Name        | Shape       | Data                  |
-| ----------- | ----------- | --------------------- |
-| prompt      | [1]         | ['Who am I?']         |
-| text        | (1,)        | Who am I? What am I?  |
-|             |             | Why am I here?        |
-```
+in the provided Dockerfile. Using this technique, we were able to load Mistral 7B into Triton
+within minutes of hearing about its release.
 
 ## Next Steps
 
-The base model files used to create the model repository can be found in the ```text_classification```
-and ```text_generation``` directories. These base models have been kept minimal in order to maximize 
-generalizability. Should you wish to modify the behavior of the transformer models, such 
-as increasing the number of sequences a text generator model returns, you should modify these
-files directly and re-run the ```create_repository.py``` script.
+The `model.py` files have been kept minimal in order to maximize generalizability. Should you wish 
+to modify the behavior of the transformer models, such as increasing the number of generated sequences 
+to return, be sure to modify the corresponding `config.pbtxt` and `model.py` files and copy them 
+into the `model_repository`.
+
+The transformers used in this tutorial were all suited for text-generation tasks, however, this 
+is not a limitation. The principles of this tutorial can be applied to server models suited for
+any other transformer task.
 
 For a more custom deployment, please see our [model configuration guide](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html) to see how the scope of this tutorial can be expanded to fit your needs.
