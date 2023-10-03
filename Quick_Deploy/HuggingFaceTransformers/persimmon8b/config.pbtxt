@@ -1,7 +1,11 @@
 backend: "python"
 parameters: {
 	key: "huggingface_model",
-	value: {string_value: "MODEL_TAG"}
+	value: {string_value: "adept/persimmon-8b-base"}
+}
+parameters: {
+	key: "max_length",
+	value: {string_value: "15"}
 }
 
 input [
@@ -13,15 +17,8 @@ input [
 ]
 output [
   {
-    name: "label"
+    name: "text"
     data_type: TYPE_STRING
-    dims: [ -1 ]
-  }
-]
-output [
-  {
-    name: "score"
-    data_type: TYPE_FP32
     dims: [ -1 ]
   }
 ]

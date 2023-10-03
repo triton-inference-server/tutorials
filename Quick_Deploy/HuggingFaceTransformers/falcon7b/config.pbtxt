@@ -1,11 +1,11 @@
 backend: "python"
 parameters: {
 	key: "huggingface_model",
-	value: {string_value: "MODEL_TAG"}
+	value: {string_value: "tiiuae/falcon-7b"}
 }
 parameters: {
 	key: "max_length",
-	value: {string_value: "MAX_LENGTH_TAG"}
+	value: {string_value: "15"}
 }
 
 input [

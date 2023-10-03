@@ -38,7 +38,7 @@ class TritonPythonModel:
         self.logger = pb_utils.Logger
         self.model_config = json.loads(args["model_config"])
         self.model_params = self.model_config.get("parameters", {})
-        default_hf_model = "facebook/opt-125m"
+        default_hf_model = "mistralai/Mistral-7B-v0.1"
         default_max_gen_length = "15"
         # Check for user-specified model name in model config parameters
         hf_model = self.model_params.get("huggingface_model", {}).get(
@@ -53,10 +53,16 @@ class TritonPythonModel:
         
         self.logger.log_info(f"Max sequence length: {self.max_length}")
         self.logger.log_info(f"Loading HuggingFace model: {hf_model}...")
+        # Assume tokenizer available for same model
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(hf_model)
         self.pipeline = transformers.pipeline(
             "text-generation",
             model=hf_model,
+            torch_dtype=torch.float16,
+            tokenizer=self.tokenizer,
+            device_map="auto"
         )
+
 
     def execute(self, requests):
         responses = []
@@ -75,6 +81,7 @@ class TritonPythonModel:
         sequences = self.pipeline(
             prompt,
             max_length=self.max_length,
+            pad_token_id=self.tokenizer.eos_token_id,
         )
 
         output_tensors = []
