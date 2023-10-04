@@ -69,7 +69,7 @@ class TritonPythonModel:
             AsyncEngineArgs(**vllm_engine_config)
         )
 
-        output_config = pb_utils.get_output_config_by_name(self.model_config, "TEXT")
+        output_config = pb_utils.get_output_config_by_name(self.model_config, "text")
         self.output_dtype = pb_utils.triton_string_to_numpy(output_config["data_type"])
 
         # Counter to keep track of ongoing request counts
@@ -123,6 +123,11 @@ class TritonPythonModel:
         This functions parses the dictionary values into their
         expected format.
         """
+        # Opinionated defaults for out-of-the-box experience if left unspecified.
+        # These will be overwritten below if provided.
+        sampling_params = {
+          "temperature": 0.1
+        }
 
         params_dict = json.loads(params_json)
 
@@ -130,19 +135,19 @@ class TritonPythonModel:
         bool_keys = ["ignore_eos", "skip_special_tokens", "use_beam_search"]
         for k in bool_keys:
             if k in params_dict:
-                params_dict[k] = bool(params_dict[k])
+                sampling_params[k] = bool(params_dict[k])
 
         float_keys = ["frequency_penalty", "length_penalty", "presence_penalty", "temperature", "top_p"]
         for k in float_keys:
             if k in params_dict:
-                params_dict[k] = float(params_dict[k])
+                sampling_params[k] = float(params_dict[k])
 
         int_keys = ["best_of", "max_tokens", "n", "top_k"]
         for k in int_keys:
             if k in params_dict:
-                params_dict[k] = int(params_dict[k])
+                sampling_params[k] = int(params_dict[k])
 
-        return params_dict
+        return sampling_params
 
     def create_response(self, vllm_output):
         """
@@ -154,7 +159,7 @@ class TritonPythonModel:
             (prompt + output.text).encode("utf-8") for output in vllm_output.outputs
         ]
         triton_output_tensor = pb_utils.Tensor(
-            "TEXT", np.asarray(text_outputs, dtype=self.output_dtype)
+            "text", np.asarray(text_outputs, dtype=self.output_dtype)
         )
         return pb_utils.InferenceResponse(output_tensors=[triton_output_tensor])
 
@@ -166,14 +171,17 @@ class TritonPythonModel:
         self.ongoing_request_count += 1
         try:
             request_id = random_uuid()
-            prompt = pb_utils.get_input_tensor_by_name(request, "PROMPT").as_numpy()[0]
-            stream = pb_utils.get_input_tensor_by_name(request, "STREAM").as_numpy()[0]
+            prompt = pb_utils.get_input_tensor_by_name(request, "prompt").as_numpy()[0]
+            # Stream is an optional input tensor, default false if not provided
+            stream = False
+            stream_input_tensor = pb_utils.get_input_tensor_by_name(request, "stream")
+            if stream_input_tensor:
+                stream = stream_input_tensor.as_numpy()[0]
 
             # Request parameters are not yet supported via
             # BLS. Provide an optional mechanism to receive serialized
             # parameters as an input tensor until support is added
-
-            parameters_input_tensor = pb_utils.get_input_tensor_by_name(request, "SAMPLING_PARAMETERS")
+            parameters_input_tensor = pb_utils.get_input_tensor_by_name(request, "sampling_parameters")
             if parameters_input_tensor:
                 parameters = parameters_input_tensor.as_numpy()[0].decode("utf-8")
             else:
@@ -198,7 +206,7 @@ class TritonPythonModel:
             self.logger.log_info(f"Error generating stream: {e}")
             error = pb_utils.TritonError(f"Error generating stream: {e}")
             triton_output_tensor = pb_utils.Tensor(
-                "TEXT", np.asarray(["N/A"], dtype=self.output_dtype)
+                "text", np.asarray(["N/A"], dtype=self.output_dtype)
             )
             response = pb_utils.InferenceResponse(
                 output_tensors=[triton_output_tensor], error=error
