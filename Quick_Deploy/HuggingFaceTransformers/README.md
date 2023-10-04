@@ -39,16 +39,17 @@ These models were selected because of their popularity and consistent response q
 However, this tutorial is also generalizable for any transformer model provided 
 sufficient infrastructure. 
 
-*NOTE*: The tutorial is intended to be a reference example only. It is a work in progress.
+*NOTE*: The tutorial is intended to be a reference example only. It may not be tuned for 
+optimal performance.
 
 ## Step 1: Create a Model Repository
 
 The first step is to create a model repository containing the models we want the Triton 
-Inference Server to load and use for inference processing. For this tutorial an empty
-directory named `model_repository` has been provided, into which we will copy the 
-`falcon7b` model folder:
+Inference Server to load and use for inference processing. To accomplish this, create a 
+directory called `model_repository` and copy the `falcon7b` model folder into it:
 
 ```
+mkdir -p model_repository
 cp -r falcon7b/ model_repository/ 
 ```
 
@@ -88,7 +89,7 @@ I0922 23:28:40.352017 1 http_server.cc:3558] Started HTTPService at 0.0.0.0:8000
 I0922 23:28:40.395611 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8002
 ```
 
-## Step 4: Use a Triton Client to Query the Server
+## Step 4: Query the Server
 
 Now we can query the server using curl, specifying the server address and input details:
 
@@ -150,21 +151,18 @@ In our testing, these queries return the following parsed results:
 # persimmon8b
 "Where is the nearest starbucks?"
 ```
-## 'Hour Zero' Support
+## 'Day Zero' Support
 
-At the time of writing this tutorial, transformers version 4.34.0 was not yet released, meaning
-very new models such as Persimmon-8B and Mistral 7B were not yet fully supported by the latest
-transformers releases (4.33.3). Triton is not limited to waiting for official releases and can
-load the latest models by building from source. This can be done by replacing:
-```docker
-RUN pip install transformers==4.34.0
-```
-with:
+The latest transformer models may not always be supported in the most recent, official
+release of the `transformers` package. In such a case, you should still be able to 
+load these 'bleeding edge' models in Triton by building `transformers` from source. 
+This can be done by replacing the transformers install directive in the provided 
+Dockerfile with:
 ```docker
 RUN pip install git+https://github.com/huggingface/transformers.git
 ```
-in the provided Dockerfile. Using this technique, we were able to load Mistral 7B into Triton
-within minutes of hearing about its release.
+Using this technique you should be able to serve any transformer models supported by 
+hugging face with Triton.
 
 ## Next Steps
 
