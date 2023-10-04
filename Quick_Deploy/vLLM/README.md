@@ -34,8 +34,7 @@ The following tutorial demonstrates how to deploy a simple
 Triton Inference Server using Triton's [Python backend](https://github.com/triton-inference-server/python_backend) and the
 [vLLM](https://github.com/vllm-project/vllm) library.
 
-*NOTE*: The tutorial is intended to be a reference example only. It is a work in progress with
-[known limitations](#limitations).
+*NOTE*: The tutorial is intended to be a reference example only and has [known limitations](#limitations).
 
 
 ## Step 1: Build a Triton Container Image with vLLM
