@@ -61,7 +61,6 @@ class TritonPythonModel:
             torch_dtype=torch.float16,
             tokenizer=self.tokenizer,
             device_map="auto",
-            trust_remote_code=True,
         )
 
 
