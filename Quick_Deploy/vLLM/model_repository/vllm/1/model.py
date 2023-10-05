@@ -186,13 +186,13 @@ class TritonPythonModel:
             async for output in self.llm_engine.generate(
                 str(prompt), sampling_params, request_id
             ):
+                if response_sender.is_cancelled():
+                    await self.llm_engine.abort(request_id)
+                    break
                 if stream:
                     response_sender.send(self.create_response(output))
                 else:
                     last_output = output
-                if response_sender.is_cancelled():
-                    await self.llm_engine.abort(request_id)
-                    break
 
             if not stream:
                 response_sender.send(self.create_response(last_output))
