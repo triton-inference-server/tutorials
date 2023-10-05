@@ -190,6 +190,9 @@ class TritonPythonModel:
                     response_sender.send(self.create_response(output))
                 else:
                     last_output = output
+                if response_sender.is_cancelled():
+                    await self.llm_engine.abort(request_id)
+                    break
 
             if not stream:
                 response_sender.send(self.create_response(last_output))
