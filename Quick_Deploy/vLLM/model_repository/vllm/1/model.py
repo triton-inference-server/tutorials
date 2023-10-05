@@ -172,6 +172,9 @@ class TritonPythonModel:
         try:
             request_id = random_uuid()
             prompt = pb_utils.get_input_tensor_by_name(request, "prompt").as_numpy()[0]
+            if isinstance(prompt, bytes):
+                prompt = prompt.decode("utf-8")
+
             # Stream is an optional input tensor, default false if not provided
             stream = False
             stream_input_tensor = pb_utils.get_input_tensor_by_name(request, "stream")
@@ -192,7 +195,7 @@ class TritonPythonModel:
 
             last_output = None
             async for output in self.llm_engine.generate(
-                str(prompt), sampling_params, request_id
+                prompt, sampling_params, request_id
             ):
                 if stream:
                     response_sender.send(self.create_response(output))
