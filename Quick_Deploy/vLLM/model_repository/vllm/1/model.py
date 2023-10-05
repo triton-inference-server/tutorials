@@ -186,7 +186,7 @@ class TritonPythonModel:
 
             last_output = None
             async for output in self.llm_engine.generate(
-                str(prompt), sampling_params, request_id
+                prompt, sampling_params, request_id
             ):
                 if stream:
                     response_sender.send(self.create_response(output))
