@@ -167,6 +167,8 @@ class TritonPythonModel:
         try:
             request_id = random_uuid()
             prompt = pb_utils.get_input_tensor_by_name(request, "PROMPT").as_numpy()[0]
+            if isinstance(prompt, bytes):
+                prompt = prompt.decode("utf-8")
             stream = pb_utils.get_input_tensor_by_name(request, "STREAM").as_numpy()[0]
 
             # Request parameters are not yet supported via
