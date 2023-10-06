@@ -29,11 +29,10 @@
 # Deploying Hugging Face Transformer Models in Triton
 
 The following tutorial demonstrates how to deploy an arbitrary hugging face transformer
-model on the Triton Inference Server using Triton's [Python backend](https://github.com/triton-inference-server/python_backend). For the purposes of this example, three transformer
+model on the Triton Inference Server using Triton's [Python backend](https://github.com/triton-inference-server/python_backend). For the purposes of this example, two transformer
 models will be deployed:
 - [tiiuae/falcon-7b](https://huggingface.co/tiiuae/falcon-7b)
 - [adept/persimmon-8b-base](https://huggingface.co/adept/persimmon-8b-base)
-- [mistralai/Mistral-7B-v0.1](https://huggingface.co/mistralai/Mistral-7B-v0.1)
 
 These models were selected because of their popularity and consistent response quality.
 However, this tutorial is also generalizable for any transformer model provided 
@@ -122,14 +121,14 @@ So far in this tutorial, we have only loaded a single model. However, Triton is 
 of hosting many models, simultaneously. To accomplish this, first ensure you have
 exited the docker container by invoking `Ctrl+C` and waiting for the container to exit.
 
-Next copy the remaining models provided into the model repository:
+Next copy the remaining model provided into the model repository:
 ```
-cp -r mistral7b/ model_repository/
 cp -r persimmon8b/ model_repository/
 ```
-*NOTE*: The combined size of these three models is large. If your current hardware cannot
-support hosting all three models simultaneously, consider copying only a single additional
-model.
+*NOTE*: The combined size of these two models is large. If your current hardware cannot
+support hosting both models simultaneously, consider loading a smaller model, such as
+[opt-125m](https://huggingface.co/facebook/opt-125m), by creating a folder for it
+using the templates provided and copying it into `model_repository`.
 
 Again, launch the server by invoking the `docker run` command from above and wait for confirmation
 that the server has launched successfully.
@@ -137,16 +136,12 @@ that the server has launched successfully.
 Query the server making sure to change the host address for each model:
 ```json
 curl -X POST localhost:8000/v2/models/falcon7b/infer -d '{"inputs": [{"name":"prompt","datatype":"BYTES","shape":[1],"data":["How can you be"]}]}'
-curl -X POST localhost:8000/v2/models/mistral7b/infer -d '{"inputs": [{"name":"prompt","datatype":"BYTES","shape":[1],"data":["Where are you going"]}]}'
 curl -X POST localhost:8000/v2/models/persimmon8b/infer -d '{"inputs": [{"name":"prompt","datatype":"BYTES","shape":[1],"data":["Where is the nearest"]}]}'
 ```
-In our testing, these queries return the following parsed results:
+In our testing, these queries returned the following parsed results:
 ```bash
 # falcon7b
 "How can you be sure that you are getting the best deal on your car"
-
-# mistral7b
-"Where are you going? I’m going to the beach."
 
 # persimmon8b
 "Where is the nearest starbucks?"
