@@ -173,9 +173,7 @@ class TritonPythonModel:
 
             # stream is an optional input
             stream = False
-
             stream_input_tensor = pb_utils.get_input_tensor_by_name(request, "stream")
-  
             if stream_input_tensor:
                 stream = stream_input_tensor.as_numpy()[0]
 
