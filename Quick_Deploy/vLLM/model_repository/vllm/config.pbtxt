@@ -49,6 +49,7 @@ input [
     name: "STREAM"
     data_type: TYPE_BOOL
     dims: [ 1 ]
+    optional: true
   },
   {
     name: "SAMPLING_PARAMETERS"
