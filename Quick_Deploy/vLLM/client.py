@@ -41,13 +41,13 @@ def create_request(prompt, stream, request_id, sampling_parameters, model_name, 
     inputs = []
     prompt_data = np.array([prompt.encode("utf-8")], dtype=np.object_)
     try:
-        inputs.append(grpcclient.InferInput("PROMPT", [1], "BYTES"))
+        inputs.append(grpcclient.InferInput("text_input", [1], "BYTES"))
         inputs[-1].set_data_from_numpy(prompt_data)
     except Exception as e:
         print(f"Encountered an error {e}")
 
     stream_data = np.array([stream], dtype=bool)
-    inputs.append(grpcclient.InferInput("STREAM", [1], "BOOL"))
+    inputs.append(grpcclient.InferInput("stream", [1], "BOOL"))
     inputs[-1].set_data_from_numpy(stream_data)
 
     # Request parameters are not yet supported via BLS. Provide an
@@ -58,12 +58,12 @@ def create_request(prompt, stream, request_id, sampling_parameters, model_name, 
         sampling_parameters_data = np.array(
             [json.dumps(sampling_parameters).encode("utf-8")], dtype=np.object_
         )
-        inputs.append(grpcclient.InferInput("SAMPLING_PARAMETERS", [1], "BYTES"))
+        inputs.append(grpcclient.InferInput("sampling_parameters", [1], "BYTES"))
         inputs[-1].set_data_from_numpy(sampling_parameters_data)
 
     # Add requested outputs
     outputs = []
-    outputs.append(grpcclient.InferRequestedOutput("TEXT"))
+    outputs.append(grpcclient.InferRequestedOutput("text_output"))
 
     # Issue the asynchronous sequence inference.
     return {
@@ -113,7 +113,7 @@ async def main(FLAGS):
                 if error:
                     print(f"Encountered error while processing: {error}")
                 else:
-                    output = result.as_numpy("TEXT")
+                    output = result.as_numpy("text_output")
                     for i in output:
                         results_dict[result.get_response().id].append(i)
 

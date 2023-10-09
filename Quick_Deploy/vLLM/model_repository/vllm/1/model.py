@@ -69,7 +69,7 @@ class TritonPythonModel:
             AsyncEngineArgs(**vllm_engine_config)
         )
 
-        output_config = pb_utils.get_output_config_by_name(self.model_config, "TEXT")
+        output_config = pb_utils.get_output_config_by_name(self.model_config, "text_output")
         self.output_dtype = pb_utils.triton_string_to_numpy(output_config["data_type"])
 
         # Counter to keep track of ongoing request counts
@@ -154,7 +154,7 @@ class TritonPythonModel:
             (prompt + output.text).encode("utf-8") for output in vllm_output.outputs
         ]
         triton_output_tensor = pb_utils.Tensor(
-            "TEXT", np.asarray(text_outputs, dtype=self.output_dtype)
+            "text_output", np.asarray(text_outputs, dtype=self.output_dtype)
         )
         return pb_utils.InferenceResponse(output_tensors=[triton_output_tensor])
 
@@ -167,20 +167,20 @@ class TritonPythonModel:
         try:
             request_id = random_uuid()
 
-            prompt = pb_utils.get_input_tensor_by_name(request, "PROMPT").as_numpy()[0]
+            prompt = pb_utils.get_input_tensor_by_name(request, "text_input").as_numpy()[0]
             if isinstance(prompt, bytes):
                 prompt = prompt.decode("utf-8")
 
             # stream is an optional input
             stream = False
-            stream_input_tensor = pb_utils.get_input_tensor_by_name(request, "STREAM")
+            stream_input_tensor = pb_utils.get_input_tensor_by_name(request, "stream")
             if stream_input_tensor:
                 stream = stream_input_tensor.as_numpy()[0]
 
             # Request parameters are not yet supported via
             # BLS. Provide an optional mechanism to receive serialized
             # parameters as an input tensor until support is added
-            parameters_input_tensor = pb_utils.get_input_tensor_by_name(request, "SAMPLING_PARAMETERS")
+            parameters_input_tensor = pb_utils.get_input_tensor_by_name(request, "sampling_parameters")
             if parameters_input_tensor:
                 parameters = parameters_input_tensor.as_numpy()[0].decode("utf-8")
             else:
@@ -205,7 +205,7 @@ class TritonPythonModel:
             self.logger.log_info(f"Error generating stream: {e}")
             error = pb_utils.TritonError(f"Error generating stream: {e}")
             triton_output_tensor = pb_utils.Tensor(
-                "TEXT", np.asarray(["N/A"], dtype=self.output_dtype)
+                "text_output", np.asarray(["N/A"], dtype=self.output_dtype)
             )
             response = pb_utils.InferenceResponse(
                 output_tensors=[triton_output_tensor], error=error

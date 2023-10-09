@@ -41,18 +41,18 @@ model_transaction_policy {
 
 input [
   {
-    name: "PROMPT"
+    name: "text_input"
     data_type: TYPE_STRING
     dims: [ 1 ]
   },
   {
-    name: "STREAM"
+    name: "stream"
     data_type: TYPE_BOOL
     dims: [ 1 ]
     optional: true
   },
   {
-    name: "SAMPLING_PARAMETERS"
+    name: "sampling_parameters"
     data_type: TYPE_STRING
     dims: [ 1 ]
     optional: true
@@ -61,7 +61,7 @@ input [
 
 output [
   {
-    name: "TEXT"
+    name: "text_output"
     data_type: TYPE_STRING
     dims: [ -1 ]
   }
