@@ -42,21 +42,21 @@ class LLMClient:
         self._loop = asyncio.get_event_loop()
         self._results_dict = {}
 
-    async def async_request_iterator(self, prompts, sampling_parameters, model_name):
+    async def async_request_iterator(self, prompts, sampling_parameters):
         try:
             for iter in range(self._flags.iterations):
                 for i, prompt in enumerate(prompts):
                     prompt_id = self._flags.offset + (len(prompts) * iter) + i
                     self._results_dict[str(prompt_id)] = []
-                    yield self.create_request(prompt, self._flags.streaming_mode, prompt_id, sampling_parameters, model_name)
+                    yield self.create_request(prompt, self._flags.streaming_mode, prompt_id, sampling_parameters)
         except Exception as error:
             print(f"Caught an error in the request iterator: {error}")
 
-    async def stream_infer(self, prompts, sampling_parameters, model_name):
+    async def stream_infer(self, prompts, sampling_parameters):
         try:
             # Start streaming
             response_iterator = self._client.stream_infer(
-                inputs_iterator=self.async_request_iterator(prompts, sampling_parameters, model_name),
+                inputs_iterator=self.async_request_iterator(prompts, sampling_parameters),
                 stream_timeout=self._flags.stream_timeout,
             )
             async for response in response_iterator:
@@ -65,12 +65,12 @@ class LLMClient:
             print(error)
             sys.exit(1)
 
-    async def process_stream(self, prompts, sampling_parameters, model_name):
+    async def process_stream(self, prompts, sampling_parameters):
         # Clear results in between process_stream calls
         self.results_dict = []
         
         # Read response from the stream
-        async for response in self.stream_infer(prompts, sampling_parameters, model_name):
+        async for response in self.stream_infer(prompts, sampling_parameters):
             result, error = response
             if error:
                 print(f"Encountered error while processing: {error}")
@@ -80,14 +80,13 @@ class LLMClient:
                     self._results_dict[result.get_response().id].append(i)
 
     async def run(self):
-        model_name = "vllm"
         sampling_parameters = {"temperature": "0.1", "top_p": "0.95"}
         stream = self._flags.streaming_mode
         with open(self._flags.input_prompts, "r") as file:
             print(f"Loading inputs from `{self._flags.input_prompts}`...")
             prompts = file.readlines()
 
-        await self.process_stream(prompts, sampling_parameters, model_name)
+        await self.process_stream(prompts, sampling_parameters)
 
         with open(self._flags.results_file, "w") as file:
             for id in self._results_dict.keys():
@@ -106,7 +105,7 @@ class LLMClient:
     def run_async(self):
         self._loop.run_until_complete(self.run())
 
-    def create_request(self, prompt, stream, request_id, sampling_parameters, model_name, send_parameters_as_tensor=True):
+    def create_request(self, prompt, stream, request_id, sampling_parameters, send_parameters_as_tensor=True):
         inputs = []
         prompt_data = np.array([prompt.encode("utf-8")], dtype=np.object_)
         try:
@@ -136,7 +135,7 @@ class LLMClient:
 
         # Issue the asynchronous sequence inference.
         return {
-            "model_name": model_name,
+            "model_name": self._flags.model,
             "inputs": inputs,
             "outputs": outputs,
             "request_id": str(request_id),
@@ -146,6 +145,14 @@ class LLMClient:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-m",
+        "--model",
+        type=str,
+        required=False,
+        default="vllm",
+        help="Model name",
+    )
     parser.add_argument(
         "-v",
         "--verbose",
