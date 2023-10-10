@@ -54,6 +54,7 @@ class LLMClient:
 
     async def stream_infer(self, prompts, sampling_parameters, model_name):
         try:
+            # Start streaming
             response_iterator = self._client.stream_infer(
                 inputs_iterator=self.async_request_iterator(prompts, sampling_parameters, model_name),
                 stream_timeout=self._flags.stream_timeout,
@@ -68,6 +69,7 @@ class LLMClient:
         # Clear results in between process_stream calls
         self.results_dict = []
         
+        # Read response from the stream
         async for response in self.stream_infer(prompts, sampling_parameters, model_name):
             result, error = response
             if error:
@@ -76,6 +78,7 @@ class LLMClient:
                 output = result.as_numpy("TEXT")
                 for i in output:
                     self._results_dict[result.get_response().id].append(i)
+
     async def run(self):
         model_name = "vllm"
         sampling_parameters = {"temperature": "0.1", "top_p": "0.95"}
@@ -139,6 +142,7 @@ class LLMClient:
             "request_id": str(request_id),
             "parameters": sampling_parameters
         }
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
