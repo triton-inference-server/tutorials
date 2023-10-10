@@ -97,8 +97,9 @@ class LLMClient:
             print(f"Storing results into `{self._flags.results_file}`...")
 
         if self._flags.verbose:
-            print(f"\nContents of `{self._flags.results_file}` ===>")
-            system(f"cat {self._flags.results_file}")
+            with open(self._flags.results_file, "r") as file:
+                print(f"\nContents of `{self._flags.results_file}` ===>")
+                print(file.read())
 
         print("PASS: vLLM example")
 
