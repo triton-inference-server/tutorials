@@ -30,7 +30,6 @@ import numpy as np
 import torch
 import triton_python_backend_utils as pb_utils
 from diffusers import LMSDiscreteScheduler, UNet2DConditionModel
-from torch import autocast
 from torch.utils.dlpack import from_dlpack, to_dlpack
 from tqdm.auto import tqdm
 from transformers import CLIPTokenizer
