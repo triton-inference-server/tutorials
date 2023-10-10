@@ -26,7 +26,7 @@
 
 name: "detection_preprocessing"
 backend: "python"
-max_batch_size: 256 
+max_batch_size: 256
 input [
 {
     name: "detection_preprocessing_input"
@@ -34,7 +34,7 @@ input [
     dims: [ -1 ]
 }
 ]
- 
+
 output [
 {
     name: "detection_preprocessing_output"

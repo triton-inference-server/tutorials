@@ -32,7 +32,7 @@ max_batch_size: 0
 
 # We need to use decoupled transaction policy for saturating
 # vLLM engine for max throughtput.
-# TODO [DLIS:5233]: Allow asychronous execution to lift this
+# TODO [DLIS:5233]: Allow asynchronous execution to lift this
 # restriction for cases there is exactly a single response to
 # a single request.
 model_transaction_policy {

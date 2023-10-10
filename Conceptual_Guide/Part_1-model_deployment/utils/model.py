@@ -234,7 +234,6 @@ class STRModel(nn.Module):
         self.Prediction = nn.Linear(self.SequenceModeling_output, num_classes)
 
     def forward(self, input):
-
         """Feature extraction stage"""
         visual_feature = self.FeatureExtraction(input)
         visual_feature = self.AdaptiveAvgPool(

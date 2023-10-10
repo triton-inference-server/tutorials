@@ -25,15 +25,15 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import math
-import numpy as np
+
 import cv2
+import numpy as np
 import tritonclient.http as httpclient
 
 SAVE_INTERMEDIATE_IMAGES = False
 
 
 def detection_preprocessing(image: cv2.Mat) -> np.ndarray:
-
     inpWidth = 640
     inpHeight = 480
 
@@ -154,7 +154,7 @@ def recognition_postprocessing(scores: np.ndarray) -> str:
     text = ""
     alphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
 
-    scores = np.transpose(scores, (1,0,2))
+    scores = np.transpose(scores, (1, 0, 2))
 
     for i in range(scores.shape[0]):
         c = np.argmax(scores[i][0])
@@ -172,7 +172,6 @@ def recognition_postprocessing(scores: np.ndarray) -> str:
 
 
 if __name__ == "__main__":
-
     # Setting up client
     client = httpclient.InferenceServerClient(url="localhost:8000")
 

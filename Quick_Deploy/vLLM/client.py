@@ -26,18 +26,24 @@
 
 import argparse
 import asyncio
+import json
 import queue
 import sys
 from os import system
-import json
 
 import numpy as np
 import tritonclient.grpc.aio as grpcclient
 from tritonclient.utils import *
 
 
-
-def create_request(prompt, stream, request_id, sampling_parameters, model_name, send_parameters_as_tensor=True):
+def create_request(
+    prompt,
+    stream,
+    request_id,
+    sampling_parameters,
+    model_name,
+    send_parameters_as_tensor=True,
+):
     inputs = []
     prompt_data = np.array([prompt.encode("utf-8")], dtype=np.object_)
     try:
@@ -53,7 +59,7 @@ def create_request(prompt, stream, request_id, sampling_parameters, model_name, 
     # Request parameters are not yet supported via BLS. Provide an
     # optional mechanism to send serialized parameters as an input
     # tensor until support is added
-    
+
     if send_parameters_as_tensor:
         sampling_parameters_data = np.array(
             [json.dumps(sampling_parameters).encode("utf-8")], dtype=np.object_
@@ -71,7 +77,7 @@ def create_request(prompt, stream, request_id, sampling_parameters, model_name, 
         "inputs": inputs,
         "outputs": outputs,
         "request_id": str(request_id),
-        "parameters": sampling_parameters
+        "parameters": sampling_parameters,
     }
 
 

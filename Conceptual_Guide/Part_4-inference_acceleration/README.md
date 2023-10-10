@@ -1,4 +1,4 @@
-<!-- 
+<!--
 # Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,10 +29,10 @@
 
 # Accelerating Inference for Deep Learning Models
 
-| Navigate to | [Part 3: Optimizing Triton Configuration](../Part_3-optimizing_triton_configuration/)  | [Part 5: Building Model Ensembles](../Part_5-Model_Ensembles/) | 
+| Navigate to | [Part 3: Optimizing Triton Configuration](../Part_3-optimizing_triton_configuration/)  | [Part 5: Building Model Ensembles](../Part_5-Model_Ensembles/) |
 | ------------ | --------------- | --------------- |
 
-Model acceleration is a complex nuanced topic. The viability of techniques like graph optimizations for models, pruning, knowledge distillation, quantization, and more, highly depend on the structure of the model. Each of these topics are vast fields of research in their own right and building custom tools requires massive engineering investment. 
+Model acceleration is a complex nuanced topic. The viability of techniques like graph optimizations for models, pruning, knowledge distillation, quantization, and more, highly depend on the structure of the model. Each of these topics are vast fields of research in their own right and building custom tools requires massive engineering investment.
 
 Rather than having an exhaustive outline of the ecosystem, for brevity and objectivity, this discussion will be focused on the tools and features which are recommended to use while deploying models using the Triton Inference Server.
 
@@ -44,23 +44,23 @@ Performance tuning of Triton models is discussed broadly [here](https://github.c
 
 Acceleration recommendations depend on two main factors:
 * **Type of Hardware**: Triton users can choose to run models on GPU or CPU. Owing to the parallelism they provide, GPUs provide many avenues of performance acceleration. Models using PyTorch, TensorFlow, ONNX runtime, and TensorRT can utilize these benefits. For CPUs Triton users can leverage the OpenVINO backend for acceleration.
-* **Type of the model**: Usually users leverage one or more of three different classes of model: `Shallow models` like Random Forests, `Neural Networks` like BERT or CNNs, and lastly, `Large Transformer Models` which are usually too big to fit in a single GPU's memory. Each model category leverages different optimizations to accelerate performance. 
+* **Type of the model**: Usually users leverage one or more of three different classes of model: `Shallow models` like Random Forests, `Neural Networks` like BERT or CNNs, and lastly, `Large Transformer Models` which are usually too big to fit in a single GPU's memory. Each model category leverages different optimizations to accelerate performance.
 
 ![Decision Tree](./img/selecting_accelerator.PNG)
 
-With these broad categories considered, let's drill down into the specific scenarios and decision making process to pick the most appropriate Triton Backend for the use case along with a brief discussion about possible optimizations. 
+With these broad categories considered, let's drill down into the specific scenarios and decision making process to pick the most appropriate Triton Backend for the use case along with a brief discussion about possible optimizations.
 
 ## GPU Based Acceleration
 
-As mentioned before, acceleration for deep learning models can be achieved in many ways. Graph level optimizations like fusing layers can reduce the number of GPU kernels that are needed to be launched for execution. Fusing layers makes the model execution more memory efficient and increases the density of operations. Once fused, a kernel auto tuner can pick the correct combination of kernels to maximize utilization of GPU resources. Similarly, use of lower precision (FP16, INT8, etc.) with techniques like quantization can drastically reduce memory requirements and increase throughput. 
+As mentioned before, acceleration for deep learning models can be achieved in many ways. Graph level optimizations like fusing layers can reduce the number of GPU kernels that are needed to be launched for execution. Fusing layers makes the model execution more memory efficient and increases the density of operations. Once fused, a kernel auto tuner can pick the correct combination of kernels to maximize utilization of GPU resources. Similarly, use of lower precision (FP16, INT8, etc.) with techniques like quantization can drastically reduce memory requirements and increase throughput.
 
 The exact nature of performance optimization tactics differs with each GPU based on its hardware design. These are a few of many challenges we solve for Deep Learning Practitioners with [NVIDIA TensorRT](https://developer.nvidia.com/tensorrt) which is an SDK focused on deep learning inference optimization.
 
-While TensorRT works with popular deep learning frameworks like PyTorch, TensorFlow, MxNET, ONNX Runtime and more, it also has framework level integrations with PyTorch([Torch-TensorRT](https://github.com/pytorch/TensorRT)) and TensorFlow([TensorFlow-TensorRT](https://github.com/tensorflow/tensorrt)) to provide their respective developers with flexibility and fallback mechanisms. 
+While TensorRT works with popular deep learning frameworks like PyTorch, TensorFlow, MxNET, ONNX Runtime and more, it also has framework level integrations with PyTorch([Torch-TensorRT](https://github.com/pytorch/TensorRT)) and TensorFlow([TensorFlow-TensorRT](https://github.com/tensorflow/tensorrt)) to provide their respective developers with flexibility and fallback mechanisms.
 
 ### Using TensorRT directly
 
-There are three routes for users to use to convert their models to TensorRT: the C++ API, Python API, and [trtexec](https://github.com/NVIDIA/TensorRT/tree/main/samples/trtexec)/[polygraphy](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy) (TensorRT's command line tools). [Refer this guide for a fleshed out example](https://github.com/NVIDIA/TensorRT/tree/main/quickstart/deploy_to_triton). 
+There are three routes for users to use to convert their models to TensorRT: the C++ API, Python API, and [trtexec](https://github.com/NVIDIA/TensorRT/tree/main/samples/trtexec)/[polygraphy](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy) (TensorRT's command line tools). [Refer this guide for a fleshed out example](https://github.com/NVIDIA/TensorRT/tree/main/quickstart/deploy_to_triton).
 
 That said, there are two main steps needed. First, convert the model to a TensorRT Engine. It is recommended to use the [TensorRT Container](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tensorrt) to run the command.
 
@@ -72,17 +72,17 @@ trtexec --onnx=model.onnx \
 
 Once converted, place the model in the `model.plan` in the model repository (as described in part 1) and use `tensorrt` as the `backend` in the `config.pbtxt`
 
-Apart from just the conversion to TensorRT, users can also leverage some [cuda specific optimizations](https://github.com/triton-inference-server/common/blob/d4017443199e4f19462360789f5c80b0eb1e4738/protobuf/model_config.proto#L823). 
+Apart from just the conversion to TensorRT, users can also leverage some [cuda specific optimizations](https://github.com/triton-inference-server/common/blob/d4017443199e4f19462360789f5c80b0eb1e4738/protobuf/model_config.proto#L823).
 
 For cases where users run into a situation where some of the operators in their models aren't supported by TensorRT there are three possible options:
 * **Use one of the framework integrations**: TensorRT has two integrations with Frameworks: Torch-TensorRT (PyTorch), and TensorFlow-TensorRT (TensorFlow). These integrations have a fallback mechanism built in to use the framework backend in cases where TensorRT doesn't directly support the graph.
 
 * **Use the ONNX Runtime with TensorRT**: Triton users can also leverage this fallback mechanism with the ONNX Runtime (more in the following section).
 
-* **Build a plugin**: TensorRT allows for building plugins and implementing custom ops. Users can write their own [TensorRT plugins](https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#extending) to implement unsupported ops(Recommended for expert users). It is highly encouraged to report said ops to have them innately supported by TensorRT. 
+* **Build a plugin**: TensorRT allows for building plugins and implementing custom ops. Users can write their own [TensorRT plugins](https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#extending) to implement unsupported ops(Recommended for expert users). It is highly encouraged to report said ops to have them innately supported by TensorRT.
 
 ### Using TensorRT's integration with PyTorch/TensorFlow
-In the case of **PyTorch**, Torch-TensorRT is an Ahead of Time Compiler which converts TorchScript/Torch FX to a module targeting a TensorRT Engine. Post compilation, users can use the optimized model in the same manner as they would use a TorchScript model. Check out the [getting started](https://www.youtube.com/watch?v=TU5BMU6iYZ0) with Torch TensorRT to learn more. [Refer this guide for a fleshed out example](https://pytorch.org/TensorRT/tutorials/serving_torch_tensorrt_with_triton.html) demonstrating compilation of PyTorch model with Torch TensorRT and deploying it on Triton.  
+In the case of **PyTorch**, Torch-TensorRT is an Ahead of Time Compiler which converts TorchScript/Torch FX to a module targeting a TensorRT Engine. Post compilation, users can use the optimized model in the same manner as they would use a TorchScript model. Check out the [getting started](https://www.youtube.com/watch?v=TU5BMU6iYZ0) with Torch TensorRT to learn more. [Refer this guide for a fleshed out example](https://pytorch.org/TensorRT/tutorials/serving_torch_tensorrt_with_triton.html) demonstrating compilation of PyTorch model with Torch TensorRT and deploying it on Triton.
 
 **TensorFlow** users can make use of TensorFlow TensorRT, which segments the graph into subgraphs which are supported and not supported by TensorRT. The supported subgraphs are then replaced by a TensorRT optimized node producing a graph which has both TensorFlow and TensorRT components. [Refer to this tutorial](https://github.com/tensorflow/tensorrt/tree/master/tftrt/triton) explaining the exact steps required to accelerate a model with TensorFlow-TensorRT and deploy it on Triton Inference Server.
 
@@ -90,7 +90,7 @@ In the case of **PyTorch**, Torch-TensorRT is an Ahead of Time Compiler which co
 
 ### Using TensorRT's integration with ONNX RunTime
 
-There are three options to accelerate the ONNX runtime: with `TensorRT` and `CUDA` execution providers for GPU and with `OpenVINO`(discussed in later section) for CPU. 
+There are three options to accelerate the ONNX runtime: with `TensorRT` and `CUDA` execution providers for GPU and with `OpenVINO`(discussed in later section) for CPU.
 
 In general TensorRT will provide better optimizations than the CUDA execution provider however, this depends on the exact structure of the model, more precisely, it depends in the operators used in the network being accelerated. If all the operators are supported, conversion to TensorRT will yield better performance. When `TensorRT` is selected as the accelerator, all supported subgraphs are accelerated by TensorRT and the rest of the graph runs on the CUDA execution provider. Users can achieve this with the following additions to the config file.
 
@@ -113,7 +113,7 @@ There are a few other ONNX runtime specific optimizations. Refer to this section
 ## CPU Based Acceleration
 Triton Inference Server also supports acceleration for CPU only model with [OpenVINO](https://docs.openvino.ai/latest/index.html). In configuration file, users can add the following to enable CPU acceleration.
 ```
-optimization { 
+optimization {
   execution_accelerators {
     cpu_execution_accelerator : [{
       name : "openvino"
@@ -146,7 +146,7 @@ Since this is a model we converted to ONNX, and TensorRT acceleration examples a
 * ONNX RT execution on GPU w. TRT acceleration: `ORT_TRT_config.pbtxt`
 * ONNX RT execution on CPU w. OpenVINO acceleration: `ORT_openvino_config.pbtxt`
 
-While using ONNX RT there are some [general optimizations](https://github.com/triton-inference-server/onnxruntime_backend#other-optimization-options-with-onnx-runtime) to consider, irrespective of the Execution provider. These can be graph level optimizations, or selecting the number and behavior of the threads used to parallelize the execution or some memory usage optimizations. The use of each of these options is highly dependent on the model being deployed. 
+While using ONNX RT there are some [general optimizations](https://github.com/triton-inference-server/onnxruntime_backend#other-optimization-options-with-onnx-runtime) to consider, irrespective of the Execution provider. These can be graph level optimizations, or selecting the number and behavior of the threads used to parallelize the execution or some memory usage optimizations. The use of each of these options is highly dependent on the model being deployed.
 
 With this context, let's launch the Triton Inference Server with the appropriate configuration file.
 
@@ -180,7 +180,7 @@ Concurrency: 2, throughput: 4257.9 infer/sec, latency 7672 usec
 ```
 
 ### ONNX RT execution on GPU w. TRT acceleration
-While specifying the use of TensorRT Execution Provider, the CUDA Execution provider is used as a fallback for operators not supported by TensorRT. It is recommended to use TensorRT natively if all operators are supported as the performance boost and optimization options are considerably better. In this case, TensorRT accelerator has been used with lower `FP16` precision. 
+While specifying the use of TensorRT Execution Provider, the CUDA Execution provider is used as a fallback for operators not supported by TensorRT. It is recommended to use TensorRT natively if all operators are supported as the performance boost and optimization options are considerably better. In this case, TensorRT accelerator has been used with lower `FP16` precision.
 
 ```
 ## Additions to Config
@@ -206,7 +206,7 @@ Concurrency: 2, throughput: 11820.2 infer/sec, latency 2706 usec
 
 ### ONNX RT execution on CPU w. OpenVINO acceleration
 
-Triton users can also use OpenVINO for CPU deployment. This can be enabled via the following: 
+Triton users can also use OpenVINO for CPU deployment. This can be enabled via the following:
 
 ```
 optimization { execution_accelerators {
@@ -221,7 +221,7 @@ There are many other features that for each backend which can be enabled dependi
 
 ## Model Navigator
 
-The sections above describe converting models and using different accelerators and provide a "general guideline" to build an intuition about which "path" to take while considering optimizations. These are manual explorations that consume considerable time. To check the conversion coverage and explore a subset of the optimization possible, users can make use of the [Model Navigator Tool](https://github.com/triton-inference-server/model_navigator). 
+The sections above describe converting models and using different accelerators and provide a "general guideline" to build an intuition about which "path" to take while considering optimizations. These are manual explorations that consume considerable time. To check the conversion coverage and explore a subset of the optimization possible, users can make use of the [Model Navigator Tool](https://github.com/triton-inference-server/model_navigator).
 
 # What's next?
 
