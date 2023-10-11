@@ -51,8 +51,8 @@ The above command should create the tritonserver_vllm image with vLLM and all of
 
 ## Step 2: Start Triton Inference Server
 
-A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton is 
-included with this demo as `model_repository` directory. 
+A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton is
+included with this demo as `model_repository` directory.
 The model repository should look like this:
 ```
 model_repository/
@@ -80,7 +80,7 @@ for supported key-value pairs.
 
 For multi-GPU support, EngineArgs like `tensor_parallel_size` can be specified in [`vllm_engine_args.json`](model_repository/vllm/vllm_engine_args.json).
 
-*Note*: vLLM greedily consume upto 90% of the GPU's memory under default settings.
+*Note*: vLLM greedily consume up to 90% of the GPU's memory under default settings.
 This tutorial updates this behavior by setting `gpu_memory_utilization` to 50%.
 You can tweak this behavior using fields like `gpu_memory_utilization` and other settings
 in [`vllm_engine_args.json`](model_repository/vllm/vllm_engine_args.json).

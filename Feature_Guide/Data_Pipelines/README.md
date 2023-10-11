@@ -90,7 +90,7 @@ def execute(self, requests):
     return responses
 ```
 
-There are two key points to note in this case: the `pb_utils.get_input_tensor_by_name(...)` and the `pb_utils.InferenceResponse(...)` function. These functions, as the name implies are used to receive and send tensors. Triton Inference Server supports a wide range of datatypes. In this example, we showcase 5 of them, but for a full list of supported datatypes, refer to the [documentation here](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#datatypes). 
+There are two key points to note in this case: the `pb_utils.get_input_tensor_by_name(...)` and the `pb_utils.InferenceResponse(...)` function. These functions, as the name implies are used to receive and send tensors. Triton Inference Server supports a wide range of datatypes. In this example, we showcase 5 of them, but for a full list of supported datatypes, refer to the [documentation here](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#datatypes).
 
 In the case of this model, the "input layers" are `model_1_input_string`, `model_1_input_UINT8_array`, `model_1_input_INT8_array`, `model_1_input_FP32_image` and `model_1_input_bool`. We define these along with the expected dimension and datatype in `config.pbtxt` for this model.
 ```
@@ -157,9 +157,9 @@ output [
 
 **Note**: For a regular `onnx`, `torchscript`, `tensorflow` or any other model, we just need to define the input and output layers in `config.pbtxt`. The interaction between the ensemble and the client will remain the same. If you are unsure about the layers, dimensions and datatypes for your model, you can use tools like [Netron](https://netron.app/) or [Polygraphy](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy) to get the required information.
 
-The second model in this example is identical to the one above. We will use that model for showcasing the data flow in a [model ensemble](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/architecture.md#ensemble-models). If you have already referred [Part-5 of the conceptual guide](https://github.com/triton-inference-server/tutorials/tree/main/Conceptual_Guide/Part_5-Model_Ensembles), then the following explanation of the ensembles might seem familiar. 
+The second model in this example is identical to the one above. We will use that model for showcasing the data flow in a [model ensemble](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/architecture.md#ensemble-models). If you have already referred [Part-5 of the conceptual guide](https://github.com/triton-inference-server/tutorials/tree/main/Conceptual_Guide/Part_5-Model_Ensembles), then the following explanation of the ensembles might seem familiar.
 
-With the model setup discussed, let's discuss setting up an ensemble. Ensembles are used to build pipelines with two or more models. The benefit of using an ensemble is that the Triton Inference Server handles all the tensor/memory movement required between two models. Additionally, users can define a model flow using simple configuration files. This feature is especially useful for situations where users are setting up multiple pipelines with some common models shared among them.  
+With the model setup discussed, let's discuss setting up an ensemble. Ensembles are used to build pipelines with two or more models. The benefit of using an ensemble is that the Triton Inference Server handles all the tensor/memory movement required between two models. Additionally, users can define a model flow using simple configuration files. This feature is especially useful for situations where users are setting up multiple pipelines with some common models shared among them.
 
 We will discuss the structure of the model repository a bit later. Let's jump into the configuration for the ensemble.
 
@@ -196,7 +196,7 @@ ensemble_scheduling {
         value: "ensemble_input_string"
       },
       ...
-      
+
       output_map {
         key: "model_1_output_string"
         value: "model1_to_model2_string"
@@ -273,7 +273,7 @@ ensemble_scheduling {
         value: "ensemble_input_string"    # this is the name of the ensemble's input
       },
       ...
-      
+
       output_map {
         key: "model_1_output_string"      # Model 1's output Tensor
         value: "model1_to_model2_string"  # Mapping output from Model1 to Model2
@@ -301,7 +301,7 @@ ensemble_scheduling {
 ```
 Before proceeding let's build an intuition about how to define the `key` and the `value` fields. The `key` field is populated using the names of the layers the models require. The field `value` is recognized by the ensemble. This field is used to define the flow of the tensors. So if you want to move the output of one of the layers of a model to input of another model, you need to use the `value` in the `output_map` of `model1` as the `value` in the `input_map` of `model2`.
 
-With the individual configurations understood let's briefly look at the structure of the model repository for this example. Essentially we have two models 
+With the individual configurations understood let's briefly look at the structure of the model repository for this example. Essentially we have two models
 ```
 model_repository/
 ├── ensemble_model

@@ -1,4 +1,4 @@
-<!-- 
+<!--
 # Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,14 +29,14 @@
 
 # Dynamic Batching & Concurrent Model Execution
 
-| Navigate to | [Part 1: Model Deployment](../Part_1-model_deployment/) | [Part 3: Optimizing Triton Configuration](../Part_3-optimizing_triton_configuration/) | 
+| Navigate to | [Part 1: Model Deployment](../Part_1-model_deployment/) | [Part 3: Optimizing Triton Configuration](../Part_3-optimizing_triton_configuration/) |
 | ------------ | --------------- | --------------- |
 
-Part-1 of this series introduced the mechanisms to set up a Triton Inference Server. This iteration discusses the concept of dynamic batching and concurrent model execution. These are important features that can be used to reduce latency as well as increase throughput via higher resource utilization. 
+Part-1 of this series introduced the mechanisms to set up a Triton Inference Server. This iteration discusses the concept of dynamic batching and concurrent model execution. These are important features that can be used to reduce latency as well as increase throughput via higher resource utilization.
 
 ## What is Dynamic Batching?
 
-Dynamic batching, in reference to the Triton Inference Server, refers to the functionality which allows the combining of one or more inference requests into a single batch (which has to be created dynamically) to maximize throughput. 
+Dynamic batching, in reference to the Triton Inference Server, refers to the functionality which allows the combining of one or more inference requests into a single batch (which has to be created dynamically) to maximize throughput.
 
 Dynamic batching can be enabled and configured on per model basis by specifying selections in the model's `config.pbtxt`. Dynamic Batching can be enabled with its default settings by adding the following to the `config.pbtxt` file:
 ```
@@ -55,7 +55,7 @@ Let's discuss a sample scenario(refer the diagram below). Say there are 5 infere
 
 In the case where no dynamic batching is used, all requests are processed sequentially, which means that it takes `5X ms` to process all the requests. This process is quite wasteful as each batch processing could have processed more batches than it did in sequential execution.
 
-Using Dynamic batching in this case leads to more efficient packing of requests into the GPU memory resulting in a considerably faster `3X ms`. It also reduces the latency of responses as more queries can be processed in fewer cycles. If the use of `delay` is considered, `A`, `B`, `C` and `D`, `E` can be batched together to get even better utilization of resources. 
+Using Dynamic batching in this case leads to more efficient packing of requests into the GPU memory resulting in a considerably faster `3X ms`. It also reduces the latency of responses as more queries can be processed in fewer cycles. If the use of `delay` is considered, `A`, `B`, `C` and `D`, `E` can be batched together to get even better utilization of resources.
 
 **Note:** The above is an extreme version of an ideal case scenario. In practice, not all elements of execution can be perfectly parallelized, resulting in longer execution time for larger batches.
 
@@ -72,14 +72,14 @@ instance_group [
     kind: KIND_GPU
     gpus: [ 0, 1 ]
   }
-] 
+]
 ```
 
 Let's take the previous example and discuss the effect of adding multiple models for parallel execution. In this example, instead of having a single model process five queries, two models are spawned. ![Multiple Model Instances](./img/multi_instance.PNG)
 
 For a "no dynamic batching" case, as there are model models to execute, the queries are distributed equally. Users can also add [priorities](https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md#priority) to prioritize or de-prioritize any specific instance group.
 
-When considering the case of multiple instances with dynamic batches enabled, the following happens. Owing to the availability of another instance, query `B` which arrives with some delay can be executed using the second instance. With some delay allocated, instance 1 gets filled and launched by time `T = X/2` and since queries `D` and `E` stack up to fill up to the maximum batch size, the second model can start inference without any delay. 
+When considering the case of multiple instances with dynamic batches enabled, the following happens. Owing to the availability of another instance, query `B` which arrives with some delay can be executed using the second instance. With some delay allocated, instance 1 gets filled and launched by time `T = X/2` and since queries `D` and `E` stack up to fill up to the maximum batch size, the second model can start inference without any delay.
 
 The key takeaway from the above examples is that the Triton Inference Server provides flexibility with respect to policies related to creating more efficient batching, thus enabling better resource utilization, resulting in reduced latency and increased throughput.
 
@@ -118,7 +118,7 @@ torch.onnx.export(model, trace_input, "str.onnx", verbose=True, dynamic_axes={'i
 As discussed in `Part 1`, a model repository is a filesystem based repository of models and configuration schema used by the Triton Inference Server (refer to `Part 1` for a more detailed explanation for model repositories). For this example, the model repository structure would need to be set up in the following manner:
 ```
 model_repository
-|   
+|
 |-- text_recognition
     |
     |-- config.pbtxt

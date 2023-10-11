@@ -25,8 +25,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import torch
-torch.hub._validate_not_a_forked_repo=lambda a,b,c: True
 
-model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet50', pretrained=True).eval().to("cuda")
-traced_model = torch.jit.trace(model, torch.randn(1,3,224,224).to("cuda"))
+torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
+
+model = (
+    torch.hub.load("pytorch/vision:v0.10.0", "resnet50", pretrained=True)
+    .eval()
+    .to("cuda")
+)
+traced_model = torch.jit.trace(model, torch.randn(1, 3, 224, 224).to("cuda"))
 torch.jit.save(traced_model, "model.pt")

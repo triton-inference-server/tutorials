@@ -1,5 +1,5 @@
 
-<!-- 
+<!--
 # Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@ There are two primary methods of deploying a model pipeline on the Triton Infere
 
 ## Examples
 
-For the purposes of this explanation, the `ViT` model([Link to HuggingFace](https://huggingface.co/docs/transformers/v4.24.0/en/model_doc/vit#transformers.ViTModel)) is being used. This specific ViT model doesn't have an application head (like image classification) but [HuggingFace provides](https://huggingface.co/models?search=google/vit) ViT models with different heads which users can utilize. A good practice while deploying models is to understand the and explore the structure of the model if you are unfamiliar with it. An easy way to see the structure with a graphical interface is by using tools like [Netron](https://netron.app/). While Triton autogenerates configuration files for the models, the users may still require names of the input and output layers to build clients/model ensembles for which we can use this tool. 
+For the purposes of this explanation, the `ViT` model([Link to HuggingFace](https://huggingface.co/docs/transformers/v4.24.0/en/model_doc/vit#transformers.ViTModel)) is being used. This specific ViT model doesn't have an application head (like image classification) but [HuggingFace provides](https://huggingface.co/models?search=google/vit) ViT models with different heads which users can utilize. A good practice while deploying models is to understand the and explore the structure of the model if you are unfamiliar with it. An easy way to see the structure with a graphical interface is by using tools like [Netron](https://netron.app/). While Triton autogenerates configuration files for the models, the users may still require names of the input and output layers to build clients/model ensembles for which we can use this tool.
 
 ![multiple models](./img/netron.PNG)
 
@@ -76,7 +76,7 @@ def execute(self, requests):
                 outputs.last_hidden_state.numpy()
             )
         ])
-        responses.append(inference_response) 
+        responses.append(inference_response)
     return responses
 ```
 * `finialize()`: This function is executed when Triton unloads the model. It can be used to free any memory, or any other operations required to safely unload the model. Defining this function is optional.
@@ -87,7 +87,7 @@ To run this example open two terminals and use the following commands:
 # Pick the pre-made model repository
 mv python_model_repository model_repository
 
-# Pull and run the Triton container & replace yy.mm 
+# Pull and run the Triton container & replace yy.mm
 # with year and month of release. Eg. 23.05
 docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:yy.mm-py3 bash
 
@@ -112,7 +112,7 @@ python3 client.py --model_name "python_vit"
 ### Deploying using a Triton Ensemble (Approach 2)
 
 Before the specifics around deploying the models can be discussed, the first step is to download and export the model. It is recommended to run the following inside the [PyTorch container available on NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch). If this is your first try at setting up a model ensemble in Triton, it is highly recommended to review [this guide](../Conceptual_Guide/Part_5-Model_Ensembles/README.md) before proceeding. The key advantages of breaking down the pipeline is improved performance and access to a multitude of acceleration options. Explore [Part-4](../Conceptual_Guide/Part_4-inference_acceleration/README.md) of the conceptual guide for details about model acceleration.
-  
+
 ```
 # Pull the PyTorch Container from NGC
 docker run -it --gpus=all -v ${PWD}:/workspace nvcr.io/nvidia/pytorch:23.05-py3
@@ -125,7 +125,7 @@ pip install transformers[onnx]
 python -m transformers.onnx --model=google/vit-base-patch16-224 --atol=1e-3 onnx/vit
 ```
 
-With the model downloaded, set up the model repository in the structure described below. The basic structure of the model repository along with the required configuration files are available in `ensemble_model_repository`. 
+With the model downloaded, set up the model repository in the structure described below. The basic structure of the model repository along with the required configuration files are available in `ensemble_model_repository`.
 ```
 model_repository/
 |-- ensemble_model
@@ -155,7 +155,7 @@ mkdir -p model_repository/vit/1
 mv vit/model.onnx model_repository/vit/1/
 mkdir model_repository/ensemble_model/1
 
-# Pull and run the Triton container & replace yy.mm 
+# Pull and run the Triton container & replace yy.mm
 # with year and month of release. Eg. 23.05
 docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:yy.mm-py3 bash
 

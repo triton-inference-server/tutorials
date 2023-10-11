@@ -2,7 +2,7 @@
 
 For users experiencing the "Tensor in" & "Tensor out" approach to Deep Learning Inference, getting started with Triton can lead to many questions. The goal of this repository is to familiarize users with Triton's features and provide guides and examples to ease migration. For a feature by feature explanation, refer to the [Triton Inference Server documentation](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html).
 
-#### Getting Started Checklist 
+#### Getting Started Checklist
 | [Overview Video](https://www.youtube.com/watch?v=NQDtfSi5QF4) | [Conceptual Guide: Deploying Models](Conceptual_Guide/Part_1-model_deployment/README.md) |
 | ------------ | --------------- |
 

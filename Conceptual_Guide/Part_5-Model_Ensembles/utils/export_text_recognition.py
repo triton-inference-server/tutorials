@@ -24,9 +24,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from pathlib import Path
+
 import torch
 from model import STRModel
-from pathlib import Path
 
 # Create PyTorch Model Object
 model = STRModel(input_channels=1, output_channels=512, num_classes=37)
