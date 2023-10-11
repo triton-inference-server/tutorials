@@ -24,18 +24,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import numpy as np
-import sys
-import json
 import io
+import json
 import math
+
+import cv2
+import numpy as np
+
 # triton_python_backend_utils is available in every Triton Python model. You
 # need to use this module to create inference requests and responses. It also
 # contains some utility functions for extracting information from model_config
 # and converting Triton input/output types to numpy types.
 import triton_python_backend_utils as pb_utils
-import cv2
-import os
 
 
 class TritonPythonModel:
@@ -46,7 +46,7 @@ class TritonPythonModel:
     def initialize(self, args):
         """`initialize` is called only once when the model is being loaded.
         Implementing `initialize` function is optional. This function allows
-        the model to intialize any state associated with this model.
+        the model to initialize any state associated with this model.
         Parameters
         ----------
         args : dict
@@ -60,15 +60,17 @@ class TritonPythonModel:
         """
 
         # You must parse model_config. JSON string is not parsed here
-        model_config = json.loads(args['model_config'])
+        model_config = json.loads(args["model_config"])
 
         # Get OUTPUT0 configuration
         output0_config = pb_utils.get_output_config_by_name(
-            model_config, "detection_postprocessing_output")
+            model_config, "detection_postprocessing_output"
+        )
 
         # Convert Triton types to numpy types
         self.output0_dtype = pb_utils.triton_string_to_numpy(
-            output0_config['data_type'])
+            output0_config["data_type"]
+        )
 
     def execute(self, requests):
         """`execute` MUST be implemented in every Python model. `execute`
@@ -93,14 +95,19 @@ class TritonPythonModel:
         output0_dtype = self.output0_dtype
 
         responses = []
+
         def fourPointsTransform(frame, vertices):
             vertices = np.asarray(vertices)
             outputSize = (100, 32)
-            targetVertices = np.array([
-                [0, outputSize[1] - 1],
-                [0, 0],
-                [outputSize[0] - 1, 0],
-                [outputSize[0] - 1, outputSize[1] - 1]], dtype="float32")
+            targetVertices = np.array(
+                [
+                    [0, outputSize[1] - 1],
+                    [0, 0],
+                    [outputSize[0] - 1, 0],
+                    [outputSize[0] - 1, outputSize[1] - 1],
+                ],
+                dtype="float32",
+            )
 
             rotationMatrix = cv2.getPerspectiveTransform(vertices, targetVertices)
             result = cv2.warpPerspective(frame, rotationMatrix, outputSize)
@@ -117,8 +124,12 @@ class TritonPythonModel:
             assert geometry.shape[0] == 1, "Invalid dimensions of geometry"
             assert scores.shape[1] == 1, "Invalid dimensions of scores"
             assert geometry.shape[1] == 5, "Invalid dimensions of geometry"
-            assert scores.shape[2] == geometry.shape[2], "Invalid dimensions of scores and geometry"
-            assert scores.shape[3] == geometry.shape[3], "Invalid dimensions of scores and geometry"
+            assert (
+                scores.shape[2] == geometry.shape[2]
+            ), "Invalid dimensions of scores and geometry"
+            assert (
+                scores.shape[3] == geometry.shape[3]
+            ), "Invalid dimensions of scores and geometry"
             height = scores.shape[2]
             width = scores.shape[3]
             for y in range(0, height):
@@ -133,7 +144,7 @@ class TritonPythonModel:
                     score = scoresData[x]
 
                     # If score is lower than threshold score, move to next x
-                    if (score < scoreThresh):
+                    if score < scoreThresh:
                         continue
 
                     # Calculate offset
@@ -148,7 +159,10 @@ class TritonPythonModel:
                     w = x1_data[x] + x3_data[x]
 
                     # Calculate offset
-                    offset = ([offsetX + cosA * x1_data[x] + sinA * x2_data[x], offsetY - sinA * x1_data[x] + cosA * x2_data[x]])
+                    offset = [
+                        offsetX + cosA * x1_data[x] + sinA * x2_data[x],
+                        offsetY - sinA * x1_data[x] + cosA * x2_data[x],
+                    ]
 
                     # Find points for rectangle
                     p1 = (-sinA * h + offset[0], -cosA * h + offset[1])
@@ -164,34 +178,43 @@ class TritonPythonModel:
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
             # Get INPUT0
-            in_1 = pb_utils.get_input_tensor_by_name(request, "detection_postprocessing_input_1")
-            in_2 = pb_utils.get_input_tensor_by_name(request, "detection_postprocessing_input_2")
-            in_3 = pb_utils.get_input_tensor_by_name(request, "detection_postprocessing_input_3")
+            in_1 = pb_utils.get_input_tensor_by_name(
+                request, "detection_postprocessing_input_1"
+            )
+            in_2 = pb_utils.get_input_tensor_by_name(
+                request, "detection_postprocessing_input_2"
+            )
+            in_3 = pb_utils.get_input_tensor_by_name(
+                request, "detection_postprocessing_input_3"
+            )
 
-            scores = in_1.as_numpy().transpose(0,3,1,2)
-            geometry = in_2.as_numpy().transpose(0,3,1,2)
+            scores = in_1.as_numpy().transpose(0, 3, 1, 2)
+            geometry = in_2.as_numpy().transpose(0, 3, 1, 2)
             frame = np.squeeze(in_3.as_numpy(), axis=0)
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             [boxes, confidences] = decodeBoundingBoxes(scores, geometry)
             indices = cv2.dnn.NMSBoxesRotated(boxes, confidences, 0.5, 0.4)
 
             cropped_list = []
-            cv2.imwrite("frame.png",frame)
+            cv2.imwrite("frame.png", frame)
             count = 0
             for i in indices:
                 # get 4 corners of the rotated rect
-                count+=1
+                count += 1
                 vertices = cv2.boxPoints(boxes[i])
                 cropped = fourPointsTransform(frame, vertices)
-                cv2.imwrite(str(count)+".png",cropped)
-                cropped = np.expand_dims(cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY),axis=0)
+                cv2.imwrite(str(count) + ".png", cropped)
+                cropped = np.expand_dims(
+                    cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY), axis=0
+                )
 
-                cropped_list.append(((cropped/255.0)-0.5)*2)
-            cropped_arr = np.stack(cropped_list,axis=0)
+                cropped_list.append(((cropped / 255.0) - 0.5) * 2)
+            cropped_arr = np.stack(cropped_list, axis=0)
 
-            np.save("tensor.pkl",cropped_arr)
-            out_tensor_0 = pb_utils.Tensor("detection_postprocessing_output",
-                                           cropped_arr.astype(output0_dtype))
+            np.save("tensor.pkl", cropped_arr)
+            out_tensor_0 = pb_utils.Tensor(
+                "detection_postprocessing_output", cropped_arr.astype(output0_dtype)
+            )
 
             # Create InferenceResponse. You can set an error here in case
             # there was a problem with handling this inference request.
@@ -199,9 +222,10 @@ class TritonPythonModel:
             # response:
             #
             # pb_utils.InferenceResponse(
-            #    output_tensors=..., TritonError("An error occured"))
+            #    output_tensors=..., TritonError("An error occurred"))
             inference_response = pb_utils.InferenceResponse(
-                output_tensors=[out_tensor_0])
+                output_tensors=[out_tensor_0]
+            )
             responses.append(inference_response)
         # You should return a list of pb_utils.InferenceResponse. Length
         # of this list must match the length of `requests` list.
@@ -212,4 +236,4 @@ class TritonPythonModel:
         Implementing `finalize` function is OPTIONAL. This function allows
         the model to perform any necessary clean ups before exit.
         """
-        print('Cleaning up...')
+        print("Cleaning up...")

@@ -1,4 +1,4 @@
-<!-- 
+<!--
 # Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@ This README showcases how to deploy a simple ResNet model on Triton Inference Se
 Export a TensorFlow model as a saved model.
 
 ```
-# <xx.xx> is the yy:mm for the publishing tag for NVIDIA's Tensorflow 
+# <xx.xx> is the yy:mm for the publishing tag for NVIDIA's Tensorflow
 # container; eg. 22.04
 
 docker run -it --gpus all -v ${PWD}:/workspace nvcr.io/nvidia/tensorflow:<xx.xx>-tf2-py3
@@ -107,4 +107,4 @@ The output of the same should look like below:
  b'0.000001:751' b'0.000001:685' b'0.000001:408' b'0.000001:116'
  b'0.000001:627' b'0.000001:933' b'0.000000:661' b'0.000000:148']
 ```
-The output format here is `<confidence_score>:<classification_index>`. To learn how to map these to the label names and more, refer to our [documentation](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_classification.md). The client code above is available in `client.py`. 
+The output format here is `<confidence_score>:<classification_index>`. To learn how to map these to the label names and more, refer to our [documentation](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_classification.md). The client code above is available in `client.py`.

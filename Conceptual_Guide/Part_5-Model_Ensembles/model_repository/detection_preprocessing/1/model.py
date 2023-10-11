@@ -24,9 +24,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import numpy as np
-import json
 import io
+import json
+
+import numpy as np
+import torch
+import torchvision.transforms as transforms
 
 # triton_python_backend_utils is available in every Triton Python model. You
 # need to use this module to create inference requests and responses. It also
@@ -34,8 +37,7 @@ import io
 # and converting Triton input/output types to numpy types.
 import triton_python_backend_utils as pb_utils
 from PIL import Image
-import torchvision.transforms as transforms
-import torch
+
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model
@@ -45,7 +47,7 @@ class TritonPythonModel:
     def initialize(self, args):
         """`initialize` is called only once when the model is being loaded.
         Implementing `initialize` function is optional. This function allows
-        the model to intialize any state associated with this model.
+        the model to initialize any state associated with this model.
         Parameters
         ----------
         args : dict
@@ -59,15 +61,17 @@ class TritonPythonModel:
         """
 
         # You must parse model_config. JSON string is not parsed here
-        model_config = json.loads(args['model_config'])
+        model_config = json.loads(args["model_config"])
 
         # Get OUTPUT0 configuration
         output0_config = pb_utils.get_output_config_by_name(
-            model_config, "detection_preprocessing_output")
+            model_config, "detection_preprocessing_output"
+        )
 
         # Convert Triton types to numpy types
         self.output0_dtype = pb_utils.triton_string_to_numpy(
-            output0_config['data_type'])
+            output0_config["data_type"]
+        )
 
     def execute(self, requests):
         """`execute` MUST be implemented in every Python model. `execute`
@@ -97,31 +101,33 @@ class TritonPythonModel:
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
             # Get INPUT0
-            in_0 = pb_utils.get_input_tensor_by_name(request, "detection_preprocessing_input")
+            in_0 = pb_utils.get_input_tensor_by_name(
+                request, "detection_preprocessing_input"
+            )
 
             def image_loader(image):
                 [h, w] = image.size
-                resize_w = (w //32)*32
-                resize_h = (h //32)*32
+                resize_w = (w // 32) * 32
+                resize_h = (h // 32) * 32
 
                 center_crop = resize_h if resize_w > resize_h else resize_w
-                loader = transforms.Compose([
-                transforms.CenterCrop(center_crop),
-                transforms.ToTensor()
-                ])
+                loader = transforms.Compose(
+                    [transforms.CenterCrop(center_crop), transforms.ToTensor()]
+                )
 
                 im = loader(image)
-                im = torch.unsqueeze(im,0)
-                return im.permute(0,2,3,1)
+                im = torch.unsqueeze(im, 0)
+                return im.permute(0, 2, 3, 1)
 
             img = in_0.as_numpy()
 
             image = Image.open(io.BytesIO(img.tobytes()))
             img_out = image_loader(image)
-            img_out = np.array(img_out)*255.0
+            img_out = np.array(img_out) * 255.0
 
-            out_tensor_0 = pb_utils.Tensor("detection_preprocessing_output",
-                                           img_out.astype(output0_dtype))
+            out_tensor_0 = pb_utils.Tensor(
+                "detection_preprocessing_output", img_out.astype(output0_dtype)
+            )
 
             # Create InferenceResponse. You can set an error here in case
             # there was a problem with handling this inference request.
@@ -129,9 +135,10 @@ class TritonPythonModel:
             # response:
             #
             # pb_utils.InferenceResponse(
-            #    output_tensors=..., TritonError("An error occured"))
+            #    output_tensors=..., TritonError("An error occurred"))
             inference_response = pb_utils.InferenceResponse(
-                output_tensors=[out_tensor_0])
+                output_tensors=[out_tensor_0]
+            )
             responses.append(inference_response)
         # You should return a list of pb_utils.InferenceResponse. Length
         # of this list must match the length of `requests` list.
@@ -142,4 +149,4 @@ class TritonPythonModel:
         Implementing `finalize` function is OPTIONAL. This function allows
         the model to perform any necessary clean ups before exit.
         """
-        print('Cleaning up...')
+        print("Cleaning up...")

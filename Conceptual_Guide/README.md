@@ -1,4 +1,4 @@
-<!-- 
+<!--
 # Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@
 Conceptual guides have been designed as an onboarding experience to Triton Inference Server. These guides will cover:
 * [Part 1: Model Deployment](Part_1-model_deployment/): This guide talks about deploying and managing multiple models.
 * [Part 2: Improving Resource Utilization](Part_2-improving_resource_utilization/): This guide discusses two popular features/techniques used to maximize a GPU's utilization whilst deploying models.
-* [Part 3: Optimizing Triton Configuration](Part_3-optimizing_triton_configuration/): Each deployment has requirements specific to the use case. This guide walks users through the process of tailoring deployment configurations to match the SLAs. 
+* [Part 3: Optimizing Triton Configuration](Part_3-optimizing_triton_configuration/): Each deployment has requirements specific to the use case. This guide walks users through the process of tailoring deployment configurations to match the SLAs.
 * [Part 4: Accelerating Models](Part_4-inference_acceleration/): Another path towards achieving higher throughput is to accelerate the underlying models. This guide covers SDKs and tools which can be used to accelerate the models.
 * [Part 5: Building Model Ensembles](./Part_5-Model_Ensembles/): Models are rarely used standalone. This guide will cover "how to build a deep learning inference pipeline?"
 * [Part 6: Using the BLS API to build complex pipelines](Part_6-building_complex_pipelines/): Often times there are scenarios where the pipeline requires control flows. Learn how to work with complex pipelines with models deployed on different backends.

@@ -24,8 +24,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import tritonclient.grpc as grpcclient
 import numpy as np
+import tritonclient.grpc as grpcclient
 
 client = grpcclient.InferenceServerClient(url="localhost:8001")
 
