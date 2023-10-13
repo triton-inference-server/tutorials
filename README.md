@@ -15,9 +15,9 @@ The focus of these examples is to demonstrate deployment for models trained with
 | --------------- | ------------ | --------------- | --------------- | --------------- |
 
 #### Supported Model Table
-The table below contains a 
+The table below contains a
 | Model Name      | Supported with HuggingFace format | Supported with TensorRT-LLM Backend | Supported with vLLM Backend |
-| :-------------: | :------------------------------: | :----------------------------------: | :-------------------------: | 
+| :-------------: | :------------------------------: | :----------------------------------: | :-------------------------: |
 | [Llama2-7B](https://ai.meta.com/llama/) | [Llama-2](https://huggingface.co/meta-llama/Llama-2-7b-hf/tree/main) |[tutorial](Popular_Models_Guide/Llama2/trtllm_guide.md) | :grey_question:|
 | [Persimmon-8B](https://www.adept.ai/blog/persimmon-8b) |:white_check_mark:   |:grey_question:  |       :white_check_mark:          |
 | [Falcon-180B](https://falconllm.tii.ae/index.html) |:white_check_mark:   |:grey_question:  |       :white_check_mark:          |

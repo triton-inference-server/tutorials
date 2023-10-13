@@ -35,21 +35,21 @@ Clone the repo of the model with weights and tokens [here](https://huggingface.c
 
 ## Installation
 
-Launch Triton docker container with TensorRT-LLM backend 
+Launch Triton docker container with TensorRT-LLM backend
 ```docker run --rm -it --net host --shm-size=2g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all -v /path/to/tensorrtllm_backend:/tensorrtllm_backend nvcr.io/nvidia/tritonserver:23.10-trtllm-py3 bash```
 
-Alternatively, you can follow instructions [here](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/README.md) to build Tritonserver with Tensorrt-LLM Backend if you want to build a specialized container. 
+Alternatively, you can follow instructions [here](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/README.md) to build Tritonserver with Tensorrt-LLM Backend if you want to build a specialized container.
 
 Don't forget to allow gpu usage when you launch the container.
 
 ## Create Engines for each model [skip this step if you already have an engine]
-TensorRT-LLM requires each model to be compiled for the configuration you need before running. 
-To do so, before you run your model for the first time on Tritonserver you will need to create a TensorRT-LLM engine for the model for the configuration you want. 
+TensorRT-LLM requires each model to be compiled for the configuration you need before running.
+To do so, before you run your model for the first time on Tritonserver you will need to create a TensorRT-LLM engine for the model for the configuration you want.
 To do so, you will need to complete the following steps:
 
 1. Install Tensorrt-LLM python package
    ```bash
-    # TensorRT-LLM is required for generating engines. 
+    # TensorRT-LLM is required for generating engines.
     pip install git+https://github.com/NVIDIA/TensorRT-LLM.git
     mkdir /usr/local/lib/python3.10/dist-packages/tensorrt_llm/libs/
     cp /opt/tritonserver/backends/tensorrtllm/* /usr/local/lib/python3.10/dist-packages/tensorrt_llm/libs/
@@ -78,7 +78,7 @@ To do so, you will need to complete the following steps:
                     --world-size 1
     ```
 
-    > Optional: You can check test the output of the model with `run.py` 
+    > Optional: You can check test the output of the model with `run.py`
     > located in the same llama examples folder.
     >
     >   ```bash
@@ -94,10 +94,10 @@ To run our Llama2-7B model, you will need to:
 
 1. Copy over the inflight batcher models repository
  ```bash
- cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/. 
+ cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/.
  ```
 
-2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps 
+2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps
 
     ```bash
     # preprocessing
@@ -105,13 +105,13 @@ To run our Llama2-7B model, you will need to:
     sed -i 's#${tokenizer_type}#auto#' /opt/tritonserver/inflight_batcher_llm/preprocessing/config.pbtxt
     sed -i 's#${tokenizer_dir}#/<path to your engine>/1-gpu/#' /opt/tritonserver/inflight_batcher_llm/postprocessing/config.pbtxt
     sed -i 's#${tokenizer_type}#auto#' /opt/tritonserver/inflight_batcher_llm/postprocessing/config.pbtxt
-    
+
     sed -i 's#${decoupled_mode}#false#' /opt/tritonserver/inflight_batcher_llm/tensorrt_llm/config.pbtxt
     sed -i 's#${engine_dir}#/<path to your engine>/1-gpu/#' /opt/tritonserver/inflight_batcher_llm/tensorrt_llm/config.pbtxt
     ```
     Also, ensure that the `gpt_model_type` parameter is set to `inflight_fused_batching`
 
-3.  Launch Tritonserver 
+3.  Launch Tritonserver
 
     ```bash
     tritonserver --model-repository=/opt/tritonserver/inflight_batcher_llm
