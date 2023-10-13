@@ -42,18 +42,18 @@ Alternatively, you can follow instructions [here](https://github.com/triton-infe
 
 Don't forget to allow gpu usage when you launch the container.
 
-## Create Engines for each model [skip this step if you already have a engine]
+## Create Engines for each model [skip this step if you already have an engine]
 TensorRT-LLM requires each model to be compiled for the configuration you need before running. 
 To do so, before you run your model for the first time on Tritonserver you will need to create a TensorRT-LLM engine for the model for the configuration you want. 
 To do so, you will need to complete the following steps:
 
 1. Install Tensorrt-LLM python package
    ```bash
-# TensorRT-LLM is required for generating engines. 
-pip install git+https://github.com/NVIDIA/TensorRT-LLM.git
-mkdir /usr/local/lib/python3.10/dist-packages/tensorrt_llm/libs/
-cp /opt/tritonserver/backends/tensorrtllm/* /usr/local/lib/python3.10/dist-packages/tensorrt_llm/libs/
-```
+    # TensorRT-LLM is required for generating engines. 
+    pip install git+https://github.com/NVIDIA/TensorRT-LLM.git
+    mkdir /usr/local/lib/python3.10/dist-packages/tensorrt_llm/libs/
+    cp /opt/tritonserver/backends/tensorrtllm/* /usr/local/lib/python3.10/dist-packages/tensorrt_llm/libs/
+    ```
 
 2.  Log in to huggingface-cli
 
@@ -61,96 +61,69 @@ cp /opt/tritonserver/backends/tensorrtllm/* /usr/local/lib/python3.10/dist-packa
     huggingface-cli login --token hf_*****
     ```
 
-3.  Compile model (3 min)
-
-    <!-- ```bash
-    python3 examples/llama/build.py \
-        --model_dir meta-llama/Llama-2-7b-chat-hf \
-        --dtype float16 \
-        --use_gpt_attention_plugin float16 \
-        --use_gemm_plugin float16 \
-        --output_dir ../tensorrt_llm_backend/all_models/gpt/tensorrt_llm/1 \
-        --world_size 1
-    ``` -->
+3.  Compile model engines
+    The script to build Llama models is located in [TensorRT-LLM repository](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples). We use the one located in the docker container as
+     `/tensorrtllm_backend/tensorrt_llm/examples/llama/build.py`.
+     This command compiles the model with in flight batching and 1 GPU. More details for the scripting please see the documentation for the Llama example [here](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples/llama/README.md).
 
     ```bash
-    python3 examples/llama/build.py \
-        --model_dir meta-llama/Llama-2-7b-chat-hf \
-        --dtype float16 \
-        --use_gpt_attention_plugin float16 \
-        --use_gemm_plugin float16 \
-        --output_dir ../tensorrt_llm_backend/all_models/inflight_batcher_llm/tensorrt_llm/1 \
-        --world_size 1
+    python build.py --model_dir /<path to your llama repo>/Llama-2-7b-chat-hf/ \
+                    --dtype bfloat16 \
+                    --use_gpt_attention_plugin bfloat16 \
+                    --use_inflight_batching \
+                    --paged_kv_cache \
+                    --remove_input_padding \
+                    --use_gemm_plugin bfloat16 \
+                    --output_dir /<path to your engine>/1-gpu/
+                    --world-size 1
     ```
 
-
-python build.py --model_dir /mnt/nvdl/usr/katheriney/Llama-2-7b-chat-hf/ \
-                --dtype bfloat16 \
-                --use_gpt_attention_plugin bfloat16 \
-                --use_inflight_batching \
-                --paged_kv_cache \
-                --remove_input_padding \
-                --use_gemm_plugin bfloat16 \
-                --output_dir /mnt/nvdl/usr/katheriney/engines/bf16/1-gpu/
-
-    ```bash
-    python3 examples/llama/build.py 
-        --model_dir /data/meta-llama/Llama-2-7b-chat-hf/ \
-        --dtype float16  --use_gpt_attention_plugin bfloat16 \
-        --use_gemm_plugin bfloat16 \
-        --output_dir /data/meta-llama/gen/7B/trt_engines/bf16/1-gpu/ 
-    ```
-    
-    > Optional: You can check test the output of the model with the following command:
+    > Optional: You can check test the output of the model with `run.py` 
+    > located in the same llama examples folder.
     >
     >   ```bash
-    >    python3 examples/llama/run.py --engine_dir=../tensorrt_llm_backend/all_models/gpt/tensorrt_llm/1/ --max_output_len 100 --tokenizer_dir meta-llama/Llama-2-7b-chat-hf --input_text "How do I count to ten in French?"
+    >    python3 /run.py --engine_dir=<path to your engine>/1-gpu/ --max_output_len 100 --tokenizer_dir <path to your llama repo>/Llama-2-7b-chat-hf --input_text "How do I count to ten in French?"
     >    ```
 
 ## Serving with Triton
 
-> Note: WIP, this part doesnt work yet because it uses the wrong tokenizer
+We're almost there! The last step is to create a Triton readable model. You can
+find a template of a model that uses in flight batching in [tensorrtllm_backend/all_models/inflight_batcher_llm](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/all_models/inflight_batcher_llm).
+To run our Llama2-7B model, you will need to:
 
-13. Launch Triton Docker container
+
+1. Copy over the inflight batcher models repository
+ ```bash
+ cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/. 
+ ```
+
+2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps 
 
     ```bash
-    cd ..
-    docker run -it --rm --gpus all --network host --shm-size=1g -v $(pwd)/all_models:/app/all_models triton_trt_llm
+    # preprocessing
+    sed -i 's#${tokenizer_dir}#/<path to your engine>/1-gpu/#' /opt/tritonserver/inflight_batcher_llm/preprocessing/config.pbtxt
+    sed -i 's#${tokenizer_type}#auto#' /opt/tritonserver/inflight_batcher_llm/preprocessing/config.pbtxt
+    sed -i 's#${tokenizer_dir}#/<path to your engine>/1-gpu/#' /opt/tritonserver/inflight_batcher_llm/postprocessing/config.pbtxt
+    sed -i 's#${tokenizer_type}#auto#' /opt/tritonserver/inflight_batcher_llm/postprocessing/config.pbtxt
+    
+    sed -i 's#${decoupled_mode}#false#' /opt/tritonserver/inflight_batcher_llm/tensorrt_llm/config.pbtxt
+    sed -i 's#${engine_dir}#/<path to your engine>/1-gpu/#' /opt/tritonserver/inflight_batcher_llm/tensorrt_llm/config.pbtxt
     ```
+    Also, ensure that the `gpt_model_type` parameter is set to `inflight_fused_batching`
 
-    <!-- ```bash
-    docker run -it --rm --gpus all --network host --shm-size=1g -v $(pwd)/../llama_quickstart/model_repository:/app/all_models/gpt triton_trt_llm
-    ``` -->
-
-14. Install TensorRT-LLM into container (6 sec)
+3.  Launch Tritonserver 
 
     ```bash
-    pip install tensorrt_llm/build/tensorrt_llm-0.1.3-py3-none-any.whl
-    ```
-
-15. Modify model config file
-
-    <!-- ```bash
-    sed -i 's#${engine_dir}#/app/all_models/gpt/tensorrt_llm/1#' all_models/gpt/tensorrt_llm/config.pbtxt
-    ``` -->
-
-    ```bash
-    sed -i 's#${decoupled_mode}#true#' all_models/inflight_batcher_llm/tensorrt_llm/config.pbtxt
-    sed -i 's#${engine_dir}#/app/all_models/inflight_batcher_llm/tensorrt_llm/1#' all_models/inflight_batcher_llm/tensorrt_llm/config.pbtxt
-    ```
-
-16. Launch Tritonserver (20 mins)
-
-    ```bash
-    tritonserver --model-repository /app/all_models/gpt --log-verbose 1
-    ```
-
-    ```bash
-    tritonserver --model-repository /app/all_models/inflight_batcher_llm --log-verbose 1
+    tritonserver --model-repository=/opt/tritonserver/inflight_batcher_llm
     ```
 
 ## Client
 
-WIP
+You can test the results of the run with the [inflight_batcher_llm_client.py script](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/inflight_batcher_llm)
+
+```bash
+python3 /tensorrtllm_backend/inflight_batcher_llm/client/inflight_batcher_llm_client.py --request-output-len 200
+```
+
 
 
