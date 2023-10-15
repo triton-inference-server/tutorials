@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -24,14 +24,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import torch
 from diffusers import AutoencoderKL
 from transformers import CLIPTextModel, CLIPTokenizer
-import torch
 
 prompt = "Draw a dog"
-vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4",
-                                    subfolder="vae",
-                                    use_auth_token=True)
+vae = AutoencoderKL.from_pretrained(
+    "CompVis/stable-diffusion-v1-4", subfolder="vae", use_auth_token=True
+)
 
 tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
 text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
@@ -44,12 +44,7 @@ torch.onnx.export(
     input_names=["latent_sample", "return_dict"],
     output_names=["sample"],
     dynamic_axes={
-        "latent_sample": {
-            0: "batch",
-            1: "channels",
-            2: "height",
-            3: "width"
-        },
+        "latent_sample": {0: "batch", 1: "channels", 2: "height", 3: "width"},
     },
     do_constant_folding=True,
     opset_version=14,
@@ -70,10 +65,7 @@ torch.onnx.export(
     input_names=["input_ids"],
     output_names=["last_hidden_state", "pooler_output"],
     dynamic_axes={
-        "input_ids": {
-            0: "batch",
-            1: "sequence"
-        },
+        "input_ids": {0: "batch", 1: "sequence"},
     },
     opset_version=14,
     do_constant_folding=True,

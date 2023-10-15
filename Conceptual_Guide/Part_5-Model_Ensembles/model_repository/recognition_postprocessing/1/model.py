@@ -24,8 +24,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import numpy as np
 import json
+
+import numpy as np
+
 # triton_python_backend_utils is available in every Triton Python model. You
 # need to use this module to create inference requests and responses. It also
 # contains some utility functions for extracting information from model_config
@@ -41,7 +43,7 @@ class TritonPythonModel:
     def initialize(self, args):
         """`initialize` is called only once when the model is being loaded.
         Implementing `initialize` function is optional. This function allows
-        the model to intialize any state associated with this model.
+        the model to initialize any state associated with this model.
         Parameters
         ----------
         args : dict
@@ -55,15 +57,17 @@ class TritonPythonModel:
         """
 
         # You must parse model_config. JSON string is not parsed here
-        model_config = json.loads(args['model_config'])
+        model_config = json.loads(args["model_config"])
 
         # Get OUTPUT0 configuration
         output0_config = pb_utils.get_output_config_by_name(
-            model_config, "recognition_postprocessing_output")
+            model_config, "recognition_postprocessing_output"
+        )
 
         # Convert Triton types to numpy types
         self.output0_dtype = pb_utils.triton_string_to_numpy(
-            output0_config['data_type'])
+            output0_config["data_type"]
+        )
 
     def execute(self, requests):
         """`execute` MUST be implemented in every Python model. `execute`
@@ -88,6 +92,7 @@ class TritonPythonModel:
         output0_dtype = self.output0_dtype
 
         responses = []
+
         def decodeText(scores):
             text = ""
             alphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -96,26 +101,30 @@ class TritonPythonModel:
                 if c != 0:
                     text += alphabet[c - 1]
                 else:
-                    text += '-'
+                    text += "-"
 
             # adjacent same letters as well as background text must be removed to get the final output
             char_list = []
             for i in range(len(text)):
-                if text[i] != '-' and (not (i > 0 and text[i] == text[i - 1])):
+                if text[i] != "-" and (not (i > 0 and text[i] == text[i - 1])):
                     char_list.append(text[i])
-            return ''.join(char_list)
+            return "".join(char_list)
 
         # Every Python backend must iterate over everyone of the requests
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
             # Get INPUT0
-            in_1 = pb_utils.get_input_tensor_by_name(request, "recognition_postprocessing_input").as_numpy()
+            in_1 = pb_utils.get_input_tensor_by_name(
+                request, "recognition_postprocessing_input"
+            ).as_numpy()
             text_list = []
             for i in range(in_1.shape[0]):
                 text_list.append(decodeText(in_1[i]))
-            print(text_list,flush=True)
-            out_tensor_0 = pb_utils.Tensor("recognition_postprocessing_output",
-                                           np.array(text_list).astype(output0_dtype))
+            print(text_list, flush=True)
+            out_tensor_0 = pb_utils.Tensor(
+                "recognition_postprocessing_output",
+                np.array(text_list).astype(output0_dtype),
+            )
 
             # Create InferenceResponse. You can set an error here in case
             # there was a problem with handling this inference request.
@@ -123,9 +132,10 @@ class TritonPythonModel:
             # response:
             #
             # pb_utils.InferenceResponse(
-            #    output_tensors=..., TritonError("An error occured"))
+            #    output_tensors=..., TritonError("An error occurred"))
             inference_response = pb_utils.InferenceResponse(
-                output_tensors=[out_tensor_0])
+                output_tensors=[out_tensor_0]
+            )
             responses.append(inference_response)
         # You should return a list of pb_utils.InferenceResponse. Length
         # of this list must match the length of `requests` list.
@@ -136,5 +146,4 @@ class TritonPythonModel:
         Implementing `finalize` function is OPTIONAL. This function allows
         the model to perform any necessary clean ups before exit.
         """
-        print('Cleaning up...')
-
+        print("Cleaning up...")

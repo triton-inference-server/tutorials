@@ -132,7 +132,13 @@ class TritonPythonModel:
             if k in params_dict:
                 params_dict[k] = bool(params_dict[k])
 
-        float_keys = ["frequency_penalty", "length_penalty", "presence_penalty", "temperature", "top_p"]
+        float_keys = [
+            "frequency_penalty",
+            "length_penalty",
+            "presence_penalty",
+            "temperature",
+            "top_p",
+        ]
         for k in float_keys:
             if k in params_dict:
                 params_dict[k] = float(params_dict[k])
@@ -166,16 +172,23 @@ class TritonPythonModel:
         self.ongoing_request_count += 1
         try:
             request_id = random_uuid()
+
             prompt = pb_utils.get_input_tensor_by_name(request, "PROMPT").as_numpy()[0]
             if isinstance(prompt, bytes):
                 prompt = prompt.decode("utf-8")
-            stream = pb_utils.get_input_tensor_by_name(request, "STREAM").as_numpy()[0]
+
+            # stream is an optional input
+            stream = False
+            stream_input_tensor = pb_utils.get_input_tensor_by_name(request, "STREAM")
+            if stream_input_tensor:
+                stream = stream_input_tensor.as_numpy()[0]
 
             # Request parameters are not yet supported via
             # BLS. Provide an optional mechanism to receive serialized
             # parameters as an input tensor until support is added
-
-            parameters_input_tensor = pb_utils.get_input_tensor_by_name(request, "SAMPLING_PARAMETERS")
+            parameters_input_tensor = pb_utils.get_input_tensor_by_name(
+                request, "SAMPLING_PARAMETERS"
+            )
             if parameters_input_tensor:
                 parameters = parameters_input_tensor.as_numpy()[0].decode("utf-8")
             else:

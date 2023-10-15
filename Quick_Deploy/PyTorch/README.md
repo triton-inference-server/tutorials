@@ -1,4 +1,4 @@
-<!-- 
+<!--
 # Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@ This README showcases how to deploy a simple ResNet model on Triton Inference Se
 Save the PyTorch model. This model needs to be traced/scripted to obtain a torchscript model.
 
 ```
-# <xx.xx> is the yy:mm for the publishing tag for NVIDIA's PyTorch 
+# <xx.xx> is the yy:mm for the publishing tag for NVIDIA's PyTorch
 # container; eg. 22.04
 
 docker run -it --gpus all -v ${PWD}:/workspace nvcr.io/nvidia/pytorch:<xx.xx>-py3
@@ -95,4 +95,4 @@ The output of the same should look like below:
 [b'12.468750:90' b'11.523438:92' b'9.664062:14' b'8.429688:136'
  b'8.234375:11']
 ```
-The output format here is `<confidence_score>:<classification_index>`. To learn how to map these to the label names and more, refer to our [documentation](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_classification.md). The client code above is available in `client.py`. 
+The output format here is `<confidence_score>:<classification_index>`. To learn how to map these to the label names and more, refer to our [documentation](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_classification.md). The client code above is available in `client.py`.
