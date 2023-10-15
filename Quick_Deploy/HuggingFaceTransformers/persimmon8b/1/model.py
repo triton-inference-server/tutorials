@@ -23,17 +23,16 @@
 # OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import json
 import functools
-import numpy as np
-import triton_python_backend_utils as pb_utils
+import json
 
+import numpy as np
 import torch
 import transformers
+import triton_python_backend_utils as pb_utils
 
 
 class TritonPythonModel:
-
     def initialize(self, args):
         self.logger = pb_utils.Logger
         self.model_config = json.loads(args["model_config"])
@@ -45,13 +44,13 @@ class TritonPythonModel:
             "string_value", default_hf_model
         )
         # Check for user-specified max length in model config parameters
-        self.max_length = int(
-            self.model_params.get("max_length", {}).get(
+        self.max_output_length = int(
+            self.model_params.get("max_output_length", {}).get(
                 "string_value", default_max_gen_length
             )
         )
-        
-        self.logger.log_info(f"Max sequence length: {self.max_length}")
+
+        self.logger.log_info(f"Max sequence length: {self.max_output_length}")
         self.logger.log_info(f"Loading HuggingFace model: {hf_model}...")
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(hf_model)
         self.pipeline = transformers.pipeline(
@@ -59,7 +58,7 @@ class TritonPythonModel:
             model=hf_model,
             torch_dtype=torch.float16,
             tokenizer=self.tokenizer,
-            device_map="auto"
+            device_map="auto",
         )
 
     def execute(self, requests):
@@ -78,8 +77,8 @@ class TritonPythonModel:
     def generate(self, prompt):
         sequences = self.pipeline(
             prompt,
-            max_length=self.max_length,
-            pad_token_id=self.tokenizer.eos_token_id
+            max_length=self.max_output_length,
+            pad_token_id=self.tokenizer.eos_token_id,
         )
 
         output_tensors = []

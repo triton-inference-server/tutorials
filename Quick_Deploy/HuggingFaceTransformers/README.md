@@ -35,31 +35,32 @@ models will be deployed:
 - [adept/persimmon-8b-base](https://huggingface.co/adept/persimmon-8b-base)
 
 These models were selected because of their popularity and consistent response quality.
-However, this tutorial is also generalizable for any transformer model provided 
-sufficient infrastructure. 
+However, this tutorial is also generalizable for any transformer model provided
+sufficient infrastructure.
 
-*NOTE*: The tutorial is intended to be a reference example only. It may not be tuned for 
+*NOTE*: The tutorial is intended to be a reference example only. It may not be tuned for
 optimal performance.
 
 ## Step 1: Create a Model Repository
 
-The first step is to create a model repository containing the models we want the Triton 
-Inference Server to load and use for inference processing. To accomplish this, create a 
+The first step is to create a model repository containing the models we want the Triton
+Inference Server to load and use for inference processing. To accomplish this, create a
 directory called `model_repository` and copy the `falcon7b` model folder into it:
 
 ```
 mkdir -p model_repository
-cp -r falcon7b/ model_repository/ 
+cp -r falcon7b/ model_repository/
 ```
 
-The `falcon7b/` folder we copied is organized in the way Triton expects and contains 
+The `falcon7b/` folder we copied is organized in the way Triton expects and contains
 two important files needed to serve models in Triton:
 - **config.pbtxt** - Outlines the backend to use, model input/output details, and custom
 parameters to use for execution. More information on the full range of model configuration
 properties Triton supports can be found [here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html).
-- **model.py** - Implements how Triton should handle the model during the initialization, 
-execution, and finalization stages. More information regarding python backend usage 
+- **model.py** - Implements how Triton should handle the model during the initialization,
+execution, and finalization stages. More information regarding python backend usage
 can be found [here](https://github.com/triton-inference-server/python_backend#usage).
+
 
 ## Step 2: Build a Triton Container Image
 
@@ -77,7 +78,7 @@ Once the ```triton_transformer_server``` image is created, you can launch the Tr
 Server in a container with the following command:
 
 ```bash
-docker run --gpus all -it --rm -p 8000:8000 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}/model_repository:/opt/tritonserver/model_repository triton_transformer_server tritonserver --model-repository=model_repository
+docker run --gpus all -it --rm --net=host --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}/model_repository:/opt/tritonserver/model_repository triton_transformer_server tritonserver --model-repository=model_repository
 ```
 
 The server has launched successfully when you see the following outputs in your console:
@@ -146,28 +147,112 @@ In our testing, these queries returned the following parsed results:
 # persimmon8b
 "Where is the nearest starbucks?"
 ```
+
 ## 'Day Zero' Support
 
 The latest transformer models may not always be supported in the most recent, official
-release of the `transformers` package. In such a case, you should still be able to 
-load these 'bleeding edge' models in Triton by building `transformers` from source. 
-This can be done by replacing the transformers install directive in the provided 
+release of the `transformers` package. In such a case, you should still be able to
+load these 'bleeding edge' models in Triton by building `transformers` from source.
+This can be done by replacing the transformers install directive in the provided
 Dockerfile with:
 ```docker
 RUN pip install git+https://github.com/huggingface/transformers.git
 ```
-Using this technique you should be able to serve any transformer models supported by 
+Using this technique you should be able to serve any transformer models supported by
 hugging face with Triton.
 
-## Next Steps
 
-The `model.py` files have been kept minimal in order to maximize generalizability. Should you wish 
-to modify the behavior of the transformer models, such as increasing the number of generated sequences 
-to return, be sure to modify the corresponding `config.pbtxt` and `model.py` files and copy them 
+# Next Steps
+The following sections expand on the base tutorial and provide guidance for future sandboxing.
+
+## Loading Cached Models
+In the previous steps, we downloaded the falcon-7b model from hugging face when we
+launched the Triton server. We can avoid this lengthy download process  in subsequent runs
+by loading cached models into Triton. To do so, we can follow the hugging face [tutorial
+for downloading models](https://huggingface.co/docs/hub/models-downloading). Once the model
+is downloaded, we can mount it to the Triton container by adding the following mount option to our
+`docker run` command from earlier (making sure to replace {USER} with your username on
+Linux):
+
+```bash
+# Option to mount a specific cached model (falcon-7b in this case)
+-v /home/{USER}/.cache/huggingface/hub/models--tiiuae--falcon-7b:/root/.cache/huggingface/hub/models--tiiuae--falcon-7b
+
+# Option to mount all cached models on the host system
+-v /home/{USER}/.cache/huggingface:/root/.cache/huggingface
+```
+
+## Triton Tool Ecosystem
+Deploying models in Triton also comes with the benefit of access to a fully-supported suite
+of deployment analyzers to help you better understand and tailor your systems to fit your
+needs. Triton currently has two options for deployment analysis:
+- [Performance Analyzer](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton-inference-server-2310/user-guide/docs/user_guide/perf_analyzer.html): An inference performance optimizer.
+- [Model Analyzer](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_analyzer.html) A GPU memory and compute utilization optimizer.
+
+### Performance Analyzer
+To use the performance analyzer, please ensure the Triton server is still active with the falcon7b
+model or restart it using the docker run command from above.
+
+Once Triton launches successfully, start a Triton SDK container by running the following in a separate window:
+
+```bash
+docker run -it --net=host nvcr.io/nvidia/tritonserver:23.09-py3-sdk bash
+```
+This container comes with all of Triton's deployment analyzers pre-installed, meaning
+we can simply enter the following to get feedback on our model's inference performance:
+
+```bash
+perf_analyzer -m falcon7b --concurrency-range 1:4
+```
+
+This command should run quickly and profile the performance of our falcon7b model at
+increasing levels of concurrency. As the analyzer runs, it will output useful metrics
+such as latency percentiles, latency by stage of inference, and successful request
+count. Ultimately, the analyzer will neatly summarize the data in the final output:
+
+```json
+Concurrency: 1, throughput: 23.2174 infer/sec, latency 43041 usec
+Concurrency: 2, throughput: 23.3284 infer/sec, latency 85590 usec
+Concurrency: 3, throughput: 23.94 infer/sec, latency 125085 usec
+Concurrency: 4, throughput: 23.773 infer/sec, latency 167879 usec
+```
+
+This is a single, simple use case for the performance analyzer. For more information and
+a more complete list of performance analyzer parameters and use cases, please see
+[this](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton-inference-server-2310/user-guide/docs/user_guide/perf_analyzer.html) guide.
+
+### Model Analyzer
+
+To use the model analyzer, please terminate your Triton server by invoking `Ctrl+C` and relaunching
+it with the following command:
+```bash
+docker run --gpus all -it --rm --net=host --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}/model_repository:/opt/tritonserver/model_repository -v /home/{USER}/.cache/huggingface/hub/models--tiiuae--falcon-7b:/root/.cache/huggingface/hub/models--tiiuae--falcon-7b triton_transformer_server tritonserver --model-repository=model_repository --model-control-mode=explicit
+```
+
+Similarly, exit your Triton SDK container by invoking `Ctrl+C` and relanch it with the following
+command (ensuring the model_repository path is correct):
+```bash
+docker run -it --net=host -v ${PWD}/model_repository:/opt/tritonserver/model_repository nvcr.io/nvidia/tritonserver:23.09-py3-sdk bash
+```
+
+Once Triton launches successfully, enter the following command into your SDK container:
+```bash
+model-analyzer profile -m /opt/tritonserver/model_repository/ --profile-models falcon7b --run-config-search-mode quick --triton-launch-mode=remote
+```
+This tool will take longer to execute than the Performance Analyzer example. However, once it
+is complete, the model analyzer will provide you a full summary relating to throughput, latency,
+and hardware utilization in csv and pdf format.
+
+## Customization
+
+The `model.py` files have been kept minimal in order to maximize generalizability. Should you wish
+to modify the behavior of the transformer models, such as increasing the number of generated sequences
+to return, be sure to modify the corresponding `config.pbtxt` and `model.py` files and copy them
 into the `model_repository`.
 
-The transformers used in this tutorial were all suited for text-generation tasks, however, this 
-is not a limitation. The principles of this tutorial can be applied to server models suited for
+The transformers used in this tutorial were all suited for text-generation tasks, however, this
+is not a limitation. The principles of this tutorial can be applied to serve models suited for
 any other transformer task.
 
+Triton offers a rich variety of available server configuration options not mentioned in this tutorial.
 For a more custom deployment, please see our [model configuration guide](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html) to see how the scope of this tutorial can be expanded to fit your needs.
