@@ -23,9 +23,7 @@
 # OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import functools
 import json
-
 import numpy as np
 import torch
 import transformers
@@ -66,10 +64,10 @@ class TritonPythonModel:
         responses = []
         for request in requests:
             # Assume input named "prompt", specified in autocomplete above
-            prompt_tensor = pb_utils.get_input_tensor_by_name(request, "prompt")
-            prompt = prompt_tensor.as_numpy()[0].decode("utf-8")
+            input_tensor = pb_utils.get_input_tensor_by_name(request, "text_input")
+            prompt = input_tensor.as_numpy()[0].decode("utf-8")
 
-            self.logger.log_info(f"Generating sequences for prompt: {prompt}")
+            self.logger.log_info(f"Generating sequences for text_input: {prompt}")
             response = self.generate(prompt)
             responses.append(response)
 
@@ -89,7 +87,7 @@ class TritonPythonModel:
             self.logger.log_info(f"Sequence {i+1}: {text}")
             texts.append(text)
 
-        tensor = pb_utils.Tensor("text", np.array(texts, dtype=np.object_))
+        tensor = pb_utils.Tensor("text_output", np.array(texts, dtype=np.object_))
         output_tensors.append(tensor)
         response = pb_utils.InferenceResponse(output_tensors=output_tensors)
         return response

@@ -94,7 +94,7 @@ I0922 23:28:40.395611 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8
 Now we can query the server using curl, specifying the server address and input details:
 
 ```json
-curl -X POST localhost:8000/v2/models/falcon7b/infer -d '{"inputs": [{"name":"prompt","datatype":"BYTES","shape":[1],"data":["I am going"]}]}'
+curl -X POST localhost:8000/v2/models/falcon7b/infer -d '{"inputs": [{"name":"text_input","datatype":"BYTES","shape":[1],"data":["I am going"]}]}'
 ```
 In our testing, the server returned the following result (formatted for legibility):
 ```json
@@ -136,8 +136,8 @@ that the server has launched successfully.
 
 Query the server making sure to change the host address for each model:
 ```json
-curl -X POST localhost:8000/v2/models/falcon7b/infer -d '{"inputs": [{"name":"prompt","datatype":"BYTES","shape":[1],"data":["How can you be"]}]}'
-curl -X POST localhost:8000/v2/models/persimmon8b/infer -d '{"inputs": [{"name":"prompt","datatype":"BYTES","shape":[1],"data":["Where is the nearest"]}]}'
+curl -X POST localhost:8000/v2/models/falcon7b/infer -d '{"inputs": [{"name":"text_input","datatype":"BYTES","shape":[1],"data":["How can you be"]}]}'
+curl -X POST localhost:8000/v2/models/persimmon8b/infer -d '{"inputs": [{"name":"text_input","datatype":"BYTES","shape":[1],"data":["Where is the nearest"]}]}'
 ```
 In our testing, these queries returned the following parsed results:
 ```bash
