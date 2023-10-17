@@ -1,10 +1,11 @@
 import requests
 from fastapi import FastAPI
 from ray import serve
-from tritonserver_api import TritonServer 
+from tritonserver_api import TritonServer
 
 # 1: Define a FastAPI app and wrap it in a deployment with a route handler.
 app = FastAPI()
+
 
 def create_triton_server():
     options = triton_bindings.TRITONSERVER_ServerOptions()
@@ -14,38 +15,40 @@ def create_triton_server():
     options.set_exit_timeout(5)
     return triton_bindings.TRITONSERVER_Server(options)
 
+
 @serve.deployment(route_prefix="/")
 @serve.ingress(app)
 class TritonDeployment:
-
     def __init__(self):
         server_options = TritonServer.Options()
         self._triton_server = TritonServer(server_options)
         self._triton_server.start()
 
         self._models = self._triton_server.model_index()
+        for model in self._models:
+            print(model)
 
-        print(self._models)
-        
-#        self._simple = self._triton_server.model("simple")
+        print(self._models[-1].ready())
 
- #       while (not self._simple.ready()):
-  #          time.sleep(0.1)
+    #        print(self._models)
 
-   #     inference_request = InferenceRequest(server,"simple",1)
-            
+    #        self._simple = self._triton_server.model("simple")
+
+    #       while (not self._simple.ready()):
+    #          time.sleep(0.1)
+
+    #     inference_request = InferenceRequest(server,"simple",1)
+
     #    inference_request = self._simple.inference_request()
-        
-     #   infernce_request.inputs["INPUT_0"] = foo
-        
-      #  self._simple.infer_async(inputs={"INPUT0":[]},
-       #                          priority=1,
-        #                         correlation_id=1)
 
-#        self._simple.infer_async(inference_request)
-        
-        
-    
+    #   infernce_request.inputs["INPUT_0"] = foo
+
+    #  self._simple.infer_async(inputs={"INPUT0":[]},
+    #                          priority=1,
+    #                         correlation_id=1)
+
+    #        self._simple.infer_async(inference_request)
+
     # FastAPI will automatically parse the HTTP request for us.
     @app.get("/hello")
     def say_hello(self, name: str) -> str:
