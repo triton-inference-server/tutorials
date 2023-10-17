@@ -3,5 +3,5 @@ ARG BASE_IMAGE_TAG=23.09-py3
 
 FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as triton-ray
 
-RUN pip install -U ray[all]
+RUN pip install -U ray[all]==2.7
 RUN pip install /opt/tritonserver/python/tritonserver-2.38.0-py3-none-any.whl
