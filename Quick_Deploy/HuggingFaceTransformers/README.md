@@ -202,19 +202,24 @@ This container comes with all of Triton's deployment analyzers pre-installed, me
 we can simply enter the following to get feedback on our model's inference performance:
 
 ```bash
-perf_analyzer -m falcon7b --concurrency-range 1:4
+perf_analyzer -m falcon7b --collect-metrics
 ```
 
-This command should run quickly and profile the performance of our falcon7b model at
-increasing levels of concurrency. As the analyzer runs, it will output useful metrics
-such as latency percentiles, latency by stage of inference, and successful request
-count. Ultimately, the analyzer will neatly summarize the data in the final output:
+This command should run quickly and profile the performance of our falcon7b model.
+As the analyzer runs, it will output useful metrics such as latency percentiles,
+latency by stage of inference, and successful request count. A subset of the output
+data is shown below:
 
-```json
-Concurrency: 1, throughput: 23.2174 infer/sec, latency 43041 usec
-Concurrency: 2, throughput: 23.3284 infer/sec, latency 85590 usec
-Concurrency: 3, throughput: 23.94 infer/sec, latency 125085 usec
-Concurrency: 4, throughput: 23.773 infer/sec, latency 167879 usec
+```bash
+
+#Avg request latency
+42140 usec (overhead 24 usec + queue 26 usec + compute input 26 usec + compute infer 41998 usec + compute output 65 usec)
+
+#Avg GPU Utilization
+GPU-57c7b00e-ca04-3876-91e2-c1eae40a0733 : 52.7222%
+
+#Inferences/Second vs. Client Average Batch Latency
+Concurrency: 1, throughput: 23.4404 infer/sec, latency 42583 usec
 ```
 
 This is a single, simple use case for the performance analyzer. For more information and

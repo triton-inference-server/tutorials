@@ -1,25 +1,22 @@
 # Triton backend to use
 backend: "python"
 
-# Hugging face model path
-# Parameters must follow this
+# Hugging face model path. Parameters must follow this
 # key/value structure
 parameters: {
-	key: "huggingface_model",
-	value: {string_value: "adept/persimmon-8b-base"}
+  key: "huggingface_model",
+  value: {string_value: "tiiuae/falcon-7b"}
 }
 
-# The maximum number of tokens
-# to generate in response to
-# our input
+# The maximum number of tokens to generate in response
+# to our input
 parameters: {
-	key: "max_output_length",
-	value: {string_value: "15"}
+  key: "max_output_length",
+  value: {string_value: "15"}
 }
 
-# Triton should expect as input
-# a single string of set length
-# named 'text_input'
+# Triton should expect as input a single string of set
+# length named 'text_input'
 input [
   {
     name: "text_input"
@@ -28,9 +25,8 @@ input [
   }
 ]
 
-# Triton should expect to respond
-# with a single string output of
-# variable length named 'text_output'
+# Triton should expect to respond with a single string
+# output of variable length named 'text_output'
 output [
   {
     name: "text_output"

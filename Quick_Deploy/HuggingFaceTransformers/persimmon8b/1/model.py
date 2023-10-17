@@ -51,6 +51,7 @@ class TritonPythonModel:
 
         self.logger.log_info(f"Max sequence length: {self.max_output_length}")
         self.logger.log_info(f"Loading HuggingFace model: {hf_model}...")
+        # Assume tokenizer available for same model
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(hf_model)
         self.pipeline = transformers.pipeline(
             "text-generation",
