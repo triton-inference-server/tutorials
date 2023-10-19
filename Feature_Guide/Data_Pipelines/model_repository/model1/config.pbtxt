@@ -82,3 +82,25 @@ output [
     dims: [-1]
   }
 ]
+
+# The configuration of engineArgs
+parameters {
+  key: "model"
+  value: {
+    string_value: "facebook/opt-125m",
+  }
+}
+
+parameters {
+  key: "disable_log_requests"
+  value: {
+    string_value: "true"
+  }
+}
+
+parameters {
+  key: "gpu_memory_utilization"
+  value: {
+    string_value: "0.5"
+  }
+}
