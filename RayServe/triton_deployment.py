@@ -1,3 +1,4 @@
+import numpy
 import requests
 from fastapi import FastAPI
 from ray import serve
@@ -29,6 +30,19 @@ class TritonDeployment:
             print(model)
 
         print(self._models[-1].ready())
+
+        model = self._triton_server.model("test")
+
+        print(model.metadata())
+
+        inference_request = model.inference_request()
+
+        inference_request.inputs["text_input"] = numpy.array(
+            ["hello"], dtype=numpy.object_
+        )
+
+        for response in model.infer_async(inference_request):
+            print(response)
 
     #        print(self._models)
 
