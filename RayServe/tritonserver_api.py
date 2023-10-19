@@ -40,6 +40,7 @@ class TritonServer:
             triton_bindings.TRITONSERVER_ModelControlMode.POLL
         )
         options.set_log_verbose(0)
+        options.set_log_info(0)
         options.set_exit_timeout(5)
         self._server = triton_bindings.TRITONSERVER_Server(options)
 
@@ -133,7 +134,7 @@ NUMPY_TO_TRITON_DTYPE = defaultdict(
 
 TRITON_TO_NUMPY_DTYPE = defaultdict(
     lambda: triton_bindings.TRITONSERVER_DataType.INVALID,
-    {value: key for value, key in NUMPY_TO_TRITON_DTYPE.items()},
+    {value: key for key, value in NUMPY_TO_TRITON_DTYPE.items()},
 )
 
 
@@ -199,11 +200,11 @@ class InferenceResponse:
                 memory_type_id,
                 numpy_array,
             ) = response.output(output_index)
-
             if type_ == triton_bindings.TRITONSERVER_DataType.BYTES:
                 numpy_array = InferenceRequest._deserialize_bytes_array(numpy_array)
 
-            outputs[name] = numpy_array.reshape(shape)
+            numpy_dtype = TRITON_TO_NUMPY_DTYPE[type_]
+            outputs[name] = numpy_array.view(numpy_dtype).reshape(shape)
         values["outputs"] = outputs
         values["_server"] = server
 
@@ -221,8 +222,9 @@ class InferenceRequest:
     timeout: int = 0
     inputs: dict = dataclasses.field(default_factory=dict)
     parameters: dict = dataclasses.field(default_factory=dict)
-    _server: triton_bindings.TRITONSERVER_Server = None
     model: TritonModel = None
+    _server: triton_bindings.TRITONSERVER_Server = None
+    _serialized_inputs: dict = dataclasses.field(default_factory=dict)
 
     @staticmethod
     def _release_request(request, flags, user_object):
@@ -307,6 +309,8 @@ class InferenceRequest:
 
             if triton_datatype == triton_bindings.TRITONSERVER_DataType.BYTES:
                 value = InferenceRequest._serialize_bytes_array(value)
+                # to ensure lifetime of array
+                self._serialized_inputs[name] = value
 
             _buffer = value.ctypes.data
             buffer_attributes = triton_bindings.TRITONSERVER_BufferAttributes()

@@ -8,15 +8,6 @@ from tritonserver_api import TritonServer
 app = FastAPI()
 
 
-def create_triton_server():
-    options = triton_bindings.TRITONSERVER_ServerOptions()
-    options.set_model_repository_path("/workspace/models")
-    options.set_model_control_mode(triton_bindings.TRITONSERVER_ModelControlMode.POLL)
-    options.set_log_verbose(0)
-    options.set_exit_timeout(5)
-    return triton_bindings.TRITONSERVER_Server(options)
-
-
 @serve.deployment(route_prefix="/")
 @serve.ingress(app)
 class TritonDeployment:
@@ -38,12 +29,15 @@ class TritonDeployment:
         inference_request = model.inference_request()
 
         inference_request.inputs["text_input"] = numpy.array(
-            ["hello"], dtype=numpy.object_
+            ["hello", "world"], dtype=numpy.object_
+        )
+        inference_request.inputs["fp16_input"] = numpy.array(
+            [[0.5], [1], [2], [3]], dtype=numpy.float16
         )
 
         for response in model.infer_async(inference_request):
-            print(response)
-            print(response.outputs["text_output"])
+            for output in response.outputs.items():
+                print(output)
 
     #        print(self._models)
 
