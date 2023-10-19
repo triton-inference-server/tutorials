@@ -26,7 +26,6 @@
 
 import asyncio
 import json
-import os
 import threading
 from typing import AsyncGenerator
 
@@ -36,8 +35,6 @@ from vllm import SamplingParams
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.utils import random_uuid
-
-_VLLM_ENGINE_ARGS_FILENAME = "vllm_engine_args.json"
 
 
 class TritonPythonModel:
@@ -55,18 +52,14 @@ class TritonPythonModel:
             self.using_decoupled
         ), "vLLM Triton backend must be configured to use decoupled model transaction policy"
 
-        engine_args_filepath = os.path.join(
-            args["model_repository"], _VLLM_ENGINE_ARGS_FILENAME
-        )
-        assert os.path.isfile(
-            engine_args_filepath
-        ), f"'{_VLLM_ENGINE_ARGS_FILENAME}' containing vllm engine args must be provided in '{args['model_repository']}'"
-        with open(engine_args_filepath) as file:
-            vllm_engine_config = json.load(file)
+        self.model_name = args["model_name"]
+        assert (
+            self.model_name
+        ), "Parameter of [name] must be configured, and can not be empty in config.pbtxt"
 
         # Create an AsyncLLMEngine from the config from JSON
         self.llm_engine = AsyncLLMEngine.from_engine_args(
-            AsyncEngineArgs(**vllm_engine_config)
+            AsyncEngineArgs(**self.handle_initializing_config())
         )
 
         output_config = pb_utils.get_output_config_by_name(self.model_config, "TEXT")
@@ -82,6 +75,38 @@ class TritonPythonModel:
         )
         self._shutdown_event = asyncio.Event()
         self._loop_thread.start()
+
+    def handle_initializing_config(self):
+        model_params = self.model_config.get("parameters", {})
+        model_engine_args = {}
+        for key, value in model_params.items():
+            model_engine_args[key] = value['string_value']
+
+        bool_keys = ["trust_remote_code", "use_np_weights", "use_dummy_weights",
+                     "worker_use_ray", "disable_log_stats"]
+        for k in bool_keys:
+            if k in model_engine_args:
+                model_engine_args[k] = bool(model_engine_args[k])
+
+        float_keys = ["gpu_memory_utilization"]
+        for k in float_keys:
+            if k in model_engine_args:
+                model_engine_args[k] = float(model_engine_args[k])
+
+        int_keys = ["seed", "pipeline_parallel_size", "tensor_parallel_size", "block_size",
+                    "swap_space", "max_num_batched_tokens", "max_num_seqs"]
+        for k in int_keys:
+            if k in model_engine_args:
+                model_engine_args[k] = int(model_engine_args[k])
+
+        # Check necessary parameter configuration in model config
+        model_param = model_engine_args["model"]
+        assert (
+            model_param
+        ), "Parameter of [model] must be configured, and can not be empty in config.pbtxt"
+
+        self.logger.log_info(f"Initialize engineArgs: {model_engine_args}")
+        return model_engine_args
 
     def create_task(self, coro):
         """

@@ -60,16 +60,30 @@ model_repository/
     |-- 1
     |   `-- model.py
     |-- config.pbtxt
-    |-- vllm_engine_args.json
 ```
 
-The content of `vllm_engine_args.json` is:
+The configuration of engineArgs is in config.pbtxt:
 
-```json
-{
-    "model": "facebook/opt-125m",
-    "disable_log_requests": "true",
-    "gpu_memory_utilization": 0.5
+```
+parameters {
+  key: "model"
+  value: {
+    string_value: "facebook/opt-125m",
+  }
+}
+
+parameters {
+  key: "disable_log_requests"
+  value: {
+    string_value: "true"
+  }
+}
+
+parameters {
+  key: "gpu_memory_utilization"
+  value: {
+    string_value: "0.5"
+  }
 }
 ```
 This file can be modified to provide further settings to the vLLM engine. See vLLM
@@ -78,12 +92,12 @@ and
 [EngineArgs](https://github.com/vllm-project/vllm/blob/32b6816e556f69f1672085a6267e8516bcb8e622/vllm/engine/arg_utils.py#L11)
 for supported key-value pairs.
 
-For multi-GPU support, EngineArgs like `tensor_parallel_size` can be specified in [`vllm_engine_args.json`](model_repository/vllm/vllm_engine_args.json).
+For multi-GPU support, EngineArgs like `tensor_parallel_size` can be specified in [`config.pbtxt`](model_repository/vllm/config.pbtxt).
 
 *Note*: vLLM greedily consume up to 90% of the GPU's memory under default settings.
 This tutorial updates this behavior by setting `gpu_memory_utilization` to 50%.
 You can tweak this behavior using fields like `gpu_memory_utilization` and other settings
-in [`vllm_engine_args.json`](model_repository/vllm/vllm_engine_args.json).
+in [`config.pbtxt`](model_repository/vllm/config.pbtxt).
 
 Read through the documentation in [`model.py`](model_repository/vllm/1/model.py) to understand how
 to configure this sample for your use-case.
