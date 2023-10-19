@@ -43,6 +43,7 @@ class TritonDeployment:
 
         for response in model.infer_async(inference_request):
             print(response)
+            print(response.outputs["text_output"])
 
     #        print(self._models)
 

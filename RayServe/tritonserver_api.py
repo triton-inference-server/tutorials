@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import queue
+import struct
 from collections import defaultdict
 from dataclasses import dataclass
 
@@ -193,12 +194,19 @@ class InferenceResponse:
                 type_,
                 shape,
                 buffer_,
+                byte_size,
                 memory_type,
                 memory_type_id,
                 numpy_array,
             ) = response.output(output_index)
+
+            if type_ == triton_bindings.TRITONSERVER_DataType.BYTES:
+                numpy_array = InferenceRequest._deserialize_bytes_array(numpy_array)
+
             outputs[name] = numpy_array.reshape(shape)
         values["outputs"] = outputs
+        values["_server"] = server
+
         # values["classification_label"] = response.output_classification_label()
 
         return InferenceResponse(**values)
@@ -222,9 +230,9 @@ class InferenceRequest:
 
     @staticmethod
     def _allocate_buffer(
-        allocator, tensor_name, bytes_size, memory_type, memory_type_id, user_object
+        allocator, tensor_name, byte_size, memory_type, memory_type_id, user_object
     ):
-        _buffer = numpy.empty(byte_Size, numpy.byte)
+        _buffer = numpy.empty(byte_size, numpy.byte)
         return (
             _buffer.ctypes.data,
             _buffer,
@@ -234,7 +242,7 @@ class InferenceRequest:
 
     @staticmethod
     def _release_buffer(
-        allocator, _buffer, user_object, bytes_size, memory_type, memory_type_id
+        allocator, _buffer, user_object, byte_size, memory_type, memory_type_id
     ):
         # No-op
         pass
@@ -258,6 +266,29 @@ class InferenceRequest:
         buffer_attributes.byte_size = buffer_user_object.size
         return buffer_attributes
 
+    @staticmethod
+    def _deserialize_bytes_array(array):
+        result = []
+        _buffer = memoryview(array)
+        offset = 0
+        while offset < len(_buffer):
+            (item_length,) = struct.unpack_from("@I", _buffer, offset)
+            offset += 4
+            result.append(_buffer[offset : offset + item_length].tobytes())
+            offset += item_length
+        return numpy.array(result, dtype=numpy.object_)
+
+    @staticmethod
+    def _serialize_bytes_array(array):
+        result = []
+        for array_item in numpy.nditer(array, flags=["refs_ok"], order="C"):
+            item = array_item.item()
+            if type(item) != bytes:
+                item = str(item).encode("utf-8")
+            result.append(struct.pack("@I", len(item)))
+            result.append(item)
+        return numpy.frombuffer(b"".join(result), dtype=numpy.byte)
+
     _allocator = triton_bindings.TRITONSERVER_ResponseAllocator(
         _allocate_buffer, _release_buffer, _allocator_start
     )
@@ -265,7 +296,6 @@ class InferenceRequest:
     def _add_inputs(self, request):
         for name, value in self.inputs.items():
             if not isinstance(value, (numpy.ndarray, numpy.generic)):
-                print(type(value))
                 raise Exception("Invalid Argument")
 
             triton_datatype = NUMPY_TO_TRITON_DTYPE[value.dtype.type]
@@ -274,6 +304,9 @@ class InferenceRequest:
                 raise Exception("Invalid Argument")
 
             request.add_input(name, triton_datatype, value.shape)
+
+            if triton_datatype == triton_bindings.TRITONSERVER_DataType.BYTES:
+                value = InferenceRequest._serialize_bytes_array(value)
 
             _buffer = value.ctypes.data
             buffer_attributes = triton_bindings.TRITONSERVER_BufferAttributes()
@@ -285,6 +318,8 @@ class InferenceRequest:
             )
 
     def _set_callbacks(self, request):
+        #        allocator.set_buffer_attributes_function(InferenceRequest._set_buffer_attributes)
+        #       allocator.set_query_function(InferenceRequest._query_preferred_memory_type)
         response_iterator = ResponseIterator(self._server)
         request.set_release_callback(InferenceRequest._release_request, None)
         request.set_response_callback(
