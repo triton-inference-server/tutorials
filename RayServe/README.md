@@ -26,6 +26,13 @@ release.
 | triton_deployment.py | RayServe deployment including embedded Triton Server |
 | tritonserver_api.py | "Pythonic" wrapper on top of low level bindings
 
+## Python Binding References
+
+| File | Description |
+| ---- | ----------- |
+| [tritonserver_pybind.cc](https://github.com/triton-inference-server/core/blob/main/python/tritonserver/_c/tritonserver_pybind.cc) | Low level bindings |
+| [test_binding.py](https://github.com/triton-inference-server/core/blob/main/python/test/test_binding.py) | Unit tests and example usage |
+
 ## Building and Running within Docker
 
 The prototype is designed to be run within a docker container using
@@ -165,7 +172,6 @@ curl "localhost:8000/generate?text_input='who%20is%20groot?'"
 <SNIP>
 "'who is groot?'\n\n'I am groot,' said the old man, 'and I am groot.'\n\n'And who is groot?'\n\n'I am groot,' said the old man, 'and I am groot.'\n\n'And who is groot?'\n\n'I am groot,' said the old man, 'and I am groot.'\n\n'And who is groot?'\n\n'I am groot,' said the old man,"
 ```
-
 
 ## Limitations
 
