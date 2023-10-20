@@ -23,6 +23,11 @@
 # OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import os
+
+os.environ[
+    "TRANSFORMERS_CACHE"
+] = "/opt/tritonserver/model_repository/falcon7b/hf_cache"
 import json
 
 import numpy as np
@@ -60,38 +65,46 @@ class TritonPythonModel:
             tokenizer=self.tokenizer,
             device_map="auto",
         )
+        self.pipeline.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
     def execute(self, requests):
         responses = []
+        prompts = []
         for request in requests:
-            # Assume input named "prompt", specified in autocomplete above
             input_tensor = pb_utils.get_input_tensor_by_name(request, "text_input")
-            prompt = input_tensor.as_numpy()[0].decode("utf-8")
+            multi_dim = input_tensor.as_numpy().ndim > 1
+            if not multi_dim:
+                prompt = input_tensor.as_numpy()[0].decode("utf-8")
+                self.logger.log_info(f"Generating sequences for text_input: {prompt}")
+                prompts.append(prompt)
+            else:
+                # Implementation to accept dynamically batched inputs
+                num_prompts = input_tensor.as_numpy().shape[0]
+                for prompt_index in range(0, num_prompts):
+                    prompt = input_tensor.as_numpy()[prompt_index][0].decode("utf-8")
+                    prompts.append(prompt)
 
-            self.logger.log_info(f"Generating sequences for text_input: {prompt}")
-            response = self.generate(prompt)
-            responses.append(response)
+        batch_size = len(prompts)
+        return self.generate(prompts, batch_size)
 
-        return responses
-
-    def generate(self, prompt):
+    def generate(self, prompts, batch_size):
         sequences = self.pipeline(
-            prompt,
+            prompts,
             max_length=self.max_output_length,
-            eos_token_id=self.tokenizer.eos_token_id,
+            pad_token_id=self.tokenizer.eos_token_id,
+            batch_size=batch_size,
         )
-
-        output_tensors = []
+        responses = []
         texts = []
         for i, seq in enumerate(sequences):
-            text = seq["generated_text"]
-            self.logger.log_info(f"Sequence {i+1}: {text}")
+            output_tensors = []
+            text = seq[0]["generated_text"]
             texts.append(text)
+            tensor = pb_utils.Tensor("text_output", np.array(texts, dtype=np.object_))
+            output_tensors.append(tensor)
+            responses.append(pb_utils.InferenceResponse(output_tensors=output_tensors))
 
-        tensor = pb_utils.Tensor("text_output", np.array(texts, dtype=np.object_))
-        output_tensors.append(tensor)
-        response = pb_utils.InferenceResponse(output_tensors=output_tensors)
-        return response
+        return responses
 
     def finalize(self):
         print("Cleaning up...")

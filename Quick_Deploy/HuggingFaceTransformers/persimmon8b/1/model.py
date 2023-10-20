@@ -23,6 +23,12 @@
 # OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import os
+
+os.environ[
+    "TRANSFORMERS_CACHE"
+] = "/opt/tritonserver/model_repository/persimmon8b/hf_cache"
+
 import json
 
 import numpy as np
@@ -49,7 +55,7 @@ class TritonPythonModel:
             )
         )
 
-        self.logger.log_info(f"Max sequence length: {self.max_output_length}")
+        self.logger.log_info(f"Max output length: {self.max_output_length}")
         self.logger.log_info(f"Loading HuggingFace model: {hf_model}...")
         # Assume tokenizer available for same model
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(hf_model)

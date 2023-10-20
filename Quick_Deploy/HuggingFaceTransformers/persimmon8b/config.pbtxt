@@ -5,7 +5,7 @@ backend: "python"
 # key/value structure
 parameters: {
   key: "huggingface_model",
-  value: {string_value: "tiiuae/falcon-7b"}
+  value: {string_value: "adept/persimmon-8b-base"}
 }
 
 # The maximum number of tokens to generate in response
