@@ -32,6 +32,7 @@ release.
 | ---- | ----------- |
 | [tritonserver_pybind.cc](https://github.com/triton-inference-server/core/blob/main/python/tritonserver/_c/tritonserver_pybind.cc) | Low level bindings |
 | [test_binding.py](https://github.com/triton-inference-server/core/blob/main/python/test/test_binding.py) | Unit tests and example usage |
+| [tritonserver_api.py](tritonserver_api.py) | Work in progress Pythonic API |
 
 ## Building and Running within Docker
 
