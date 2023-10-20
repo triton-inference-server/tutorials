@@ -26,7 +26,7 @@ release.
 | triton_deployment.py | RayServe deployment including embedded Triton Server |
 | tritonserver_api.py | "Pythonic" wrapper on top of low level bindings
 
-## Building Docker Environments
+## Building and Running within Docker
 
 The prototype is designed to be run within a docker container using
 volume mounting for interactive local development.
@@ -37,4 +37,32 @@ volume mounting for interactive local development.
 ```bash
    ./build.sh
 ```
+
+#### Supported Backends
+```
+dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  tensorflow  tensorrt
+```
+
+#### Run
+```bash
+  ./run.sh
+```
+
+#### Within Docker Container
+
+```bash
+python3 triton_deployment.py
+```
+
+##### Expected Result
+```
+(ServeReplica:default:TritonDeployment pid=2736) {'name': 'test', 'version': 1, 'state': 'READY'}
+<SNIP>
+Hello Theodore!
+<SNIP>
+{'text_output': 'Theodore', 'fp16_output': [0.5]}
+<SNIP>
+```
+
+
 
