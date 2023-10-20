@@ -10,11 +10,21 @@ release.
 >**Note** This code is early prototype only and is not meant for
 >production and is subject to change.
 
-# Description of Files
+## Included Files
 
 |File|Description|
 |----|-----------|
 |build.sh| builds a docker image based on Triton 23.09 + RayServe |
-|build_tensorrt_llm.sh| builds a docker image based on Triton 23.09 + Tensor-RT-LLM + Ray Server |
+|build_tensorrt_llm.sh| builds a docker image based on Triton 23.09 + TensorRT-LLM + Ray Server |
+|Dockerfile | Dockerfile for Triton 23.09 + RayServe |
+|Dockerfile.trt_llm| Dockerfile for Triton 23.09 + TensorRT-LLM + RayServe|
+|models_test | Simple model repository with simple custom python model |
+|models_trt_llm | config files for TensorRT-LLM gpt2 model |
+|build_gpt_trt_llm.sh | builds the engine file for gpt 2 |
+|run.sh | runs basic image |
+|run_trt_llm.sh| runs TensorRT-LLM enabled image |
+| triton_deployment.py | RayServe deployment including embedded Triton Server |
+| tritonserver_api.py | "Pythonic" wrapper on top of low level bindings
 
+##
 
