@@ -10,4 +10,11 @@ release.
 >**Note** This code is early prototype only and is not meant for
 >production and is subject to change.
 
+# Description of Files
+
+|File|Description|
+|----|-----------|
+|build.sh| builds a docker image based on Triton 23.09 + RayServe |
+|build_tensorrt_llm.sh| builds a docker image based on Triton 23.09 + Tensor-RT-LLM + Ray Server |
+
 
