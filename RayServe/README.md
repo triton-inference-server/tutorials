@@ -7,7 +7,7 @@ A thin partial "pythonic wrapper" is also provided as an early preview
 of the type of high level api that will be provided in a coming Triton
 release.
 
->[Note] This code is early prototype only and is not meant for
+>**Note** This code is early prototype only and is not meant for
 >production and is subject to change.
 
 
