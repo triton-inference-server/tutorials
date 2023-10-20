@@ -64,20 +64,25 @@ class TritonDeployment:
         return f"Hello {name}!"
 
 
-# 2: Deploy the deployment.
-serve.run(TritonDeployment.bind())
+if __name__ == "__main__":
+    # 2: Deploy the deployment.
+    serve.run(TritonDeployment.bind())
 
-# 3: Query the deployment and print the result.
-print(requests.get("http://localhost:8000/hello", params={"name": "Theodore"}).json())
-print(
-    requests.get(
-        "http://localhost:8000/generate", params={"text_input": "Theodore"}
-    ).json()
-)
-print(
-    requests.get(
-        "http://localhost:8000/test",
-        params={"text_input": "Theodore", "fp16_input": 0.5},
-    ).json()
-)
-# "Hello Theodore!"
+    # 3: Query the deployment and print the result.
+    print(
+        requests.get("http://localhost:8000/hello", params={"name": "Theodore"}).json()
+    )
+    print(
+        requests.get(
+            "http://localhost:8000/generate", params={"text_input": "Theodore"}
+        ).json()
+    )
+    print(
+        requests.get(
+            "http://localhost:8000/test",
+            params={"text_input": "Theodore", "fp16_input": 0.5},
+        ).json()
+    )
+    # "Hello Theodore!"
+else:
+    triton_app = TritonDeployment.bind()
