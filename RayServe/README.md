@@ -90,6 +90,8 @@ curl "localhost:8000/test?text_input="who%20is%20Triton%20Inference%20Server?"&f
 ### Triton 23.09 + TensorRT-LLM + RayServe
 
 #### Build Image
+>**Note:** First time image build will take several minutes
+
 ```bash
    ./build_tensorrt_llm.sh
 ```
@@ -105,8 +107,11 @@ dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  ten
 ```
 
 #### Build TensorRT-LLM Engine
+
+>**Note:** First time engine build will a few minutes
+
 ```bash
-./
+./build_gpt_engine.sh
 ```
 
 #### Within Docker Container
@@ -117,12 +122,20 @@ python3 triton_deployment.py
 
 ##### Expected Result
 ```
-(ServeReplica:default:TritonDeployment pid=2736) {'name': 'test', 'version': 1, 'state': 'READY'}
-<SNIP>
+(ServeReplica:default:TritonDeployment pid=3556) [TensorRT-LLM][INFO] [MemUsageChange] Init cuDNN: CPU +0, GPU +10, now: CPU 957, GPU 3183 (MiB)
+(ServeReplica:default:TritonDeployment pid=3556) [TensorRT-LLM][INFO] [MemUsageChange] TensorRT-managed allocation in IExecutionContext creation: CPU +0, GPU +0, now: CPU 0, GPU 774 (MiB)
+(ServeReplica:default:TritonDeployment pid=3556) [TensorRT-LLM][INFO] Using 410880 tokens in paged KV cache.
+(ServeReplica:default:TritonDeployment pid=3556) {'name': 'ensemble', 'version': 1, 'state': 'READY'}
+(ServeReplica:default:TritonDeployment pid=3556) {'name': 'postprocessing', 'version': 1, 'state': 'READY'}
+(ServeReplica:default:TritonDeployment pid=3556) {'name': 'preprocessing', 'version': 1, 'state': 'READY'}
+(ServeReplica:default:TritonDeployment pid=3556) {'name': 'tensorrt_llm', 'version': 1, 'state': 'READY'}
+(ServeReplica:default:TritonDeployment pid=3556) {'name': 'test', 'version': 1, 'state': 'READY'}
 Hello Theodore!
-<SNIP>
+(ServeReplica:default:TritonDeployment pid=3556) INFO 2023-10-20 06:56:12,295 TritonDeployment default#TritonDeployment#jgXhTy 54e56361-b027-4dbd-b211-589d6b270589 /hello default replica.py:749 - __CALL__ OK 5.5ms
+Theodore Roosevelt, who was president from 1933 to 1945, was a staunch advocate of the use of nuclear weapons. He was also a staunch opponent of the use of atomic weapons.
+
+"I am not a pacifist," he said in a speech in 1945. "I am a pacifist because I believe that the use of nuclear weapons is a terrible thing. I believe that the use of nuclear weapons is a terrible thing. I believe that the use of nuclear weapons is a terrible thing. I believe
 {'text_output': 'Theodore', 'fp16_output': [0.5]}
-<SNIP>
 ```
 
 #### Within Docker Container
@@ -132,20 +145,36 @@ serve run triton_deployment:triton_app
 
 ##### Expected Result
 ```bash
-<SNIP>
-ServeReplica:default:TritonDeployment pid=10347) {'name': 'test', 'version': 1, 'state': 'READY'}
-<SNIP>
+(ServeReplica:default:TritonDeployment pid=7540) [TensorRT-LLM][INFO] [MemUsageChange] TensorRT-managed allocation in IExecutionContext creation: CPU +0, GPU +0, now: CPU 0, GPU 774 (MiB)
+(ServeReplica:default:TritonDeployment pid=7540) [TensorRT-LLM][INFO] Using 410880 tokens in paged KV cache.
+(ServeReplica:default:TritonDeployment pid=7540) {'name': 'ensemble', 'version': 1, 'state': 'READY'}
+(ServeReplica:default:TritonDeployment pid=7540) {'name': 'postprocessing', 'version': 1, 'state': 'READY'}
+(ServeReplica:default:TritonDeployment pid=7540) {'name': 'preprocessing', 'version': 1, 'state': 'READY'}
+(ServeReplica:default:TritonDeployment pid=7540) {'name': 'tensorrt_llm', 'version': 1, 'state': 'READY'}
+(ServeReplica:default:TritonDeployment pid=7540) {'name': 'test', 'version': 1, 'state': 'READY'}
+2023-10-20 06:57:30,122	SUCC scripts.py:519 -- Deployed Serve app successfully.
 ```
 
 #### Interact
 ```bash
-curl "localhost:8000/test?text_input="who%20is%20Triton%20Inference%20Server?"&fp16_input=0.5"
+curl "localhost:8000/generate?text_input='who%20is%20groot?'"
 ```
 
 ##### Expected Result
 ```bash
 <SNIP>
-{"text_output":"who is Triton Inference Server?","fp16_output":[0.5]}
+"'who is groot?'\n\n'I am groot,' said the old man, 'and I am groot.'\n\n'And who is groot?'\n\n'I am groot,' said the old man, 'and I am groot.'\n\n'And who is groot?'\n\n'I am groot,' said the old man, 'and I am groot.'\n\n'And who is groot?'\n\n'I am groot,' said the old man,"
 ```
 
 
+## Limitations
+
+* Currently, while models are loaded and executed on the GPU - input tensors are passed via CPU memory
+
+* No asyncio version of response iterator
+
+* Incomplete wrapper of APIs
+
+* Robust error handling
+
+* Performance not tested
