@@ -1,3 +1,5 @@
+import os
+
 import numpy
 import requests
 from fastapi import FastAPI
@@ -8,7 +10,7 @@ from tritonserver_api import TritonServer
 app = FastAPI()
 
 
-@serve.deployment(route_prefix="/")
+@serve.deployment(route_prefix="/", ray_actor_options={"num_gpus": 1})
 @serve.ingress(app)
 class TritonDeployment:
     def __init__(self):
@@ -20,45 +22,37 @@ class TritonDeployment:
         for model in self._models:
             print(model)
 
-        print(self._models[-1].ready())
-
-        model = self._triton_server.model("test")
-
-        print(model.metadata())
-
-        inference_request = model.inference_request()
-
-        inference_request.inputs["text_input"] = numpy.array(
-            ["hello", "world"], dtype=numpy.object_
+    @app.get("/test")
+    def generate(self, text_input: str, fp16_input: float) -> dict:
+        test = self._triton_server.model("test")
+        responses = test.infer_async(
+            inputs={
+                "text_input": numpy.array([text_input], dtype=numpy.object_),
+                "fp16_input": numpy.array([[fp16_input]], dtype=numpy.float16),
+            }
         )
-        inference_request.inputs["fp16_input"] = numpy.array(
-            [[0.5], [1], [2], [3]], dtype=numpy.float16
+        for response in responses:
+            text_output = response.outputs["text_output"].astype(str)[0]
+            fp16_output = response.outputs["fp16_output"].astype(float)[0]
+
+        return {"text_output": text_output, "fp16_output": fp16_output}
+
+    @app.get("/generate")
+    def generate(self, text_input: str) -> str:
+        trt_llm = self._triton_server.model("ensemble")
+        responses = trt_llm.infer_async(
+            inputs={
+                "text_input": numpy.array([[text_input]], dtype=numpy.object_),
+                "max_tokens": numpy.array([[100]], dtype=numpy.uint32),
+                "stop_words": numpy.array([[""]], dtype=numpy.object_),
+                "bad_words": numpy.array([[""]], dtype=numpy.object_),
+            }
         )
+        result = []
+        for response in responses:
+            result.append(response.outputs["text_output"].astype(str)[0])
+        return "".join(result)
 
-        for response in model.infer_async(inference_request):
-            for output in response.outputs.items():
-                print(output)
-
-    #        print(self._models)
-
-    #        self._simple = self._triton_server.model("simple")
-
-    #       while (not self._simple.ready()):
-    #          time.sleep(0.1)
-
-    #     inference_request = InferenceRequest(server,"simple",1)
-
-    #    inference_request = self._simple.inference_request()
-
-    #   infernce_request.inputs["INPUT_0"] = foo
-
-    #  self._simple.infer_async(inputs={"INPUT0":[]},
-    #                          priority=1,
-    #                         correlation_id=1)
-
-    #        self._simple.infer_async(inference_request)
-
-    # FastAPI will automatically parse the HTTP request for us.
     @app.get("/hello")
     def say_hello(self, name: str) -> str:
         return f"Hello {name}!"
@@ -69,4 +63,15 @@ serve.run(TritonDeployment.bind())
 
 # 3: Query the deployment and print the result.
 print(requests.get("http://localhost:8000/hello", params={"name": "Theodore"}).json())
+print(
+    requests.get(
+        "http://localhost:8000/generate", params={"text_input": "Theodore"}
+    ).json()
+)
+print(
+    requests.get(
+        "http://localhost:8000/test",
+        params={"text_input": "Theodore", "fp16_input": 0.5},
+    ).json()
+)
 # "Hello Theodore!"

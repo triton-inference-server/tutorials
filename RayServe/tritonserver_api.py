@@ -1,3 +1,4 @@
+import asyncio
 import dataclasses
 import json
 import queue
@@ -41,6 +42,7 @@ class TritonServer:
         )
         options.set_log_verbose(0)
         options.set_log_info(0)
+        options.set_log_warn(0)
         options.set_exit_timeout(5)
         self._server = triton_bindings.TRITONSERVER_Server(options)
 
@@ -138,6 +140,31 @@ TRITON_TO_NUMPY_DTYPE = defaultdict(
 )
 
 
+class AsyncResponseIterator:
+    @staticmethod
+    def response_callback(response, flags, self):
+        response = InferenceResponse.set_from_server_response(self._server, response)
+
+        asyncio.run_coroutine_threadsafe(self._queue.put(response), self._loop)
+
+        if flags == triton_bindings.TRITONSERVER_ResponseCompleteFlag.FINAL:
+            asyncio.run_coroutine_threadsafe(self._queue.put(None), self._loop)
+
+    def __init__(self, server, loop):
+        self._server = server
+        self._loop = loop
+        self._queue = asyncio.Queue()
+
+    async def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        response = self._queue.get()
+        if response is None:
+            raise StopAsyncIteration
+        return response
+
+
 class ResponseIterator:
     @staticmethod
     def response_callback(response, flags, self):
@@ -150,6 +177,8 @@ class ResponseIterator:
     def __init__(self, server):
         self._queue = queue.SimpleQueue()
         self._server = server
+
+    #        self._request = request
 
     def __iter__(self):
         return self
@@ -322,10 +351,10 @@ class InferenceRequest:
             )
 
     def _set_callbacks(self, request):
-        #        allocator.set_buffer_attributes_function(InferenceRequest._set_buffer_attributes)
-        #       allocator.set_query_function(InferenceRequest._query_preferred_memory_type)
+        # allocator.set_buffer_attributes_function(InferenceRequest._set_buffer_attributes)
+        # allocator.set_query_function(InferenceRequest._query_preferred_memory_type)
         response_iterator = ResponseIterator(self._server)
-        request.set_release_callback(InferenceRequest._release_request, None)
+        request.set_release_callback(InferenceRequest._release_request, self)
         request.set_response_callback(
             InferenceRequest._allocator,
             None,
