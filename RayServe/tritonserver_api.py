@@ -43,6 +43,7 @@ class TritonServer:
         options.set_log_verbose(0)
         options.set_log_info(0)
         options.set_log_warn(0)
+        options.set_strict_readiness(0)
         options.set_exit_timeout(5)
         self._server = triton_bindings.TRITONSERVER_Server(options)
 

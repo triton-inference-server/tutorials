@@ -40,6 +40,12 @@ class TritonDeployment:
     @app.get("/generate")
     def generate(self, text_input: str) -> str:
         trt_llm = self._triton_server.model("ensemble")
+        try:
+            if not trt_llm.ready():
+                return ""
+        except:
+            return ""
+
         responses = trt_llm.infer_async(
             inputs={
                 "text_input": numpy.array([[text_input]], dtype=numpy.object_),
