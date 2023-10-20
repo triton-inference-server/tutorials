@@ -3,6 +3,7 @@ import os
 import numpy
 import requests
 from fastapi import FastAPI
+from PIL import Image
 from ray import serve
 from tritonserver_api import TritonServer
 
@@ -36,6 +37,21 @@ class TritonDeployment:
             fp16_output = response.outputs["fp16_output"].astype(float)[0]
 
         return {"text_output": text_output, "fp16_output": fp16_output}
+
+    @app.get("/classify")
+    def classify(self, image_name: str) -> str:
+        model = self._triton_server.model("resnet50_libtorch")
+
+        # print(model.metadata())
+
+        input_ = numpy.random.rand(1, 3, 224, 224).astype(numpy.float32)
+
+        responses = model.infer_async(inputs={"INPUT__0": input_})
+        for response in responses:
+            output_ = response.outputs["OUTPUT__0"]
+            max_ = numpy.argmax(output_[0])
+        #            print(max_)
+        return "max: %s" % (max_)
 
     @app.get("/generate")
     def generate(self, text_input: str) -> str:
@@ -84,5 +100,13 @@ if __name__ == "__main__":
         ).json()
     )
     # "Hello Theodore!"
+
+    print(
+        requests.get(
+            "http://localhost:8000/classify",
+            params={"image_name": "Theodore"},
+        ).json()
+    )
+
 else:
     triton_app = TritonDeployment.bind()

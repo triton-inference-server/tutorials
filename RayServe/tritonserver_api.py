@@ -332,6 +332,8 @@ class InferenceRequest:
 
             triton_datatype = NUMPY_TO_TRITON_DTYPE[value.dtype.type]
 
+            print("triton_datatype", triton_datatype, value.dtype.type, flush=True)
+
             if triton_datatype == triton_bindings.TRITONSERVER_DataType.INVALID:
                 raise Exception("Invalid Argument")
 
