@@ -68,7 +68,6 @@ class TritonPythonModel:
         self.pipeline.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
     def execute(self, requests):
-        responses = []
         prompts = []
         for request in requests:
             input_tensor = pb_utils.get_input_tensor_by_name(request, "text_input")
