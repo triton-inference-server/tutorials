@@ -20,7 +20,7 @@ release.
 |Dockerfile.trt_llm| Dockerfile for Triton 23.09 + TensorRT-LLM + RayServe|
 |models_test | Simple model repository with simple custom python model |
 |models_trt_llm | config files for TensorRT-LLM gpt2 model |
-|build_gpt_trt_llm.sh | builds the engine file for gpt 2 |
+|build_gpt_engine.sh | builds the engine file for gpt 2 |
 |run.sh | runs basic image |
 |run_trt_llm.sh| runs TensorRT-LLM enabled image |
 | triton_deployment.py | RayServe deployment including embedded Triton Server |
@@ -64,5 +64,88 @@ Hello Theodore!
 <SNIP>
 ```
 
+#### Within Docker Container
+```bash
+serve run triton_deployment:triton_app
+```
+
+##### Expected Result
+```bash
+<SNIP>
+ServeReplica:default:TritonDeployment pid=10347) {'name': 'test', 'version': 1, 'state': 'READY'}
+<SNIP>
+```
+
+#### Interact
+```bash
+curl "localhost:8000/test?text_input="who%20is%20Triton%20Inference%20Server?"&fp16_input=0.5"
+```
+
+##### Expected Result
+```bash
+<SNIP>
+{"text_output":"who is Triton Inference Server?","fp16_output":[0.5]}
+```
+
+### Triton 23.09 + TensorRT-LLM + RayServe
+
+#### Build Image
+```bash
+   ./build_tensorrt_llm.sh
+```
+
+#### Supported Backends
+```
+dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  tensorflow  tensorrt  tensorrtllm
+```
+
+#### Run
+```bash
+  ./run_trt_llm.sh
+```
+
+#### Build TensorRT-LLM Engine
+```bash
+./
+```
+
+#### Within Docker Container
+
+```bash
+python3 triton_deployment.py
+```
+
+##### Expected Result
+```
+(ServeReplica:default:TritonDeployment pid=2736) {'name': 'test', 'version': 1, 'state': 'READY'}
+<SNIP>
+Hello Theodore!
+<SNIP>
+{'text_output': 'Theodore', 'fp16_output': [0.5]}
+<SNIP>
+```
+
+#### Within Docker Container
+```bash
+serve run triton_deployment:triton_app
+```
+
+##### Expected Result
+```bash
+<SNIP>
+ServeReplica:default:TritonDeployment pid=10347) {'name': 'test', 'version': 1, 'state': 'READY'}
+<SNIP>
+```
+
+#### Interact
+```bash
+curl "localhost:8000/test?text_input="who%20is%20Triton%20Inference%20Server?"&fp16_input=0.5"
+```
+
+##### Expected Result
+```bash
+<SNIP>
+{"text_output":"who is Triton Inference Server?","fp16_output":[0.5]}
+```
 
 
