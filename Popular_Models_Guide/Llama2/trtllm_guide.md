@@ -26,7 +26,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-Note: This tutorial is for TensorRT-LLM Backend which is currently under development.
+Note: This tutorial is for TensorRT-LLM Backend which is currently under development so is subject to change.
 
 ## Pre-build instructions
 
@@ -35,10 +35,20 @@ Clone the repo of the model with weights and tokens [here](https://huggingface.c
 
 ## Installation
 
-Launch Triton docker container with TensorRT-LLM backend
+1. The installation starts with cloning the TensorRT-LLM Backend and update the TensorRT-LLM submodule:
+```bash
+git clone https://github.com/triton-inference-server/tensorrtllm_backend.git
+# Update the submodules
+cd tensorrtllm_backend
+git submodule update --init --recursive
+git lfs install
+git lfs pull
+```
+
+2. Then launch Triton docker container with TensorRT-LLM backend
 ```docker run --rm -it --net host --shm-size=2g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all -v /path/to/tensorrtllm_backend:/tensorrtllm_backend nvcr.io/nvidia/tritonserver:23.10-trtllm-py3 bash```
 
-Alternatively, you can follow instructions [here](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/README.md) to build Tritonserver with Tensorrt-LLM Backend if you want to build a specialized container.
+Alternatively, you can follow instructions [here](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/README.md) to build Triton Server with Tensorrt-LLM Backend if you want to build a specialized container.
 
 Don't forget to allow gpu usage when you launch the container.
 
@@ -62,12 +72,13 @@ To do so, you will need to complete the following steps:
     ```
 
 3.  Compile model engines
+
     The script to build Llama models is located in [TensorRT-LLM repository](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples). We use the one located in the docker container as
      `/tensorrtllm_backend/tensorrt_llm/examples/llama/build.py`.
-     This command compiles the model with in flight batching and 1 GPU. More details for the scripting please see the documentation for the Llama example [here](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples/llama/README.md).
+     This command compiles the model with inflight batching and 1 GPU. More details for the scripting please see the documentation for the Llama example [here](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples/llama/README.md).
 
     ```bash
-    python build.py --model_dir /<path to your llama repo>/Llama-2-7b-chat-hf/ \
+    python build.py --model_dir /<path to your llama repo>/Llama-2-7b-hf/ \
                     --dtype bfloat16 \
                     --use_gpt_attention_plugin bfloat16 \
                     --use_inflight_batching \
@@ -82,22 +93,23 @@ To do so, you will need to complete the following steps:
     > located in the same llama examples folder.
     >
     >   ```bash
-    >    python3 /run.py --engine_dir=<path to your engine>/1-gpu/ --max_output_len 100 --tokenizer_dir <path to your llama repo>/Llama-2-7b-chat-hf --input_text "How do I count to ten in French?"
+    >    python3 /run.py --engine_dir=<path to your engine>/1-gpu/ --max_output_len 100 --tokenizer_dir <path to your llama repo>/Llama-2-7b-hf --input_text "How do I count to ten in French?"
     >    ```
 
 ## Serving with Triton
 
-We're almost there! The last step is to create a Triton readable model. You can
+The last step is to create a Triton readable model. You can
 find a template of a model that uses in flight batching in [tensorrtllm_backend/all_models/inflight_batcher_llm](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/all_models/inflight_batcher_llm).
 To run our Llama2-7B model, you will need to:
 
 
 1. Copy over the inflight batcher models repository
+
  ```bash
  cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/.
  ```
 
-2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps
+2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps. See details in [documentation](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/README.md#create-the-model-repository):
 
     ```bash
     # preprocessing
@@ -119,11 +131,14 @@ To run our Llama2-7B model, you will need to:
 
 ## Client
 
-You can test the results of the run with the [inflight_batcher_llm_client.py script](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/inflight_batcher_llm)
+You can test the results of the run with:
+1. The [inflight_batcher_llm_client.py script](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/inflight_batcher_llm)
 
 ```bash
 python3 /tensorrtllm_backend/inflight_batcher_llm/client/inflight_batcher_llm_client.py --request-output-len 200
 ```
+
+2. The [generate endpoint](https://github.com/triton-inference-server/tensorrtllm_backend/tree/release/0.5.0#query-the-server-with-the-triton-generate-endpoint) if you are using the Triton TensorRT-LLM Backend container with versions greater than `r23.10`.
 
 
 
