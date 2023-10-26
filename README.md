@@ -23,7 +23,7 @@ The table below contains some popular models that are supported in our tutorials
 | [Falcon-180B](https://falconllm.tii.ae/index.html) |[HuggingFace tutorial](https://github.com/triton-inference-server/tutorials/tree/main/Quick_Deploy/HuggingFaceTransformers)   |:grey_question:  |       :white_check_mark:          |
 
 **Note:**
-1.  :white_check_mark: indicates that the model has been verified to work with said backend, :grey_question: indicates the model has not been verified to work.
+1. :white_check_mark: indicates that the model has been verified to work with said backend, :grey_question: indicates the model has not been verified to work.
 2. This is not an exhausitive list of what Triton supports, just what is included in the tutorials.
 
 ## What does this repository contain?

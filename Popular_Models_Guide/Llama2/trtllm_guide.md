@@ -85,8 +85,8 @@ To do so, you will need to complete the following steps:
                     --paged_kv_cache \
                     --remove_input_padding \
                     --use_gemm_plugin bfloat16 \
-                    --output_dir /<path to your engine>/1-gpu/
-                    --world-size 1
+                    --output_dir /<path to your engine>/1-gpu/ \
+                    --world_size 1
     ```
 
     > Optional: You can check test the output of the model with `run.py`
