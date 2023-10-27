@@ -90,7 +90,7 @@ TensorRT-LLM requires each model to be compiled for the configuration you need b
     > located in the same llama examples folder.
     >
     >   ```bash
-    >    python3 /run.py --engine_dir=<path to your engine>/1-gpu/ --max_output_len 100 --tokenizer_dir <path to your llama repo>/Llama-2-7b-hf --input_text "How do I count to ten in French?"
+    >    python3 run.py --engine_dir=<path to your engine>/1-gpu/ --max_output_len 100 --tokenizer_dir <path to your llama repo>/Llama-2-7b-hf --input_text "How do I count to ten in French?"
     >    ```
 
 ## Serving with Triton
@@ -125,9 +125,9 @@ To run our Llama2-7B model, you will need to:
     ```bash
     tritonserver --model-repository=/opt/tritonserver/inflight_batcher_llm
     ```
-    Note if you built the engine with `--world-size X` where `X` is greater than 1, you will need to use the [launch_triton_server.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/release/0.5.0/scripts/launch_triton_server.py) script.
+    Note if you built the engine with `--world_size X` where `X` is greater than 1, you will need to use the [launch_triton_server.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/release/0.5.0/scripts/launch_triton_server.py) script.
     ```bash
-    python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=4 --model_repo=/opt/tritonserver/inflight_batcher_llm
+    python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=X --model_repo=/opt/tritonserver/inflight_batcher_llm
     ```
 
 ## Client
