@@ -16,11 +16,11 @@ The focus of these examples is to demonstrate deployment for models trained with
 
 #### Example models
 The table below contains some popular models that are supported in our tutorials
-| Model Name      | Tutorial Link |
+| <p6>Example Models<p6>   | ####Tutorial Link |
 | :-------------: | :------------------------------: |
 | [Llama-2-7B](https://huggingface.co/meta-llama/Llama-2-7b-hf/tree/main) |[TensorRT-LLM Tutorial](Popular_Models_Guide/Llama2/trtllm_guide.md) |
 | [Persimmon-8B](https://www.adept.ai/blog/persimmon-8b) | [HuggingFace Transformers Tutorial](https://github.com/triton-inference-server/tutorials/tree/main/Quick_Deploy/HuggingFaceTransformers)  |
- [Falcon-180B](https://falconllm.tii.ae/index.html) |[HuggingFace Transformers Tutorial](https://github.com/triton-inference-server/tutorials/tree/main/Quick_Deploy/HuggingFaceTransformers)   |
+[Falcon-7B](https://huggingface.co/tiiuae/falcon-7b) |[HuggingFace Transformers Tutorial](https://github.com/triton-inference-server/tutorials/tree/main/Quick_Deploy/HuggingFaceTransformers)   |
 
 **Note:**
 This is not an exhausitive list of what Triton supports, just what is included in the tutorials.

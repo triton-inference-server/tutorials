@@ -29,7 +29,8 @@
 ## Pre-build instructions
 
 For this tutorial, we are using the Llama2-7B HuggingFace model with pre-trained weights.
-Clone the repo of the model with weights and tokens [here](https://huggingface.co/meta-llama/Llama-2-7b-hf/tree/main). You will need to get permissions for the Llama2 repository as well as get access to the huggingface cli. To get access to the huggingface cli, go here: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
+Clone the repo of the model with weights and tokens [here](https://huggingface.co/meta-llama/Llama-2-7b-hf/tree/main).
+You will need to get permissions for the Llama2 repository as well as get access to the huggingface cli. To get access to the huggingface cli, go here: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
 
 ## Installation
 
@@ -51,9 +52,7 @@ Alternatively, you can follow instructions [here](https://github.com/triton-infe
 Don't forget to allow gpu usage when you launch the container.
 
 ## Create Engines for each model [skip this step if you already have an engine]
-TensorRT-LLM requires each model to be compiled for the configuration you need before running.
-To do so, before you run your model for the first time on Tritonserver you will need to create a TensorRT-LLM engine for the model for the configuration you want.
-To do so, you will need to complete the following steps:
+TensorRT-LLM requires each model to be compiled for the configuration you need before running. To do so, before you run your model for the first time on Tritonserver you will need to create a TensorRT-LLM engine for the model for the configuration you want with the following steps:
 
 1. Install Tensorrt-LLM python package
    ```bash
@@ -71,9 +70,9 @@ To do so, you will need to complete the following steps:
 
 3.  Compile model engines
 
-    The script to build Llama models is located in [TensorRT-LLM repository](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples). We use the one located in the docker container as
-     `/tensorrtllm_backend/tensorrt_llm/examples/llama/build.py`.
-     This command compiles the model with inflight batching and 1 GPU. More details for the scripting please see the documentation for the Llama example [here](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples/llama/README.md).
+    The script to build Llama models is located in [TensorRT-LLM repository](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples). We use the one located in the docker container as `/tensorrtllm_backend/tensorrt_llm/examples/llama/build.py`.
+    This command compiles the model with inflight batching and 1 GPU. To run with more GPUs, you will need to change the build command to use `--world_size X`.
+    More details for the scripting please see the documentation for the Llama example [here](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples/llama/README.md).
 
     ```bash
     python build.py --model_dir /<path to your llama repo>/Llama-2-7b-hf/ \
@@ -125,6 +124,10 @@ To run our Llama2-7B model, you will need to:
 
     ```bash
     tritonserver --model-repository=/opt/tritonserver/inflight_batcher_llm
+    ```
+    Note if you built the engine with `--world-size X` where `X` is greater than 1, you will need to use the [launch_triton_server.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/release/0.5.0/scripts/launch_triton_server.py) script.
+    ```bash
+    python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=4 --model_repo=/opt/tritonserver/inflight_batcher_llm
     ```
 
 ## Client
