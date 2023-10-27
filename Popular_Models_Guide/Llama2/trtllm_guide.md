@@ -26,8 +26,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-Note: This tutorial is for TensorRT-LLM Backend which is currently under development so is subject to change.
-
 ## Pre-build instructions
 
 For this tutorial, we are using the Llama2-7B HuggingFace model with pre-trained weights.
