@@ -16,15 +16,14 @@ The focus of these examples is to demonstrate deployment for models trained with
 
 #### Example models
 The table below contains some popular models that are supported in our tutorials
-| Model Name      | Supported with HuggingFace format | Supported with TensorRT-LLM Backend | Supported with vLLM Backend |
-| :-------------: | :------------------------------: | :----------------------------------: | :-------------------------: |
-| [Llama2-7B](https://ai.meta.com/llama/) | [Llama-2](https://huggingface.co/meta-llama/Llama-2-7b-hf/tree/main) |[tutorial](Popular_Models_Guide/Llama2/trtllm_guide.md) | :grey_question:|
-| [Persimmon-8B](https://www.adept.ai/blog/persimmon-8b) | [HuggingFace tutorial](https://github.com/triton-inference-server/tutorials/tree/main/Quick_Deploy/HuggingFaceTransformers)  |:grey_question:  |       :white_check_mark:          |
-| [Falcon-180B](https://falconllm.tii.ae/index.html) |[HuggingFace tutorial](https://github.com/triton-inference-server/tutorials/tree/main/Quick_Deploy/HuggingFaceTransformers)   |:grey_question:  |       :white_check_mark:          |
+| Model Name      | Tutorial Link |
+| :-------------: | :------------------------------: |
+| [Llama-2-7B](https://huggingface.co/meta-llama/Llama-2-7b-hf/tree/main) |[TensorRT-LLM Tutorial](Popular_Models_Guide/Llama2/trtllm_guide.md) |
+| [Persimmon-8B](https://www.adept.ai/blog/persimmon-8b) | [HuggingFace Transformers Tutorial](https://github.com/triton-inference-server/tutorials/tree/main/Quick_Deploy/HuggingFaceTransformers)  |
+ [Falcon-180B](https://falconllm.tii.ae/index.html) |[HuggingFace Transformers Tutorial](https://github.com/triton-inference-server/tutorials/tree/main/Quick_Deploy/HuggingFaceTransformers)   |
 
 **Note:**
-1. :white_check_mark: indicates that the model has been verified to work with said backend, :grey_question: indicates the model has not been verified to work.
-2. This is not an exhausitive list of what Triton supports, just what is included in the tutorials.
+This is not an exhausitive list of what Triton supports, just what is included in the tutorials.
 
 ## What does this repository contain?
 This repository contains the following resources:
