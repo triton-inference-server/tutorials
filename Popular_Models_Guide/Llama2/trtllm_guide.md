@@ -52,7 +52,7 @@ Alternatively, you can follow instructions [here](https://github.com/triton-infe
 Don't forget to allow gpu usage when you launch the container.
 
 ## Create Engines for each model [skip this step if you already have an engine]
-TensorRT-LLM requires each model to be compiled for the configuration you need before running. To do so, before you run your model for the first time on Tritonserver you will need to create a TensorRT-LLM engine for the model for the configuration you want with the following steps:
+TensorRT-LLM requires each model to be compiled for the configuration you need before running. To do so, before you run your model for the first time on Triton Server you will need to create a TensorRT-LLM engine for the model for the configuration you want with the following steps:
 
 1. Install Tensorrt-LLM python package
    ```bash
@@ -96,7 +96,7 @@ TensorRT-LLM requires each model to be compiled for the configuration you need b
 ## Serving with Triton
 
 The last step is to create a Triton readable model. You can
-find a template of a model that uses in flight batching in [tensorrtllm_backend/all_models/inflight_batcher_llm](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/all_models/inflight_batcher_llm).
+find a template of a model that uses inflight batching in [tensorrtllm_backend/all_models/inflight_batcher_llm](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/all_models/inflight_batcher_llm).
 To run our Llama2-7B model, you will need to:
 
 
