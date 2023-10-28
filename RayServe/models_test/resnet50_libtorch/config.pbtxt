@@ -27,6 +27,7 @@
 name: "resnet50_libtorch"
 platform: "pytorch_libtorch"
 max_batch_size: 128
+dynamic_batching {}
 input {
     name: "INPUT__0"
     data_type: TYPE_FP32
