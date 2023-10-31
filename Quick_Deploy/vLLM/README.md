@@ -31,9 +31,9 @@
 
 The following tutorial demonstrates how to deploy a simple
 [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model on
-Triton Inference Server using the Triton's 
-[Python-based](https://github.com/triton-inference-server/backend/blob/main/docs/python_based_backends.md#python-based-backends) 
-[vLLM](https://github.com/triton-inference-server/vllm_backend/tree/main) 
+Triton Inference Server using the Triton's
+[Python-based](https://github.com/triton-inference-server/backend/blob/main/docs/python_based_backends.md#python-based-backends)
+[vLLM](https://github.com/triton-inference-server/vllm_backend/tree/main)
 backend.
 
 *NOTE*: The tutorial is intended to be a reference example only and has [known limitations](#limitations).
@@ -41,16 +41,16 @@ backend.
 
 ## Step 1: Prepare your model repository
 
-To use Triton, we need to build a model repository. For this tutorial we will 
-use the model repository, provided in the [samples](https://github.com/triton-inference-server/vllm_backend/tree/main/samples) 
-folder of [vllm_backend](https://github.com/triton-inference-server/vllm_backend/tree/main) 
-repository. 
+To use Triton, we need to build a model repository. For this tutorial we will
+use the model repository, provided in the [samples](https://github.com/triton-inference-server/vllm_backend/tree/main/samples)
+folder of [vllm_backend](https://github.com/triton-inference-server/vllm_backend/tree/main)
+repository.
 
-The following set of commands will create a `model_repository/vllm_model/1` 
-directory and copy 2 files: 
-[`model.json`](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/model_repository/vllm_model/1/model.json) 
-and 
-[`config.pbtxt`](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/model_repository/vllm_model/config.pbtxt), 
+The following set of commands will create a `model_repository/vllm_model/1`
+directory and copy 2 files:
+[`model.json`](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/model_repository/vllm_model/1/model.json)
+and
+[`config.pbtxt`](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/model_repository/vllm_model/config.pbtxt),
 required to serve [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model.
 ```
 mkdir -p model_repository/vllm_model/1
@@ -81,10 +81,10 @@ This file can be modified to provide further settings to the vLLM engine. See vL
 [AsyncEngineArgs](https://github.com/vllm-project/vllm/blob/32b6816e556f69f1672085a6267e8516bcb8e622/vllm/engine/arg_utils.py#L165)
 and
 [EngineArgs](https://github.com/vllm-project/vllm/blob/32b6816e556f69f1672085a6267e8516bcb8e622/vllm/engine/arg_utils.py#L11)
-for supported key-value pairs. Inflight batching and paged attention is handled 
+for supported key-value pairs. Inflight batching and paged attention is handled
 by the vLLM engine.
 
-For multi-GPU support, EngineArgs like `tensor_parallel_size` can be specified 
+For multi-GPU support, EngineArgs like `tensor_parallel_size` can be specified
 in [`model.json`](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/model_repository/vllm_model/1/model.json).
 
 *Note*: vLLM greedily consume up to 90% of the GPU's memory under default settings.
@@ -92,7 +92,7 @@ This tutorial updates this behavior by setting `gpu_memory_utilization` to 50%.
 You can tweak this behavior using fields like `gpu_memory_utilization` and other settings
 in [`model.json`](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/model_repository/vllm_model/1/model.json).
 
-Read through the documentation in [`model.py`](https://github.com/triton-inference-server/vllm_backend/blob/main/src/model.py) 
+Read through the documentation in [`model.py`](https://github.com/triton-inference-server/vllm_backend/blob/main/src/model.py)
 to understand how to configure this sample for your use-case.
 
 ## Step 2: Launch Triton Inference Server
@@ -105,11 +105,11 @@ To use this container to launch Triton, you can use the docker command below.
 docker run --gpus all -it --net=host --rm -p 8001:8001 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}:/work -w /work nvcr.io/nvidia/tritonserver:<xx.yy>-vllm-python-py3 tritonserver --model-store ./model_repository
 ```
 Where \<xx.yy\> is the version of Triton that you want to use (and
-pulled above). Please note, that Triton's vllm container was first published 
+pulled above). Please note, that Triton's vllm container was first published
 in 23.10 release, so any prior version will not work.
 
-After you start Triton you will see output on the console showing 
-the server starting up and loading the model. When you see output 
+After you start Triton you will see output on the console showing
+the server starting up and loading the model. When you see output
 like the following, Triton is ready to accept inference requests.
 
 ```
@@ -120,16 +120,16 @@ I1030 22:33:28.335154 1 http_server.cc:270] Started Metrics Service at 0.0.0.0:8
 
 ## Step 3: Use a Triton Client to Send Your First Inference Request
 
-In this tutorial, we will show how to send an inference request to the 
+In this tutorial, we will show how to send an inference request to the
 [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model in 2 ways:
 
 * [Using generate endpoint](#using-generate-endpoint)
 * [Using gRPC asyncio client](#using-grpc-asyncio-client)
 
 ### Using Generate Endpoint
-After you start Triton with the sample model_repository, 
-you can quickly run your first inference request with the 
-[generate](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_generate.md) 
+After you start Triton with the sample model_repository,
+you can quickly run your first inference request with the
+[generate](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_generate.md)
 endpoint.
 
 Let's start Triton's SDK container first with the following command.
@@ -144,30 +144,30 @@ Now, let's send an inference request:
 curl -X POST localhost:8000/v2/models/vllm_model/generate -d '{"text_input": "What is Triton Inference Server?", "parameters": {"stream": false, "temperature": 0}}'
 ```
 
-Upon success, you should see a responce from the server as follows:
+Upon success, you should see a response from the server as follows:
 ```
 {"model_name":"vllm_model","model_version":"1","text_output":"What is Triton Inference Server?\n\nTriton Inference Server is a server that is used by many"}
 ```
 
 ### Using gRPC asyncio client
-Now we will show how to run the client within Triton's SDK container 
+Now we will show how to run the client within Triton's SDK container
 to issue multiple async requests using the
 [gRPC asyncio client](https://github.com/triton-inference-server/client/blob/main/src/python/library/tritonclient/grpc/aio/__init__.py)
 library.
 
 This method requiers a
-[client.py](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/client.py) 
-script and a set of 
-[prompts](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/prompts.txt), 
-which are provided in the 
-[samples](https://github.com/triton-inference-server/vllm_backend/tree/main/samples) 
-folder of 
-[vllm_backend](https://github.com/triton-inference-server/vllm_backend/tree/main) 
+[client.py](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/client.py)
+script and a set of
+[prompts](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/prompts.txt),
+which are provided in the
+[samples](https://github.com/triton-inference-server/vllm_backend/tree/main/samples)
+folder of
+[vllm_backend](https://github.com/triton-inference-server/vllm_backend/tree/main)
 repository.
 
-Use the following command to download `client.py` and `prompts.txt` to your 
+Use the following command to download `client.py` and `prompts.txt` to your
 current directory:
-``` 
+```
 wget https://raw.githubusercontent.com/triton-inference-server/vllm_backend/main/samples/client.py
 wget https://raw.githubusercontent.com/triton-inference-server/vllm_backend/main/samples/prompts.txt
 ```
@@ -178,15 +178,15 @@ docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:<xx.
 ```
 Where \<xx.yy\> is the version of Triton that you want to use (and pulled above).
 
-Within the container, run 
-[`client.py`](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/client.py) 
+Within the container, run
+[`client.py`](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/client.py)
 with:
 ```
 python3 client.py
 ```
 
-The client reads prompts from the 
-[prompts.txt](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/prompts.txt) 
+The client reads prompts from the
+[prompts.txt](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/prompts.txt)
 file, sends them to Triton server for
 inference, and stores the results into a file named `results.txt` by default.
 
@@ -198,13 +198,13 @@ Storing results into `results.txt`...
 PASS: vLLM example
 ```
 
-You can inspect the contents of the `results.txt` for the response 
-from the server. The `--iterations` flag can be used with the client 
+You can inspect the contents of the `results.txt` for the response
+from the server. The `--iterations` flag can be used with the client
 to increase the load on the server by looping through the list of
-provided prompts in 
+provided prompts in
 [prompts.txt](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/prompts.txt).
 
-When you run the client in verbose mode with the `--verbose` flag, 
+When you run the client in verbose mode with the `--verbose` flag,
 the client will print more details about the request/response transactions.
 
 ## Limitations
@@ -212,8 +212,8 @@ the client will print more details about the request/response transactions.
 - We use decoupled streaming protocol even if there is exactly 1 response for each request.
 - The asyncio implementation is exposed to model.py.
 - Does not support providing specific subset of GPUs to be used.
-- If you are running multiple instances of Triton server with 
-a Python-based vLLM backend, you need to specify a different 
+- If you are running multiple instances of Triton server with
+a Python-based vLLM backend, you need to specify a different
 `shm-region-prefix-name` for each server. See
 [here](https://github.com/triton-inference-server/python_backend#running-multiple-instances-of-triton-server)
 for more information.
