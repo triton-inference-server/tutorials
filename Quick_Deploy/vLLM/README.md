@@ -104,7 +104,7 @@ To use this container to launch Triton, you can use the docker command below.
 ```
 docker run --gpus all -it --net=host --rm -p 8001:8001 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}:/work -w /work nvcr.io/nvidia/tritonserver:<xx.yy>-vllm-python-py3 tritonserver --model-store ./model_repository
 ```
-Here and later throughout the tutorial \<xx.yy\> is the version of Triton
+Throughout the tutorial, \<xx.yy\> is the version of Triton
 that you want to use (and pulled above). Please note, that Triton's vLLM
 container was first published in 23.10 release, so any prior version
 will not work.
