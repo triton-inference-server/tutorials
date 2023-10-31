@@ -43,7 +43,7 @@ backend.
 
 To use Triton, we need to build a model repository. For this tutorial we will
 use the model repository, provided in the [samples](https://github.com/triton-inference-server/vllm_backend/tree/main/samples)
-folder of [vllm_backend](https://github.com/triton-inference-server/vllm_backend/tree/main)
+folder of the [vllm_backend](https://github.com/triton-inference-server/vllm_backend/tree/main)
 repository.
 
 The following set of commands will create a `model_repository/vllm_model/1`
@@ -51,7 +51,7 @@ directory and copy 2 files:
 [`model.json`](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/model_repository/vllm_model/1/model.json)
 and
 [`config.pbtxt`](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/model_repository/vllm_model/config.pbtxt),
-required to serve [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model.
+required to serve the [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model.
 ```
 mkdir -p model_repository/vllm_model/1
 wget -P model_repository/vllm_model/1 https://raw.githubusercontent.com/triton-inference-server/vllm_backend/main/samples/model_repository/vllm_model/1/model.json
@@ -98,14 +98,14 @@ to understand how to configure this sample for your use-case.
 ## Step 2: Launch Triton Inference Server
 
 Once you have the model repository setup, it is time to launch the triton server.
-Starting with 23.10 release, a dedicated container with pre-installed vLLM
+Starting with 23.10 release, a dedicated container with vLLM pre-installed
 is available on [NGC.](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver)
 To use this container to launch Triton, you can use the docker command below.
 ```
 docker run --gpus all -it --net=host --rm -p 8001:8001 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}:/work -w /work nvcr.io/nvidia/tritonserver:<xx.yy>-vllm-python-py3 tritonserver --model-store ./model_repository
 ```
 Where \<xx.yy\> is the version of Triton that you want to use (and
-pulled above). Please note, that Triton's vllm container was first published
+pulled above). Please note, that Triton's vLLM container was first published
 in 23.10 release, so any prior version will not work.
 
 After you start Triton you will see output on the console showing
@@ -123,16 +123,16 @@ I1030 22:33:28.335154 1 http_server.cc:270] Started Metrics Service at 0.0.0.0:8
 In this tutorial, we will show how to send an inference request to the
 [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model in 2 ways:
 
-* [Using generate endpoint](#using-generate-endpoint)
-* [Using gRPC asyncio client](#using-grpc-asyncio-client)
+* [Using the generate endpoint](#using-generate-endpoint)
+* [Using the gRPC asyncio client](#using-grpc-asyncio-client)
 
-### Using Generate Endpoint
+### Using the Generate Endpoint
 After you start Triton with the sample model_repository,
 you can quickly run your first inference request with the
 [generate](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_generate.md)
 endpoint.
 
-Let's start Triton's SDK container first with the following command.
+Start Triton's SDK container with the following command:
 ```
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:<xx.yy>-py3-sdk bash
 ```
@@ -144,18 +144,18 @@ Now, let's send an inference request:
 curl -X POST localhost:8000/v2/models/vllm_model/generate -d '{"text_input": "What is Triton Inference Server?", "parameters": {"stream": false, "temperature": 0}}'
 ```
 
-Upon success, you should see a response from the server as follows:
+Upon success, you should see a response from the server like this one:
 ```
 {"model_name":"vllm_model","model_version":"1","text_output":"What is Triton Inference Server?\n\nTriton Inference Server is a server that is used by many"}
 ```
 
-### Using gRPC asyncio client
-Now we will show how to run the client within Triton's SDK container
+### Using the gRPC Asyncio Client
+Now, we will see how to run the client within Triton's SDK container
 to issue multiple async requests using the
 [gRPC asyncio client](https://github.com/triton-inference-server/client/blob/main/src/python/library/tritonclient/grpc/aio/__init__.py)
 library.
 
-This method requiers a
+This method requires a
 [client.py](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/client.py)
 script and a set of
 [prompts](https://github.com/triton-inference-server/vllm_backend/blob/main/samples/prompts.txt),
@@ -172,7 +172,7 @@ wget https://raw.githubusercontent.com/triton-inference-server/vllm_backend/main
 wget https://raw.githubusercontent.com/triton-inference-server/vllm_backend/main/samples/prompts.txt
 ```
 
-Now we are ready to start Triton's SDK container as follows.
+Now, we are ready to start Triton's SDK container:
 ```
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:<xx.yy>-py3-sdk bash
 ```
