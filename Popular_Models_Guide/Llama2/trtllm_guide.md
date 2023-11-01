@@ -110,9 +110,9 @@ To run our Llama2-7B model, you will need to:
 
     ```bash
     # preprocessing
-    sed -i 's#${tokenizer_dir}#/<path to your engine>/1-gpu/#' /opt/tritonserver/inflight_batcher_llm/preprocessing/config.pbtxt
+    sed -i 's#${tokenizer_dir}#/<path to your llama repo>/Llama-2-7b-hf/#' /opt/tritonserver/inflight_batcher_llm/preprocessing/config.pbtxt
     sed -i 's#${tokenizer_type}#auto#' /opt/tritonserver/inflight_batcher_llm/preprocessing/config.pbtxt
-    sed -i 's#${tokenizer_dir}#/<path to your engine>/1-gpu/#' /opt/tritonserver/inflight_batcher_llm/postprocessing/config.pbtxt
+    sed -i 's#${tokenizer_dir}#/<path to your llama repo>/Llama-2-7b-hf/#' /opt/tritonserver/inflight_batcher_llm/postprocessing/config.pbtxt
     sed -i 's#${tokenizer_type}#auto#' /opt/tritonserver/inflight_batcher_llm/postprocessing/config.pbtxt
 
     sed -i 's#${decoupled_mode}#false#' /opt/tritonserver/inflight_batcher_llm/tensorrt_llm/config.pbtxt
