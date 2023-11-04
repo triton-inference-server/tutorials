@@ -1,11 +1,12 @@
 import os
+import time
 
 import numpy
 import requests
+import tritonserver_api
 from fastapi import FastAPI
 from PIL import Image
 from ray import serve
-from tritonserver_api import TritonServer
 
 # 1: Define a FastAPI app and wrap it in a deployment with a route handler.
 app = FastAPI()
@@ -15,9 +16,26 @@ app = FastAPI()
 @serve.ingress(app)
 class TritonDeployment:
     def __init__(self):
-        server_options = TritonServer.Options()
-        self._triton_server = TritonServer(server_options)
+        #        options = tritonserver_api.Options(model_repository_paths=["/workspace/models"],
+        #                                          model_control_mode=tritonserver_api.ModelControlMode.POLL,
+        #                                         server_id="hello"
+        #                                        )
+
+        self._triton_server = tritonserver_api.Server(
+            server_id="hello",
+            startup_models=["foo"],
+            model_repository_paths=["/workspace/models"],
+            strict_model_config=True,
+            exit_on_error=False,
+            log_verbose=False,
+            log_error=True,
+            log_warn=True,
+        )
+
         self._triton_server.start()
+
+        while not self._triton_server.ready():
+            time.sleep(0.5)
 
         self._models = self._triton_server.model_index()
         for model in self._models:

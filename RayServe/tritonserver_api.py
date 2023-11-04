@@ -1,51 +1,204 @@
 import asyncio
+import ctypes
 import dataclasses
 import json
 import queue
 import struct
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import Annotated, Dict, List
 
 import numpy
 from tritonserver import _c as triton_bindings
 
 
-# @dataclass
-class ServerOptions:
-    def __init__():
-        pass
-
-
-# @dataclass
-class Tensor:
+class ModelControlMode(triton_bindings.TRITONSERVER_ModelControlMode):
     pass
 
-    def __dlpack__(self, stream=None):
-        pass
 
-    def __dlpack_device__(self):
-        pass
+class RateLimitMode(triton_bindings.TRITONSERVER_RateLimitMode):
+    pass
 
 
-class TritonServer:
-    class Options:
-        pass
+class LogFormat(triton_bindings.TRITONSERVER_LogFormat):
+    pass
 
-    def __init__(self, options):
-        pass
+
+class InstanceGroupKind(triton_bindings.TRITONSERVER_InstanceGroupKind):
+    pass
+
+
+@dataclass
+class RateLimiterResource:
+    name: str
+    count: Annotated[int, ctypes.c_uint]
+    device: Annotated[int, ctypes.c_uint]
+
+
+@dataclass
+class ModelLoadDeviceLimit:
+    kind: InstanceGroupKind
+    device: Annotated[int, ctypes.c_uint]
+    fraction: float
+
+
+@dataclass
+class Options:
+    server_id: str = "triton"
+
+    model_repository_paths: List[str] = dataclasses.field(default_factory=list[str])
+    model_control_mode: ModelControlMode = ModelControlMode.POLL
+    startup_models: List[str] = dataclasses.field(default_factory=list[str])
+    strict_model_config: bool = True
+
+    rate_limiter_mode: RateLimitMode = RateLimitMode.OFF
+    rate_limiter_resources: List[RateLimiterResource] = dataclasses.field(
+        default_factory=list[RateLimiterResource]
+    )
+
+    pinned_memory_pool_size: Annotated[int, ctypes.c_uint] = 1 << 28
+    cuda_memory_pool_sizes: Dict[
+        Annotated[int, ctypes.c_uint], Annotated[int, ctypes.c_uint]
+    ] = dataclasses.field(
+        default_factory=dict[
+            Annotated[int, ctypes.c_uint], Annotated[int, ctypes.c_uint]
+        ]
+    )
+
+    #   response_cache_size: Annotated[int, ctypes.c_uint] = 0
+    cache_config: Dict[str, Dict[str, str]] = dataclasses.field(
+        default_factory=dict[str, dict[str, str]]
+    )
+    cache_directory: str = "/opt/tritonserver/caches"
+
+    min_supported_compute_capability: float = 6.0
+
+    exit_on_error: bool = True
+    strict_readiness: bool = True
+    exit_timeout: Annotated[int, ctypes.c_uint] = 30
+    buffer_manager_thread_count: Annotated[int, ctypes.c_uint] = 0
+    model_load_thread_count: Annotated[int, ctypes.c_uint] = 4
+    model_namespacing: bool = False
+
+    log_file: str = None
+    log_info: bool = False
+    log_warn: bool = False
+    log_error: bool = False
+    log_format: LogFormat = LogFormat.DEFAULT
+    log_verbose: bool = False
+
+    metrics: bool = True
+    gpu_metrics: bool = True
+    cpu_metrics: bool = True
+    metrics_interval: Annotated[int, ctypes.c_uint] = 2000
+
+    backend_directory: str = "/opt/tritonserver/backends"
+    repo_agent_directory: str = "/opt/tritonserver/repoagents"
+    model_load_device_limits: List[ModelLoadDeviceLimit] = dataclasses.field(
+        default_factory=list[ModelLoadDeviceLimit]
+    )
+    backend_configuration: Dict[str, Dict[str, str]] = dataclasses.field(
+        default_factory=dict[str, dict[str, str]]
+    )
+    host_policies: Dict[str, Dict[str, str]] = dataclasses.field(
+        default_factory=dict[str, Dict[str, str]]
+    )
+    metrics_configuration: Dict[str, Dict[str, str]] = dataclasses.field(
+        default_factory=dict[str, Dict[str, str]]
+    )
+
+    def create_server_options(self):
+        options = triton_bindings.TRITONSERVER_ServerOptions()
+
+        options.set_server_id(self.server_id)
+
+        for model_repository_path in self.model_repository_paths:
+            options.set_model_repository_path(model_repository_path)
+        options.set_model_control_mode(self.model_control_mode)
+
+        for startup_model in self.startup_models:
+            options.set_startup_model(startup_model)
+
+        options.set_strict_model_config(self.strict_model_config)
+        options.set_rate_limiter_mode(self.rate_limiter_mode)
+
+        for rate_limiter_resource in self.rate_limiter_resources:
+            options.set_rate_limiter_resouces(
+                rate_limiter_resource.name,
+                rate_limiter_resource.count,
+                tate_limiter_resource.device,
+            )
+        options.set_pinned_memory_pool_byte_size(self.pinned_memory_pool_size)
+
+        for device, memory_size in self.cuda_memory_pool_sizes.items():
+            options.set_cuda_memory_pool_byte_size(device, memory_size)
+        for cache_name, settings in self.cache_config:
+            options.set_cache_config(cache, json.dumps(settings))
+
+        options.set_cache_directory(self.cache_directory)
+        options.set_min_supported_compute_capability(
+            self.min_supported_compute_capability
+        )
+        options.set_exit_on_error(self.exit_on_error)
+        options.set_strict_readiness(self.strict_readiness)
+        options.set_exit_timeout(self.exit_timeout)
+        options.set_buffer_manager_thread_count(self.buffer_manager_thread_count)
+        options.set_model_load_thread_count(self.model_load_thread_count)
+        options.set_model_namespacing(self.model_namespacing)
+
+        if self.log_file:
+            options.set_log_file(self.log_file)
+
+        options.set_log_info(self.log_info)
+        options.set_log_warn(self.log_warn)
+        options.set_log_error(self.log_error)
+        options.set_log_format(self.log_format)
+        options.set_log_verbose(self.log_verbose)
+        options.set_metrics(self.metrics)
+        options.set_cpu_metrics(self.cpu_metrics)
+        options.set_gpu_metrics(self.gpu_metrics)
+        options.set_metrics_interval(self.metrics_interval)
+        options.set_backend_directory(self.backend_directory)
+        options.set_repo_agent_directory(self.repo_agent_directory)
+
+        for model_load_device_limit in self.model_load_device_limits:
+            options.set_model_load_device_limit(
+                model_load_device_limit.kind,
+                model_load_device_limit.device,
+                model_load_device_limit.fraction,
+            )
+
+        for host_policy, settings in self.host_policies.items():
+            for setting_name, setting_value in settings.items():
+                options.set_host_policy(host_policy, setting_name, setting_value)
+
+        for config_name, settings in self.metrics_configuration.items():
+            for setting_name, setting_value in settings.items():
+                options.set_metrics_config(config_name, setting_name, setting_value)
+
+        for backend, settings in self.backend_configuration.items():
+            for setting_name, setting_value in settings.items():
+                options.set_backend_config(backend, setting_name, setting_value)
+
+        return options
+
+
+class Server:
+    def __init__(self, options: Options = None, **kwargs):
+        if options is None:
+            options = Options(**kwargs)
+        self._options = options
+        self._server = None
 
     def start(self):
-        options = triton_bindings.TRITONSERVER_ServerOptions()
-        options.set_model_repository_path("/workspace/models")
-        options.set_model_control_mode(
-            triton_bindings.TRITONSERVER_ModelControlMode.POLL
+        self._server = triton_bindings.TRITONSERVER_Server(
+            self._options.create_server_options()
         )
-        options.set_log_verbose(0)
-        options.set_log_info(0)
-        options.set_log_warn(0)
-        options.set_strict_readiness(0)
-        options.set_exit_timeout(5)
-        self._server = triton_bindings.TRITONSERVER_Server(options)
+
+    def ready(self):
+        if self._server is None:
+            return False
+        return self._server.is_ready()
 
     def model(self, name, version=-1):
         return TritonModel(self._server, name, version)
