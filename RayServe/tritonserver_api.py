@@ -11,6 +11,36 @@ from typing import Annotated, Dict, List
 import numpy
 from tritonserver import _c as triton_bindings
 
+# Rename module for exceptions to simplify stack trace
+exceptions = [
+    triton_bindings.TritonError,
+    triton_bindings.NotFoundError,
+    triton_bindings.UnknownError,
+    triton_bindings.InternalError,
+    triton_bindings.InvalidArgumentError,
+    triton_bindings.UnavailableError,
+    triton_bindings.UnsupportedError,
+    triton_bindings.AlreadyExistsError,
+]
+for exception in exceptions:
+    exception.__module__ = "tritonserver_api"
+
+
+class ModelBatchFlag(triton_bindings.TRITONSERVER_ModelBatchFlag):
+    pass
+
+
+class ModelIndexFlag(triton_bindings.TRITONSERVER_ModelIndexFlag):
+    pass
+
+
+class ModelTxnPropertyFlag(triton_bindings.TRITONSERVER_ModelTxnPropertyFlag):
+    pass
+
+
+class MetricFormat(triton_bindings.TRITONSERVER_MetricFormat):
+    pass
+
 
 class ModelControlMode(triton_bindings.TRITONSERVER_ModelControlMode):
     pass
@@ -25,6 +55,10 @@ class LogFormat(triton_bindings.TRITONSERVER_LogFormat):
 
 
 class InstanceGroupKind(triton_bindings.TRITONSERVER_InstanceGroupKind):
+    pass
+
+
+class MetricKind(triton_bindings.TRITONSERVER_MetricKind):
     pass
 
 
@@ -195,41 +229,98 @@ class Server:
             self._options.create_server_options()
         )
 
+    def stop(self):
+        if self_server is not None:
+            self._server.stop()
+
+    def unregister_model_repository(self, repository_path: str):
+        if self._server is not None:
+            self._server.unregister_model_repository(repository_path)
+
+    def register_model_repository(
+        self, repository_path: str, name_mapping: Dict[str, str]
+    ):
+        if self._server is not None:
+            name_mapping_list = [
+                triton_bindings.TRITONSERVER_Parameter(name, value)
+                for name, value in name_mapping.items()
+            ]
+
+            self._server.register_model_repository(repository_path, name_mapping_list)
+
+    def poll_model_repository(self):
+        if self._server is None:
+            return
+        return self._server.poll_model_repository()
+
+    def metadata(self):
+        if self._server is None:
+            return None
+        return json.loads(self._server.metadata().serialize_to_json())
+
+    def live(self):
+        if self._server is None:
+            return False
+        return self._server.is_live()
+
     def ready(self):
         if self._server is None:
             return False
         return self._server.is_ready()
 
     def model(self, name, version=-1):
-        return TritonModel(self._server, name, version)
+        if self._server is None:
+            return None
+        return Model(self._server, name, version)
 
     def model_index(self, ready=False):
+        if self._server is None:
+            return []
         models = json.loads(self._server.model_index(ready).serialize_to_json())
-        return [
-            TritonModel(
-                self._server, model["name"], int(model["version"]), model["state"]
-            )
-            for model in models
-        ]
 
-    #        return json.loads(self._server.model_index(ready).serialize_to_json())
+        for model in models:
+            if "version" in model:
+                model["version"] = int(model["version"])
 
-    def load_model():
-        pass
+        return [Model(self._server, **model) for model in models]
 
-    def unload_model():
-        pass
+    def load_model(
+        self, model_name: str, parameters: Dict[str, str | int | bool | bytes] = None
+    ):
+        if self._server is None:
+            return
+
+        if parameters:
+            parameter_list = [
+                triton_bindings.TRITONSERVER_Parameter(name, value)
+                for name, value in parameters.items()
+            ]
+            self._server.load_model_with_parameters(model_name, parameter_list)
+        else:
+            self._server.load_model(model_name)
+
+    def unload_model(self, model_name: str):
+        if self._server is None:
+            return
+        self._server.unload_model(model_name)
 
     def stop():
-        pass
+        if self._server is None:
+            return
+        self._server.stop()
+
+    def metrics(self, metric_format: MetricFormat = MetricFormat.PROMETHEUS):
+        if self._server is None:
+            return
+        return self._server.metrics().formatted(metric_format)
 
 
-class TritonModel:
+class Model:
     def __init__(
         self,
         server: triton_bindings.TRITONSERVER_Server,
         name: str,
-        version: int,
+        version: int = None,
         state: str = None,
     ):
         self._name = name
@@ -259,8 +350,27 @@ class TritonModel:
     def ready(self):
         return self._server.model_is_ready(self._name, self._version)
 
-    def batch_properties():
-        pass
+    def batch_properties(self):
+        flags, _ = self._server.model_batch_properties(self._name, self._version)
+        return ModelBatchFlag(flags)
+
+    def transaction_properties(self):
+        txn_properties, _ = self._server.model_transaction_properties(
+            self._name, self._version
+        )
+        return ModelTxnPropertyFlag(txn_properties)
+
+    def statistics(self):
+        return json.loads(
+            self._server.model_statistics(self._name, self._version).serialize_to_json()
+        )
+
+    def config(self, config_version=1):
+        return json.loads(
+            self._server.model_config(
+                self._name, self._version, config_version
+            ).serialize_to_json()
+        )
 
     def __str__(self):
         return "%s" % (
@@ -352,7 +462,7 @@ class InferenceResponse:
     error: triton_bindings.TritonError = None
     classification_label: str = None
     _server: triton_bindings.TRITONSERVER_Server = None
-    model: TritonModel = None
+    model: Model = None
 
     @staticmethod
     def set_from_server_response(server, response):
@@ -364,7 +474,7 @@ class InferenceResponse:
             values["error"] = error
 
         name, version = response.model
-        values["model"] = TritonModel(server, name, version)
+        values["model"] = Model(server, name, version)
         values["id"] = response.id
         parameters = {}
         for parameter_index in range(response.parameter_count):
@@ -405,7 +515,7 @@ class InferenceRequest:
     timeout: int = 0
     inputs: dict = dataclasses.field(default_factory=dict)
     parameters: dict = dataclasses.field(default_factory=dict)
-    model: TritonModel = None
+    model: Model = None
     _server: triton_bindings.TRITONSERVER_Server = None
     _serialized_inputs: dict = dataclasses.field(default_factory=dict)
 
@@ -537,3 +647,25 @@ class InferenceRequest:
         response_iterator = self._set_callbacks(request)
 
         return request, response_iterator
+
+
+MetricFamily = triton_bindings.TRITONSERVER_MetricFamily
+
+
+class Metric(triton_bindings.TRITONSERVER_Metric):
+    def __init__(self, family: MetricFamily, labels: Dict[str, str] = None):
+        if labels is not None:
+            parameters = [
+                triton_bindings.TRITONSERVER_Parameter(name, value)
+                for name, value in labels.items()
+            ]
+        else:
+            parameters = []
+
+        triton_bindings.TRITONSERVER_Metric.__init__(self, family, parameters)
+
+
+def serve(options: Options = None, **kwargs):
+    server = Server(options, **kwargs)
+    server.start()
+    return server

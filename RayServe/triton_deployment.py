@@ -21,25 +21,40 @@ class TritonDeployment:
         #                                         server_id="hello"
         #                                        )
 
-        self._triton_server = tritonserver_api.Server(
-            server_id="hello",
-            startup_models=["foo"],
-            model_repository_paths=["/workspace/models"],
-            strict_model_config=True,
-            exit_on_error=False,
-            log_verbose=False,
-            log_error=True,
-            log_warn=True,
+        # self._triton_server = tritonserver_api.Server(
+        #     server_id="hello",
+        #     startup_models=["foo"],
+        #     model_repository_paths=["/workspace/models"],
+        #     strict_model_config=True,
+        #     exit_on_error=False,
+        #     log_verbose=False,
+        #     log_error=True,
+        #     log_warn=True,
+        # )
+
+        self._triton_server = tritonserver_api.serve(
+            model_repository_paths=["/workspace/models"]
+        )
+        self._metric = tritonserver_api.Metric(
+            tritonserver_api.MetricFamily(
+                tritonserver_api.MetricKind.COUNTER, "custom_counter", "custom"
+            ),
+            {"test": "test"},
         )
 
-        self._triton_server.start()
+        self._metric.increment(5)
+        print(self._triton_server.metadata())
 
-        while not self._triton_server.ready():
-            time.sleep(0.5)
+        #        while not self._triton_server.ready():
+
+        #    time.sleep(0.5)
 
         self._models = self._triton_server.model_index()
         for model in self._models:
             print(model)
+            print(model.batch_properties())
+            print(model.transaction_properties())
+            print(model.config())
 
     @app.get("/test")
     def generate(self, text_input: str, fp16_input: float) -> dict:
@@ -97,6 +112,14 @@ class TritonDeployment:
     def say_hello(self, name: str) -> str:
         return f"Hello {name}!"
 
+    @app.get("/metrics")
+    def metrics(self) -> str:
+        self._metric.increment(10)
+        return self._triton_server.metrics()
+
+    def __del__(self):
+        pass
+
 
 if __name__ == "__main__":
     # 2: Deploy the deployment.
@@ -125,6 +148,9 @@ if __name__ == "__main__":
             params={"image_name": "Theodore"},
         ).json()
     )
+
+    print(requests.get("http://localhost:8000/metrics").json())
+
 
 else:
     triton_app = TritonDeployment.bind()
