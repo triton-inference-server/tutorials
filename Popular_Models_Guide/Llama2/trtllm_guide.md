@@ -120,12 +120,9 @@ To run our Llama2-7B model, you will need to:
 
 3.  Launch Tritonserver
 
+    Use the [launch_triton_server.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/release/0.5.0/scripts/launch_triton_server.py) script. This launches multiple instances of `tritonserver` with MPI.
     ```bash
-    tritonserver --model-repository=/opt/tritonserver/inflight_batcher_llm
-    ```
-    Note if you built the engine with `--world_size X` where `X` is greater than 1, you will need to use the [launch_triton_server.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/release/0.5.0/scripts/launch_triton_server.py) script.
-    ```bash
-    python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=X --model_repo=/opt/tritonserver/inflight_batcher_llm
+    python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=<the engine's world size> --model_repo=/opt/tritonserver/inflight_batcher_llm
     ```
 
 ## Client
