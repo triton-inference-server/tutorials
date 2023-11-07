@@ -56,10 +56,18 @@ TensorRT-LLM requires each model to be compiled for the configuration you need b
 
 1. Install Tensorrt-LLM python package
    ```bash
-    # TensorRT-LLM is required for generating engines.
-    pip install git+https://github.com/NVIDIA/TensorRT-LLM.git
-    mkdir /usr/local/lib/python3.10/dist-packages/tensorrt_llm/libs/
-    cp /opt/tritonserver/backends/tensorrtllm/* /usr/local/lib/python3.10/dist-packages/tensorrt_llm/libs/
+    # Install CMake
+    bash /tensorrtllm_backend/tensorrt_llm/docker/common/install_cmake.sh
+    export PATH="/usr/local/cmake/bin:${PATH}"
+
+    # PyTorch needs to be built from source for aarch64
+    ARCH="$(uname -i)"
+    if [ "${ARCH}" = "aarch64" ]; then TORCH_INSTALL_TYPE="src_non_cxx11_abi"; \
+    else TORCH_INSTALL_TYPE="pypi"; fi && \
+    (cd /tensorrtllm_backend/tensorrt_llm &&
+        bash docker/common/install_pytorch.sh $TORCH_INSTALL_TYPE &&
+        python3 ./scripts/build_wheel.py --trt_root=/usr/local/tensorrt &&
+        pip3 install ./build/tensorrt_llm*.whl)
     ```
 
 2.  Log in to huggingface-cli
