@@ -36,16 +36,20 @@ You will need to get permissions for the Llama2 repository as well as get access
 
 1. The installation starts with cloning the TensorRT-LLM Backend and update the TensorRT-LLM submodule:
 ```bash
-git clone https://github.com/triton-inference-server/tensorrtllm_backend.git
+git clone https://github.com/triton-inference-server/tensorrtllm_backend.git  --branch <release branch>
 # Update the submodules
 cd tensorrtllm_backend
+# Change submodule remote url to use https if necessary
+git submodule set-url -- tensorrt_llm https://github.com/NVIDIA/TensorRT-LLM.git
 git submodule update --init --recursive
 git lfs install
 git lfs pull
 ```
 
-2. Then launch Triton docker container with TensorRT-LLM backend
-```docker run --rm -it --net host --shm-size=2g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all -v /path/to/tensorrtllm_backend:/tensorrtllm_backend nvcr.io/nvidia/tritonserver:23.10-trtllm-py3 bash```
+1. Then launch Triton docker container with TensorRT-LLM backend. Note I'm mounting `tensorrtllm_backend` to `/tensorrtllm_backend` and the Llama2 model to `/Llama-2-7b-hf` in the docker container for simplicity. Make an `engines` folder outside docker to reuse engines for future runs.
+```bash
+docker run --rm -it --net host --shm-size=2g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all -v /path/to/tensorrtllm_backend:/tensorrtllm_backend -v /path/to/Llama2/repo:/Llama-2-7b-hf -v /path/to/engines:/engines nvcr.io/nvidia/tritonserver:23.10-trtllm-python-py3
+```
 
 Alternatively, you can follow instructions [here](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/README.md) to build Triton Server with Tensorrt-LLM Backend if you want to build a specialized container.
 
@@ -62,27 +66,21 @@ TensorRT-LLM requires each model to be compiled for the configuration you need b
     cp /opt/tritonserver/backends/tensorrtllm/* /usr/local/lib/python3.10/dist-packages/tensorrt_llm/libs/
     ```
 
-2.  Log in to huggingface-cli
-
-    ```bash
-    huggingface-cli login --token hf_*****
-    ```
-
-3.  Compile model engines
+2.  Compile model engines
 
     The script to build Llama models is located in [TensorRT-LLM repository](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples). We use the one located in the docker container as `/tensorrtllm_backend/tensorrt_llm/examples/llama/build.py`.
     This command compiles the model with inflight batching and 1 GPU. To run with more GPUs, you will need to change the build command to use `--world_size X`.
     More details for the scripting please see the documentation for the Llama example [here](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples/llama/README.md).
 
     ```bash
-    python build.py --model_dir /<path to your llama repo>/Llama-2-7b-hf/ \
+    python build.py --model_dir /Llama-2-7b-hf/ \
                     --dtype bfloat16 \
                     --use_gpt_attention_plugin bfloat16 \
                     --use_inflight_batching \
                     --paged_kv_cache \
                     --remove_input_padding \
                     --use_gemm_plugin bfloat16 \
-                    --output_dir /<path to your engine>/1-gpu/ \
+                    --output_dir /engines/1-gpu/ \
                     --world_size 1
     ```
 
@@ -90,7 +88,7 @@ TensorRT-LLM requires each model to be compiled for the configuration you need b
     > located in the same llama examples folder.
     >
     >   ```bash
-    >    python3 run.py --engine_dir=<path to your engine>/1-gpu/ --max_output_len 100 --tokenizer_dir <path to your llama repo>/Llama-2-7b-hf --input_text "How do I count to ten in French?"
+    >    python3 /tensorrtllm_backend/tensorrt_llm/examples/llama/run.py --engine_dir=/engines/1-gpu/ --max_output_len 100 --tokenizer_dir /Llama-2-7b-hf --input_text "How do I count to ten in French?"
     >    ```
 
 ## Serving with Triton
@@ -110,13 +108,13 @@ To run our Llama2-7B model, you will need to:
 
     ```bash
     # preprocessing
-    sed -i 's#${tokenizer_dir}#/<path to your llama repo>/Llama-2-7b-hf/#' /opt/tritonserver/inflight_batcher_llm/preprocessing/config.pbtxt
+    sed -i 's#${tokenizer_dir}#/Llama-2-7b-hf/#' /opt/tritonserver/inflight_batcher_llm/preprocessing/config.pbtxt
     sed -i 's#${tokenizer_type}#auto#' /opt/tritonserver/inflight_batcher_llm/preprocessing/config.pbtxt
-    sed -i 's#${tokenizer_dir}#/<path to your llama repo>/Llama-2-7b-hf/#' /opt/tritonserver/inflight_batcher_llm/postprocessing/config.pbtxt
+    sed -i 's#${tokenizer_dir}#/Llama-2-7b-hf/#' /opt/tritonserver/inflight_batcher_llm/postprocessing/config.pbtxt
     sed -i 's#${tokenizer_type}#auto#' /opt/tritonserver/inflight_batcher_llm/postprocessing/config.pbtxt
 
     sed -i 's#${decoupled_mode}#false#' /opt/tritonserver/inflight_batcher_llm/tensorrt_llm/config.pbtxt
-    sed -i 's#${engine_dir}#/<path to your engine>/1-gpu/#' /opt/tritonserver/inflight_batcher_llm/tensorrt_llm/config.pbtxt
+    sed -i 's#${engine_dir}#/engines/1-gpu/#' /opt/tritonserver/inflight_batcher_llm/tensorrt_llm/config.pbtxt
     ```
     Also, ensure that the `gpt_model_type` parameter is set to `inflight_fused_batching`
 
@@ -133,10 +131,14 @@ To run our Llama2-7B model, you will need to:
 ## Client
 
 You can test the results of the run with:
-1. The [inflight_batcher_llm_client.py script](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/inflight_batcher_llm)
+1. The [inflight_batcher_llm_client.py script](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/inflight_batcher_llm).
 
 ```bash
-python3 /tensorrtllm_backend/inflight_batcher_llm/client/inflight_batcher_llm_client.py --request-output-len 200
+# Using the SDK container as an example
+docker run --rm -it --net host --shm-size=2g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all -v /path/to/tensorrtllm_backend:/tensorrtllm_backend -v /path/to/Llama2/repo:/Llama-2-7b-hf -v /path/to/engines:/engines nvcr.io/nvidia/tritonserver:23.10-py3-sdk
+# install extra dependencies for the script
+pip3 install transformers sentencepiece
+python3 /tensorrtllm_backend/inflight_batcher_llm/client/inflight_batcher_llm_client.py --request-output-len 200 --tokenizer_type llama --tokenizer_dir /Llama-2-7b-hf
 ```
 
 2. The [generate endpoint](https://github.com/triton-inference-server/tensorrtllm_backend/tree/release/0.5.0#query-the-server-with-the-triton-generate-endpoint) if you are using the Triton TensorRT-LLM Backend container with versions greater than `r23.10`.
