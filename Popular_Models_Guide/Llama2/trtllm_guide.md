@@ -132,7 +132,7 @@ To run our Llama2-7B model, you will need to:
 ## Client
 
 You can test the results of the run with:
-1. The [inflight_batcher_llm_client.py script](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/inflight_batcher_llm).
+1. The [inflight_batcher_llm_client.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/inflight_batcher_llm/client/inflight_batcher_llm_client.py) script.
 
 ```bash
 # Using the SDK container as an example
