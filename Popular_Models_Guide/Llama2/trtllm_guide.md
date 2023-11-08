@@ -46,7 +46,7 @@ git lfs install
 git lfs pull
 ```
 
-1. Then launch Triton docker container with TensorRT-LLM backend. Note I'm mounting `tensorrtllm_backend` to `/tensorrtllm_backend` and the Llama2 model to `/Llama-2-7b-hf` in the docker container for simplicity. Make an `engines` folder outside docker to reuse engines for future runs.
+2. Launch Triton docker container with TensorRT-LLM backend. Note I'm mounting `tensorrtllm_backend` to `/tensorrtllm_backend` and the Llama2 model to `/Llama-2-7b-hf` in the docker container for simplicity. Make an `engines` folder outside docker to reuse engines for future runs.
 ```bash
 docker run --rm -it --net host --shm-size=2g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all -v /path/to/tensorrtllm_backend:/tensorrtllm_backend -v /path/to/Llama2/repo:/Llama-2-7b-hf -v /path/to/engines:/engines nvcr.io/nvidia/tritonserver:23.10-trtllm-python-py3
 ```
@@ -73,7 +73,7 @@ TensorRT-LLM requires each model to be compiled for the configuration you need b
     More details for the scripting please see the documentation for the Llama example [here](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples/llama/README.md).
 
     ```bash
-    python build.py --model_dir /Llama-2-7b-hf/ \
+    python /tensorrtllm_backend/tensorrt_llm/examples/llama/build.py --model_dir /Llama-2-7b-hf/ \
                     --dtype bfloat16 \
                     --use_gpt_attention_plugin bfloat16 \
                     --use_inflight_batching \
