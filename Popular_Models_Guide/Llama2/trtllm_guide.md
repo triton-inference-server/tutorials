@@ -136,7 +136,12 @@ You can test the results of the run with:
 
 ```bash
 # Using the SDK container as an example
-docker run --rm -it --net host --shm-size=2g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all -v /path/to/tensorrtllm_backend:/tensorrtllm_backend -v /path/to/Llama2/repo:/Llama-2-7b-hf -v /path/to/engines:/engines nvcr.io/nvidia/tritonserver:23.10-py3-sdk
+docker run --rm -it --net host --shm-size=2g \
+    --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
+    -v /path/to/tensorrtllm_backend:/tensorrtllm_backend \
+    -v /path/to/Llama2/repo:/Llama-2-7b-hf \
+    -v /path/to/engines:/engines \
+    nvcr.io/nvidia/tritonserver:23.10-py3-sdk
 # install extra dependencies for the script
 pip3 install transformers sentencepiece
 python3 /tensorrtllm_backend/inflight_batcher_llm/client/inflight_batcher_llm_client.py --request-output-len 200 --tokenizer_type llama --tokenizer_dir /Llama-2-7b-hf
