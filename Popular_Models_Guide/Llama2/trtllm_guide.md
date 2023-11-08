@@ -39,11 +39,10 @@ You will need to get permissions for the Llama2 repository as well as get access
 git clone https://github.com/triton-inference-server/tensorrtllm_backend.git  --branch <release branch>
 # Update the submodules
 cd tensorrtllm_backend
-# Change submodule remote url to use https if necessary
-git submodule set-url -- tensorrt_llm https://github.com/NVIDIA/TensorRT-LLM.git
-git submodule update --init --recursive
+# Install git-lfs if needed
+apt-get update && apt-get install git-lfs -y --no-install-recommends
 git lfs install
-git lfs pull
+git submodule update --init --recursive
 ```
 
 2. Launch Triton docker container with TensorRT-LLM backend. Note I'm mounting `tensorrtllm_backend` to `/tensorrtllm_backend` and the Llama2 model to `/Llama-2-7b-hf` in the docker container for simplicity. Make an `engines` folder outside docker to reuse engines for future runs.
