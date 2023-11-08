@@ -47,7 +47,12 @@ git submodule update --init --recursive
 
 2. Launch Triton docker container with TensorRT-LLM backend. Note I'm mounting `tensorrtllm_backend` to `/tensorrtllm_backend` and the Llama2 model to `/Llama-2-7b-hf` in the docker container for simplicity. Make an `engines` folder outside docker to reuse engines for future runs.
 ```bash
-docker run --rm -it --net host --shm-size=2g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all -v /path/to/tensorrtllm_backend:/tensorrtllm_backend -v /path/to/Llama2/repo:/Llama-2-7b-hf -v /path/to/engines:/engines nvcr.io/nvidia/tritonserver:23.10-trtllm-python-py3
+docker run --rm -it --net host --shm-size=2g \
+    --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
+    -v /path/to/tensorrtllm_backend:/tensorrtllm_backend \
+    -v /path/to/Llama2/repo:/Llama-2-7b-hf \
+    -v /path/to/engines:/engines \
+    nvcr.io/nvidia/tritonserver:23.10-trtllm-python-py3
 ```
 
 Alternatively, you can follow instructions [here](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/README.md) to build Triton Server with Tensorrt-LLM Backend if you want to build a specialized container.
