@@ -79,7 +79,7 @@ def execute(self, requests):
         responses.append(inference_response)
     return responses
 ```
-* `finialize()`: This function is executed when Triton unloads the model. It can be used to free any memory, or any other operations required to safely unload the model. Defining this function is optional.
+* `finalize()`: This function is executed when Triton unloads the model. It can be used to free any memory, or any other operations required to safely unload the model. Defining this function is optional.
 
 To run this example open two terminals and use the following commands:
 * **Terminal 1**: This terminal will be used to launch the Triton Inference Server.
