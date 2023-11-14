@@ -93,7 +93,7 @@ I0922 23:28:40.395611 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8
 
 Now we can query the server using curl, specifying the server address and input details:
 
-```json
+```bash
 curl -X POST localhost:8000/v2/models/falcon7b/infer -d '{"inputs": [{"name":"text_input","datatype":"BYTES","shape":[1],"data":["I am going"]}]}'
 ```
 In our testing, the server returned the following result (formatted for legibility):
@@ -135,7 +135,7 @@ Again, launch the server by invoking the `docker run` command from above and wai
 that the server has launched successfully.
 
 Query the server making sure to change the host address for each model:
-```json
+```bash
 curl -X POST localhost:8000/v2/models/falcon7b/infer -d '{"inputs": [{"name":"text_input","datatype":"BYTES","shape":[1],"data":["How can you be"]}]}'
 curl -X POST localhost:8000/v2/models/persimmon8b/infer -d '{"inputs": [{"name":"text_input","datatype":"BYTES","shape":[1],"data":["Where is the nearest"]}]}'
 ```
@@ -147,7 +147,12 @@ In our testing, these queries returned the following parsed results:
 # persimmon8b
 "Where is the nearest starbucks?"
 ```
+Beginning in the 23.10 release, users can now interact with large language models (LLMs) hosted
+by Triton in a simplified fashion by using Triton's generate endpoint:
 
+```bash
+curl -X POST localhost:8000/v2/models/falcon7b/generate -d '{"text_input":"How can you be"}'
+```
 ## 'Day Zero' Support
 
 The latest transformer models may not always be supported in the most recent, official
@@ -206,7 +211,7 @@ the Triton server using the `docker run` command from above.
 Once Triton launches successfully, start a Triton SDK container by running the following in a separate window:
 
 ```bash
-docker run -it --net=host nvcr.io/nvidia/tritonserver:23.09-py3-sdk bash
+docker run -it --net=host nvcr.io/nvidia/tritonserver:23.10-py3-sdk bash
 ```
 This container comes with all of Triton's deployment analyzers pre-installed, meaning
 we can simply enter the following to get feedback on our model's inference performance:
