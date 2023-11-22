@@ -62,7 +62,9 @@ class TritonPythonModel:
             AsyncEngineArgs(**self.handle_initializing_config())
         )
 
-        output_config = pb_utils.get_output_config_by_name(self.model_config, "TEXT")
+        output_config = pb_utils.get_output_config_by_name(
+            self.model_config, "text_output"
+        )
         self.output_dtype = pb_utils.triton_string_to_numpy(output_config["data_type"])
 
         # Counter to keep track of ongoing request counts
@@ -137,11 +139,17 @@ class TritonPythonModel:
         # Wait for the ongoing_requests
         while self.ongoing_request_count > 0:
             self.logger.log_info(
-                "Awaiting remaining {} requests".format(self.ongoing_request_count)
+                "[vllm] Awaiting remaining {} requests".format(
+                    self.ongoing_request_count
+                )
             )
             await asyncio.sleep(5)
 
-        self.logger.log_info("Shutdown complete")
+        for task in asyncio.all_tasks(loop=self._loop):
+            if task is not asyncio.current_task():
+                task.cancel()
+
+        self.logger.log_info("[vllm] Shutdown complete")
 
     def get_sampling_params_dict(self, params_json):
         """
@@ -185,7 +193,7 @@ class TritonPythonModel:
             (prompt + output.text).encode("utf-8") for output in vllm_output.outputs
         ]
         triton_output_tensor = pb_utils.Tensor(
-            "TEXT", np.asarray(text_outputs, dtype=self.output_dtype)
+            "text_output", np.asarray(text_outputs, dtype=self.output_dtype)
         )
         return pb_utils.InferenceResponse(output_tensors=[triton_output_tensor])
 
@@ -197,22 +205,23 @@ class TritonPythonModel:
         self.ongoing_request_count += 1
         try:
             request_id = random_uuid()
-
-            prompt = pb_utils.get_input_tensor_by_name(request, "PROMPT").as_numpy()[0]
+            prompt = pb_utils.get_input_tensor_by_name(
+                request, "text_input"
+            ).as_numpy()[0]
             if isinstance(prompt, bytes):
                 prompt = prompt.decode("utf-8")
-
-            # stream is an optional input
-            stream = False
-            stream_input_tensor = pb_utils.get_input_tensor_by_name(request, "STREAM")
-            if stream_input_tensor:
-                stream = stream_input_tensor.as_numpy()[0]
+            stream = pb_utils.get_input_tensor_by_name(request, "stream")
+            if stream:
+                stream = stream.as_numpy()[0]
+            else:
+                stream = False
 
             # Request parameters are not yet supported via
             # BLS. Provide an optional mechanism to receive serialized
             # parameters as an input tensor until support is added
+
             parameters_input_tensor = pb_utils.get_input_tensor_by_name(
-                request, "SAMPLING_PARAMETERS"
+                request, "sampling_parameters"
             )
             if parameters_input_tensor:
                 parameters = parameters_input_tensor.as_numpy()[0].decode("utf-8")
@@ -235,10 +244,10 @@ class TritonPythonModel:
                 response_sender.send(self.create_response(last_output))
 
         except Exception as e:
-            self.logger.log_info(f"Error generating stream: {e}")
+            self.logger.log_info(f"[vllm] Error generating stream: {e}")
             error = pb_utils.TritonError(f"Error generating stream: {e}")
             triton_output_tensor = pb_utils.Tensor(
-                "TEXT", np.asarray(["N/A"], dtype=self.output_dtype)
+                "text_output", np.asarray(["N/A"], dtype=self.output_dtype)
             )
             response = pb_utils.InferenceResponse(
                 output_tensors=[triton_output_tensor], error=error
@@ -267,7 +276,7 @@ class TritonPythonModel:
         """
         Triton virtual method; called when the model is unloaded.
         """
-        self.logger.log_info("Issuing finalize to vllm backend")
+        self.logger.log_info("[vllm] Issuing finalize to vllm backend")
         self._shutdown_event.set()
         if self._loop_thread is not None:
             self._loop_thread.join()
