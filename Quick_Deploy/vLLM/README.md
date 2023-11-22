@@ -49,7 +49,7 @@ The model repository should look like this:
 model_repository/
 └── vllm_model
     ├── 1
-    │   └── model.json
+    │   └── model.py
     └── config.pbtxt
 ```
 
