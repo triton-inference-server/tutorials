@@ -47,7 +47,7 @@ included with this demo as `model_repository` directory.
 The model repository should look like this:
 ```
 model_repository/
-└── vllm
+└── vllm_model
     ├── 1
     │   └── model.py
     └── config.pbtxt
