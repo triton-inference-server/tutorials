@@ -47,10 +47,10 @@ included with this demo as `model_repository` directory.
 The model repository should look like this:
 ```
 model_repository/
-`-- vllm
-    |-- 1
-    |   `-- model.py
-    |-- config.pbtxt
+└── vllm_model
+    ├── 1
+    │   └── model.json
+    └── config.pbtxt
 ```
 
 The configuration of engineArgs is in config.pbtxt:
@@ -73,7 +73,7 @@ parameters {
 parameters {
   key: "gpu_memory_utilization"
   value: {
-    string_value: "0.5"
+    string_value: "0.8"
   }
 }
 ```
