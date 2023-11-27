@@ -22,8 +22,10 @@ exceptions = [
     triton_bindings.UnsupportedError,
     triton_bindings.AlreadyExistsError,
 ]
+
 for exception in exceptions:
     exception.__module__ = "tritonserver_api"
+    globals()[exception.__name__] = exception
 
 
 class ModelBatchFlag(triton_bindings.TRITONSERVER_ModelBatchFlag):
@@ -218,11 +220,25 @@ class Options:
 
 
 class Server:
+    class UnstartedServer(object):
+        def __init__(self):
+            pass
+
+        def __getattribute__(self, name):
+            raise triton_bindings.triton_bindings.InvalidArgumentError(
+                "Server not started"
+            )
+
+        def __setattr__(self, name, value):
+            raise triton_bindings.triton_bindings.InvalidArgumentError(
+                "Server not started"
+            )
+
     def __init__(self, options: Options = None, **kwargs):
         if options is None:
             options = Options(**kwargs)
         self._options = options
-        self._server = None
+        self._server = Server.UnstartedServer()
 
     def start(self):
         self._server = triton_bindings.TRITONSERVER_Server(
@@ -230,52 +246,38 @@ class Server:
         )
 
     def stop(self):
-        if self_server is not None:
-            self._server.stop()
+        self._server.stop()
+        self._server = Server.UnstartedServer()
 
     def unregister_model_repository(self, repository_path: str):
-        if self._server is not None:
-            self._server.unregister_model_repository(repository_path)
+        self._server.unregister_model_repository(repository_path)
 
     def register_model_repository(
         self, repository_path: str, name_mapping: Dict[str, str]
     ):
-        if self._server is not None:
-            name_mapping_list = [
-                triton_bindings.TRITONSERVER_Parameter(name, value)
-                for name, value in name_mapping.items()
-            ]
+        name_mapping_list = [
+            triton_bindings.TRITONSERVER_Parameter(name, value)
+            for name, value in name_mapping.items()
+        ]
 
-            self._server.register_model_repository(repository_path, name_mapping_list)
+        self._server.register_model_repository(repository_path, name_mapping_list)
 
     def poll_model_repository(self):
-        if self._server is None:
-            return
         return self._server.poll_model_repository()
 
     def metadata(self):
-        if self._server is None:
-            return None
         return json.loads(self._server.metadata().serialize_to_json())
 
     def live(self):
-        if self._server is None:
-            return False
         return self._server.is_live()
 
     def ready(self):
-        if self._server is None:
-            return False
         return self._server.is_ready()
 
     def model(self, name, version=-1):
-        if self._server is None:
-            return None
         return Model(self._server, name, version)
 
     def model_index(self, ready=False):
-        if self._server is None:
-            return []
         models = json.loads(self._server.model_index(ready).serialize_to_json())
 
         for model in models:
@@ -287,9 +289,6 @@ class Server:
     def load_model(
         self, model_name: str, parameters: Dict[str, str | int | bool | bytes] = None
     ):
-        if self._server is None:
-            return
-
         if parameters:
             parameter_list = [
                 triton_bindings.TRITONSERVER_Parameter(name, value)
@@ -300,18 +299,12 @@ class Server:
             self._server.load_model(model_name)
 
     def unload_model(self, model_name: str):
-        if self._server is None:
-            return
         self._server.unload_model(model_name)
 
     def stop():
-        if self._server is None:
-            return
         self._server.stop()
 
     def metrics(self, metric_format: MetricFormat = MetricFormat.PROMETHEUS):
-        if self._server is None:
-            return
         return self._server.metrics().formatted(metric_format)
 
 
