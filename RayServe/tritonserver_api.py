@@ -1,15 +1,20 @@
+from __future__ import annotations
+
 import asyncio
 import ctypes
 import dataclasses
+import inspect
 import json
 import queue
 import struct
+import time
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Annotated, Dict, List
 
 import numpy
 from tritonserver import _c as triton_bindings
+from tritonserver._c import TRITONSERVER_MetricFamily as MetricFamily
 
 # Rename module for exceptions to simplify stack trace
 exceptions = [
@@ -80,8 +85,16 @@ class ModelLoadDeviceLimit:
 
 @dataclass
 class Options:
-    server_id: str = "triton"
+    """Server Options
 
+    Parameters
+    ----------
+    server_id: str
+            Id for server.
+
+    """
+
+    server_id: str = "triton"
     model_repository_paths: List[str] = dataclasses.field(default_factory=list[str])
     model_control_mode: ModelControlMode = ModelControlMode.POLL
     startup_models: List[str] = dataclasses.field(default_factory=list[str])
@@ -240,10 +253,12 @@ class Server:
         self._options = options
         self._server = Server.UnstartedServer()
 
-    def start(self):
+    def start(self, blocking=False):
         self._server = triton_bindings.TRITONSERVER_Server(
             self._options.create_server_options()
         )
+        while blocking and not self.is_ready():
+            time.sleep(0.1)
 
     def stop(self):
         self._server.stop()
@@ -268,16 +283,19 @@ class Server:
     def metadata(self):
         return json.loads(self._server.metadata().serialize_to_json())
 
-    def live(self):
+    def is_live(self):
         return self._server.is_live()
 
-    def ready(self):
+    def is_ready(self):
         return self._server.is_ready()
 
-    def model(self, name, version=-1):
-        return Model(self._server, name, version)
+    def get_model(self, model_name, model_version=-1):
+        return Model(self._server, model_name, model_version)
 
-    def model_index(self, ready=False):
+    def models(self, ready=False):
+        return self._model_index(ready)
+
+    def _model_index(self, ready=False):
         models = json.loads(self._server.model_index(ready).serialize_to_json())
 
         for model in models:
@@ -297,12 +315,10 @@ class Server:
             self._server.load_model_with_parameters(model_name, parameter_list)
         else:
             self._server.load_model(model_name)
+        return self.get_model(model_name)
 
     def unload_model(self, model_name: str):
         self._server.unload_model(model_name)
-
-    def stop():
-        self._server.stop()
 
     def metrics(self, metric_format: MetricFormat = MetricFormat.PROMETHEUS):
         return self._server.metrics().formatted(metric_format)
@@ -321,26 +337,41 @@ class Model:
         self._server = server
         self._state = state
 
-    def inference_request(self, **kwargs):
-        kwargs["model"] = self
-        kwargs["_server"] = self._server
-        return InferenceRequest(**kwargs)
+    def create_inference_request(self, **kwargs):
+        return InferenceRequest(model=self, _server=self._server, **kwargs)
 
-    def infer_async(self, inference_request=None, **kwargs):
+    def async_infer(
+        self, inference_request: InferenceRequest = None, **kwargs
+    ) -> AsyncResponseIterator:
         if inference_request is None:
-            kwargs["model"] = self
-            kwargs["_server"] = self._server
-            inference_request = InferenceRequest(**kwargs)
+            inference_request = InferenceRequest(
+                model=self, _server=self._server, **kwargs
+            )
+        server_request, response_iterator = inference_request.create_server_request(
+            use_async_iterator=True
+        )
+        self._server.infer_async(server_request)
+        if inference_request.response_queue is None:
+            return response_iterator
+
+    def infer(
+        self, inference_request: InferenceRequest = None, **kwargs
+    ) -> ResponseIterator:
+        if inference_request is None:
+            inference_request = InferenceRequest(
+                model=self, _server=self._server, **kwargs
+            )
         server_request, response_iterator = inference_request.create_server_request()
         self._server.infer_async(server_request)
-        return response_iterator
+        if inference_request.response_queue is None:
+            return response_iterator
 
     def metadata(self):
         return json.loads(
             self._server.model_metadata(self._name, self._version).serialize_to_json()
         )
 
-    def ready(self):
+    def is_ready(self):
         return self._server.model_is_ready(self._name, self._version)
 
     def batch_properties(self):
@@ -387,6 +418,7 @@ NUMPY_TO_TRITON_DTYPE = defaultdict(
         numpy.float32: triton_bindings.TRITONSERVER_DataType.FP32,
         numpy.float64: triton_bindings.TRITONSERVER_DataType.FP64,
         numpy.bytes_: triton_bindings.TRITONSERVER_DataType.BYTES,
+        numpy.str_: triton_bindings.TRITONSERVER_DataType.BYTES,
         numpy.object_: triton_bindings.TRITONSERVER_DataType.BYTES,
     },
 )
@@ -398,77 +430,92 @@ TRITON_TO_NUMPY_DTYPE = defaultdict(
 
 
 class AsyncResponseIterator:
-    @staticmethod
-    def response_callback(response, flags, self):
-        response = InferenceResponse.set_from_server_response(self._server, response)
+    def response_callback(self, response, flags, unused):
+        try:
+            response = InferenceResponse.set_from_server_response(
+                self._server, response, flags
+            )
+            asyncio.run_coroutine_threadsafe(self._queue.put(response), self._loop)
 
-        asyncio.run_coroutine_threadsafe(self._queue.put(response), self._loop)
+        except Exception as e:
+            triton_bindings.TRITONSERVER_LogMessage(
+                triton_bindings.TRITONSERVER_LogLevel.ERROR,
+                __file__,
+                inspect.currentframe().f_lineno,
+                str(e),
+            )
+            # raise e
 
-        if flags == triton_bindings.TRITONSERVER_ResponseCompleteFlag.FINAL:
-            asyncio.run_coroutine_threadsafe(self._queue.put(None), self._loop)
-
-    def __init__(self, server, loop):
+    def __init__(self, server, loop=None, response_queue=None):
         self._server = server
+        if loop is None:
+            loop = asyncio.get_running_loop()
         self._loop = loop
-        self._queue = asyncio.Queue()
+        if response_queue is None:
+            response_queue = asyncio.Queue()
+        self._queue = response_queue
+        self._complete = False
 
-    async def __aiter__(self):
+    def __aiter__(self):
         return self
 
     async def __anext__(self):
-        response = self._queue.get()
-        if response is None:
+        if self._complete:
             raise StopAsyncIteration
+        response = await self._queue.get()
+        self._complete = response.final
         return response
 
 
 class ResponseIterator:
-    @staticmethod
-    def response_callback(response, flags, self):
+    def response_callback(self, response, flags, unused):
         self._queue.put(
-            InferenceResponse.set_from_server_response(self._server, response)
+            InferenceResponse.set_from_server_response(self._server, response, flags)
         )
-        if flags == triton_bindings.TRITONSERVER_ResponseCompleteFlag.FINAL:
-            self._queue.put(None)
 
-    def __init__(self, server):
-        self._queue = queue.SimpleQueue()
+    def __init__(self, server, response_queue: queue.SimpleQueue = None):
+        if response_queue is None:
+            response_queue = queue.SimpleQueue()
+        self._queue = response_queue
         self._server = server
-
-    #        self._request = request
+        self._complete = False
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        response = self._queue.get()
-        if response is None:
+        if self._complete:
             raise StopIteration
+        response = self._queue.get()
+        self._complete = response.final
         return response
 
 
 @dataclass
 class InferenceResponse:
-    id: str = None
+    request_id: str = None
     parameters: dict = dataclasses.field(default_factory=dict)
     outputs: dict = dataclasses.field(default_factory=dict)
     error: triton_bindings.TritonError = None
     classification_label: str = None
+    final: bool = False
     _server: triton_bindings.TRITONSERVER_Server = None
     model: Model = None
 
     @staticmethod
-    def set_from_server_response(server, response):
+    def set_from_server_response(server, response, flags):
         values = {}
-
         try:
             response.throw_if_response_error()
         except triton_bindings.TritonError as error:
             values["error"] = error
 
+        if flags == triton_bindings.TRITONSERVER_ResponseCompleteFlag.FINAL:
+            values["final"] = True
+
         name, version = response.model
         values["model"] = Model(server, name, version)
-        values["id"] = response.id
+        values["request_id"] = response.id
         parameters = {}
         for parameter_index in range(response.parameter_count):
             name, type_, value = response.parameter(parameter_index)
@@ -501,7 +548,7 @@ class InferenceResponse:
 
 @dataclass
 class InferenceRequest:
-    id: str = None
+    request_id: str = None
     flags: int = 0
     correlation_id: int | str = None
     priority: int = 0
@@ -509,11 +556,11 @@ class InferenceRequest:
     inputs: dict = dataclasses.field(default_factory=dict)
     parameters: dict = dataclasses.field(default_factory=dict)
     model: Model = None
+    response_queue: queue.SimpleQueue | asyncio.Queue = None
     _server: triton_bindings.TRITONSERVER_Server = None
     _serialized_inputs: dict = dataclasses.field(default_factory=dict)
 
-    @staticmethod
-    def _release_request(request, flags, user_object):
+    def _release_request(self, request, flags, user_object):
         pass
 
     @staticmethod
@@ -584,12 +631,14 @@ class InferenceRequest:
     def _add_inputs(self, request):
         for name, value in self.inputs.items():
             if not isinstance(value, (numpy.ndarray, numpy.generic)):
-                raise Exception("Invalid Argument")
+                raise InvalidArgumentError("Input must be a numpy type")
 
             triton_datatype = NUMPY_TO_TRITON_DTYPE[value.dtype.type]
 
             if triton_datatype == triton_bindings.TRITONSERVER_DataType.INVALID:
-                raise Exception("Invalid Argument")
+                raise InvalidArgumentError(
+                    f"Input type {value.dtype.type} not recognized"
+                )
 
             request.add_input(name, triton_datatype, value.shape)
 
@@ -597,7 +646,6 @@ class InferenceRequest:
                 value = InferenceRequest._serialize_bytes_array(value)
                 # to ensure lifetime of array
                 self._serialized_inputs[name] = value
-
             _buffer = value.ctypes.data
             buffer_attributes = triton_bindings.TRITONSERVER_BufferAttributes()
             buffer_attributes.memory_type = triton_bindings.TRITONSERVER_MemoryType.CPU
@@ -607,25 +655,32 @@ class InferenceRequest:
                 name, _buffer, buffer_attributes
             )
 
-    def _set_callbacks(self, request):
+    def _set_callbacks(self, request, use_async_iterator=False):
         # allocator.set_buffer_attributes_function(InferenceRequest._set_buffer_attributes)
         # allocator.set_query_function(InferenceRequest._query_preferred_memory_type)
-        response_iterator = ResponseIterator(self._server)
-        request.set_release_callback(InferenceRequest._release_request, self)
+        if use_async_iterator:
+            response_iterator = AsyncResponseIterator(
+                self._server, response_queue=self.response_queue
+            )
+        else:
+            response_iterator = ResponseIterator(
+                self._server, response_queue=self.response_queue
+            )
+        request.set_release_callback(self._release_request, None)
         request.set_response_callback(
             InferenceRequest._allocator,
             None,
-            ResponseIterator.response_callback,
-            response_iterator,
+            response_iterator.response_callback,
+            None,
         )
         return response_iterator
 
-    def create_server_request(self):
+    def create_server_request(self, use_async_iterator=False):
         request = triton_bindings.TRITONSERVER_InferenceRequest(
             self._server, self.model._name, self.model._version
         )
-        if self.id is not None:
-            request.id = self.id
+        if self.request_id is not None:
+            request.id = self.request_id
         request.priority_uint64 = self.priority
         request.timeout_microseconds = self.timeout
         if self.correlation_id is not None:
@@ -637,12 +692,12 @@ class InferenceRequest:
 
         self._add_inputs(request)
 
-        response_iterator = self._set_callbacks(request)
+        response_iterator = self._set_callbacks(request, use_async_iterator)
 
         return request, response_iterator
 
 
-MetricFamily = triton_bindings.TRITONSERVER_MetricFamily
+# MetricFamily = triton_bindings.TRITONSERVER_MetricFamily
 
 
 class Metric(triton_bindings.TRITONSERVER_Metric):
