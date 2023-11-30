@@ -12,6 +12,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Annotated, Dict, List
 
+import _datautils
+import _dlpack
 import numpy
 from tritonserver import _c as triton_bindings
 from tritonserver._c import TRITONSERVER_MetricFamily as MetricFamily
@@ -402,33 +404,6 @@ class Model:
         )
 
 
-NUMPY_TO_TRITON_DTYPE = defaultdict(
-    lambda: triton_bindings.TRITONSERVER_DataType.INVALID,
-    {
-        bool: triton_bindings.TRITONSERVER_DataType.BOOL,
-        numpy.int8: triton_bindings.triton_bindings.TRITONSERVER_DataType.INT8,
-        numpy.int16: triton_bindings.TRITONSERVER_DataType.INT16,
-        numpy.int32: triton_bindings.TRITONSERVER_DataType.INT32,
-        numpy.int64: triton_bindings.TRITONSERVER_DataType.INT64,
-        numpy.uint8: triton_bindings.TRITONSERVER_DataType.UINT8,
-        numpy.uint16: triton_bindings.TRITONSERVER_DataType.UINT16,
-        numpy.uint32: triton_bindings.TRITONSERVER_DataType.UINT32,
-        numpy.uint64: triton_bindings.TRITONSERVER_DataType.UINT64,
-        numpy.float16: triton_bindings.TRITONSERVER_DataType.FP16,
-        numpy.float32: triton_bindings.TRITONSERVER_DataType.FP32,
-        numpy.float64: triton_bindings.TRITONSERVER_DataType.FP64,
-        numpy.bytes_: triton_bindings.TRITONSERVER_DataType.BYTES,
-        numpy.str_: triton_bindings.TRITONSERVER_DataType.BYTES,
-        numpy.object_: triton_bindings.TRITONSERVER_DataType.BYTES,
-    },
-)
-
-TRITON_TO_NUMPY_DTYPE = defaultdict(
-    lambda: triton_bindings.TRITONSERVER_DataType.INVALID,
-    {value: key for key, value in NUMPY_TO_TRITON_DTYPE.items()},
-)
-
-
 class AsyncResponseIterator:
     def response_callback(self, response, flags, unused):
         try:
@@ -536,7 +511,7 @@ class InferenceResponse:
             if type_ == triton_bindings.TRITONSERVER_DataType.BYTES:
                 numpy_array = InferenceRequest._deserialize_bytes_array(numpy_array)
 
-            numpy_dtype = TRITON_TO_NUMPY_DTYPE[type_]
+            numpy_dtype = _datautils.TRITON_TO_NUMPY_DTYPE[type_]
             outputs[name] = numpy_array.view(numpy_dtype).reshape(shape)
         values["outputs"] = outputs
         values["_server"] = server
@@ -613,46 +588,22 @@ class InferenceRequest:
             offset += item_length
         return numpy.array(result, dtype=numpy.object_)
 
-    @staticmethod
-    def _serialize_bytes_array(array):
-        result = []
-        for array_item in numpy.nditer(array, flags=["refs_ok"], order="C"):
-            item = array_item.item()
-            if type(item) != bytes:
-                item = str(item).encode("utf-8")
-            result.append(struct.pack("@I", len(item)))
-            result.append(item)
-        return numpy.frombuffer(b"".join(result), dtype=numpy.byte)
+    _allocator = _datautils.NumpyAllocator().create_response_allocator()
 
-    _allocator = triton_bindings.TRITONSERVER_ResponseAllocator(
-        _allocate_buffer, _release_buffer, _allocator_start
-    )
+    #    triton_bindings.TRITONSERVER_ResponseAllocator(
+    #       _allocate_buffer, _release_buffer, _allocator_start
+    #  )
 
     def _add_inputs(self, request):
         for name, value in self.inputs.items():
-            if not isinstance(value, (numpy.ndarray, numpy.generic)):
-                raise InvalidArgumentError("Input must be a numpy type")
-
-            triton_datatype = NUMPY_TO_TRITON_DTYPE[value.dtype.type]
-
-            if triton_datatype == triton_bindings.TRITONSERVER_DataType.INVALID:
-                raise InvalidArgumentError(
-                    f"Input type {value.dtype.type} not recognized"
-                )
-
-            request.add_input(name, triton_datatype, value.shape)
-
-            if triton_datatype == triton_bindings.TRITONSERVER_DataType.BYTES:
-                value = InferenceRequest._serialize_bytes_array(value)
+            memory_buffer = _datautils.MemoryBuffer.from_value(value)
+            if memory_buffer.data_type == triton_bindings.TRITONSERVER_DataType.BYTES:
                 # to ensure lifetime of array
-                self._serialized_inputs[name] = value
-            _buffer = value.ctypes.data
-            buffer_attributes = triton_bindings.TRITONSERVER_BufferAttributes()
-            buffer_attributes.memory_type = triton_bindings.TRITONSERVER_MemoryType.CPU
-            buffer_attributes.memory_type_id = 0
-            buffer_attributes.byte_size = value.itemsize * value.size
+                self._serialized_inputs[name] = memory_buffer.value
+            request.add_input(name, memory_buffer.data_type, memory_buffer.shape)
+
             request.append_input_data_with_buffer_attributes(
-                name, _buffer, buffer_attributes
+                name, memory_buffer.buffer_, memory_buffer.buffer_attributes
             )
 
     def _set_callbacks(self, request, use_async_iterator=False):

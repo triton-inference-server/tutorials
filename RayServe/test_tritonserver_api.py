@@ -3,6 +3,7 @@ import queue
 import time
 import unittest
 
+import cupy
 import numpy
 import pytest
 import tritonserver_api
@@ -13,6 +14,29 @@ class TrtionServerAPITest(unittest.TestCase):
         server = tritonserver_api.Server()
         with self.assertRaises(tritonserver_api.InvalidArgumentError):
             server.is_ready()
+
+    def test_gpu_memory(self):
+        server = tritonserver_api.Server(
+            model_repository_paths=["/workspace/models"],
+            log_verbose=True,
+            log_error=True,
+        )
+        server.start(blocking=True)
+
+        test = server.get_model("test")
+        fp16_input = cupy.array([[5], [6], [7], [8]], dtype=numpy.float16)
+
+        # text_input = numpy.array([c for c in "hello"], dtype=numpy.object_).astype(numpy.byte)
+
+        # text_input = cupy.array(["hello"], dtype=numpy.str_),
+        # text_input_device = numba.cuda.to_device(text_input)
+        #        fp16_input = numpy.array([["1"]], dtype=numpy.float16)
+        responses_1 = test.infer(inputs={"fp16_input": fp16_input}, request_id="1")
+
+        for response in responses_1:
+            print(response)
+
+        server.stop()
 
     def test_inference(self):
         server = tritonserver_api.Server(
@@ -37,7 +61,6 @@ class TrtionServerAPITest(unittest.TestCase):
         responses_1 = test.infer(
             inputs=inputs, request_id="1", response_queue=response_queue
         )
-
         responses_2 = test.infer(
             inputs=inputs, request_id="2", response_queue=response_queue
         )
@@ -94,9 +117,9 @@ class AsyncInferenceTest(unittest.IsolatedAsyncioTestCase):
             print(response.outputs["fp16_output"])
 
         count = 0
-        while count < 2:
+        while count < 1:
             response = await response_queue.get()
-            print(response)
+            print(response, count)
             count += 1
 
         time.sleep(10)
