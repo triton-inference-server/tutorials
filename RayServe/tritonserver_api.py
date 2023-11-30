@@ -539,44 +539,6 @@ class InferenceRequest:
         pass
 
     @staticmethod
-    def _allocate_buffer(
-        allocator, tensor_name, byte_size, memory_type, memory_type_id, user_object
-    ):
-        _buffer = numpy.empty(byte_size, numpy.byte)
-        return (
-            _buffer.ctypes.data,
-            _buffer,
-            triton_bindings.TRITONSERVER_MemoryType.CPU,
-            0,
-        )
-
-    @staticmethod
-    def _release_buffer(
-        allocator, _buffer, user_object, byte_size, memory_type, memory_type_id
-    ):
-        # No-op
-        pass
-
-    @staticmethod
-    def _allocator_start(allocator, user_object):
-        pass
-
-    @staticmethod
-    def _query_preferred_memory_type(
-        allocator, user_object, tensor_name, bytes_size, memory_type, memory_type_id
-    ):
-        return (triton_bindings.TRITONSERVER_MemoryType.CPU, 0)
-
-    @staticmethod
-    def _set_buffer_attributes(
-        allocator, tensor_name, buffer_attributes, user_object, buffer_user_object
-    ):
-        buffer_attributes.memory_type = triton_bindings.TRITONSERVER_MemoryType.CPU
-        buffer_attributes.memory_type_id = 0
-        buffer_attributes.byte_size = buffer_user_object.size
-        return buffer_attributes
-
-    @staticmethod
     def _deserialize_bytes_array(array):
         result = []
         _buffer = memoryview(array)
@@ -589,10 +551,6 @@ class InferenceRequest:
         return numpy.array(result, dtype=numpy.object_)
 
     _allocator = _datautils.NumpyAllocator().create_response_allocator()
-
-    #    triton_bindings.TRITONSERVER_ResponseAllocator(
-    #       _allocate_buffer, _release_buffer, _allocator_start
-    #  )
 
     def _add_inputs(self, request):
         for name, value in self.inputs.items():
