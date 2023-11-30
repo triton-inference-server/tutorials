@@ -535,6 +535,8 @@ class InferenceRequest:
     _server: triton_bindings.TRITONSERVER_Server = None
     _serialized_inputs: dict = dataclasses.field(default_factory=dict)
 
+    _default_allocator = _datautils.NumpyAllocator().create_response_allocator()
+
     def _release_request(self, request, flags, user_object):
         pass
 
@@ -550,8 +552,6 @@ class InferenceRequest:
             offset += item_length
         return numpy.array(result, dtype=numpy.object_)
 
-    _allocator = _datautils.NumpyAllocator().create_response_allocator()
-
     def _add_inputs(self, request):
         for name, value in self.inputs.items():
             memory_buffer = _datautils.MemoryBuffer.from_value(value)
@@ -565,8 +565,6 @@ class InferenceRequest:
             )
 
     def _set_callbacks(self, request, use_async_iterator=False):
-        # allocator.set_buffer_attributes_function(InferenceRequest._set_buffer_attributes)
-        # allocator.set_query_function(InferenceRequest._query_preferred_memory_type)
         if use_async_iterator:
             response_iterator = AsyncResponseIterator(
                 self._server, response_queue=self.response_queue
@@ -577,7 +575,7 @@ class InferenceRequest:
             )
         request.set_release_callback(self._release_request, None)
         request.set_response_callback(
-            InferenceRequest._allocator,
+            InferenceRequest._default_allocator,
             None,
             response_iterator.response_callback,
             None,

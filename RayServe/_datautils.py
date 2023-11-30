@@ -101,6 +101,45 @@ class MemoryAllocator(ABC):
         return self._allocator
 
 
+class CupyAllocator(MemoryAllocator):
+    def __init__(self):
+        pass
+
+    def start(self, allocator, user_object):
+        pass
+
+    def release(
+        self,
+        allocator,
+        buffer_,
+        buffer_user_object,
+        byte_size,
+        memory_type,
+        memory_type_id,
+    ):
+        pass
+
+    def allocate(
+        self,
+        allocator,
+        tensor_name,
+        byte_size,
+        memory_type,
+        memory_type_id,
+        user_object,
+    ):
+        _buffer = cupy.empty(byte_size, cupy.byte)
+
+        dlpack_object = DLPackObject(_buffer)
+
+        return (
+            dlpack_object.data_ptr,
+            _buffer,
+            dlpack_object.memory_type,
+            dlpack_object.memory_type_id,
+        )
+
+
 class NumpyAllocator(MemoryAllocator):
     def __init__(self):
         pass
