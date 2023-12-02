@@ -1,0 +1,35 @@
+# Triton backend to use
+backend: "python"
+
+# Hugging face model path. Parameters must follow this
+# key/value structure
+parameters: {
+  key: "huggingface_model",
+  value: {string_value: "meta-llama/Llama-2-7b-hf"}
+}
+# The maximum number of tokens to generate in response
+# to our input
+parameters: {
+  key: "max_output_length",
+  value: {string_value: "15"}
+}
+
+# Triton should expect as input a single string of set
+# length named 'text_input'
+input [
+  {
+    name: "text_input"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+  }
+]
+
+# Triton should expect to respond with a single string
+# output of variable length named 'text_output'
+output [
+  {
+    name: "text_output"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]

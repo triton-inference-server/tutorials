@@ -33,6 +33,7 @@ model on the Triton Inference Server using Triton's [Python backend](https://git
 models will be deployed:
 - [tiiuae/falcon-7b](https://huggingface.co/tiiuae/falcon-7b)
 - [adept/persimmon-8b-base](https://huggingface.co/adept/persimmon-8b-base)
+- [meta-llama/Llama-2-7b-hf](https://huggingface.co/meta-llama/Llama-2-7b)
 
 These models were selected because of their popularity and consistent response quality.
 However, this tutorial is also generalizable for any transformer model provided
@@ -76,9 +77,13 @@ docker build -t triton_transformer_server .
 
 Once the ```triton_transformer_server``` image is created, you can launch the Triton Inference
 Server in a container with the following command:
-
 ```bash
 docker run --gpus all -it --rm --net=host --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}/model_repository:/opt/tritonserver/model_repository triton_transformer_server tritonserver --model-repository=model_repository
+```
+
+**Note**: For private models like `Llama2`, you need to [request access to the model](https://huggingface.co/meta-llama/Llama-2-7b-hf/tree/main) and add the [access token](https://huggingface.co/settings/tokens) to the docker command `-e PRIVATE_REPO_TOKEN=<hf_your_huggingface_access_token>`.
+```bash
+docker run --gpus all -it --rm --net=host --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -e PRIVATE_REPO_TOKEN=<hf_your_huggingface_access_token> -v ${PWD}/model_repository:/opt/tritonserver/model_repository triton_transformer_server tritonserver --model-repository=model_repository
 ```
 
 The server has launched successfully when you see the following outputs in your console:

@@ -26,11 +26,16 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-## Pre-build instructions
+# Pre-build instructions
 
 For this tutorial, we are using the Llama2-7B HuggingFace model with pre-trained weights.
 Clone the repo of the model with weights and tokens [here](https://huggingface.co/meta-llama/Llama-2-7b-hf/tree/main).
-You will need to get permissions for the Llama2 repository as well as get access to the huggingface cli. To get access to the huggingface cli, go here: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
+You will need to get permissions for the Llama2 repository as well as get access to the huggingface cli. To get access to the tokens, go here: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
+
+There are multiple ways to run Llama2 with Tritonserver.
+1. Infer with [TensorRT-LLM Backend](trtllm_guide.md#infer-with-tensorrt-llm-backend)
+2. Infer with [vLLM Backend](vllm_guide.md#infer-with-vllm-backend)
+3. Infer with [Python Backend as a HuggingFace model](../Quick_Deploy/HuggingFaceTransformers/README.md#deploying-hugging-face-transformer-models-in-triton)
 
 ## Installation
 
