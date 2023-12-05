@@ -65,9 +65,12 @@ class TritonPythonModel:
         self.logger.log_info(f"Max output length: {self.max_output_length}")
         self.logger.log_info(f"Loading HuggingFace model: {hf_model}...")
         # Assume tokenizer available for same model
+        self.logger.log_info(f"model: {hf_model}, token: {private_repo_token}")
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(
             hf_model, token=private_repo_token
         )
+        self.logger.log_info(f"got tokenizer...")
+
         self.pipeline = transformers.pipeline(
             "text-generation",
             model=hf_model,
@@ -76,9 +79,11 @@ class TritonPythonModel:
             device_map="auto",
             token=private_repo_token,
         )
+        self.logger.log_info(f"got pipeline...")
 
     def execute(self, requests):
         responses = []
+        self.logger.log_info(f"got {len(requests)} requests")
         for request in requests:
             # Assume input named "prompt", specified in autocomplete above
             input_tensor = pb_utils.get_input_tensor_by_name(request, "text_input")
@@ -91,10 +96,14 @@ class TritonPythonModel:
         return responses
 
     def generate(self, prompt):
+        self.logger.log_info(f"generating responses for {prompt}")
         sequences = self.pipeline(
             prompt,
-            max_length=self.max_output_length,
-            pad_token_id=self.tokenizer.eos_token_id,
+            do_sample=True,
+            top_k=10,
+            num_return_sequences=1,
+            eos_token_id=self.tokenizer.eos_token_id,
+            max_length=max_output_length,
         )
 
         output_tensors = []
