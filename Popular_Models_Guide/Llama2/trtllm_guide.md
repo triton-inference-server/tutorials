@@ -139,17 +139,12 @@ To run our Llama2-7B model, you will need to:
 
     Use the [launch_triton_server.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/release/0.5.0/scripts/launch_triton_server.py) script. This launches multiple instances of `tritonserver` with MPI.
     ```bash
-<<<<<<< HEAD
     python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=<world size of the engine> --model_repo=/opt/tritonserver/inflight_batcher_llm
-=======
-    python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=<the engine's world size> --model_repo=/opt/tritonserver/inflight_batcher_llm
->>>>>>> address comments on server start instructions
     ```
 
 ## Client
 
 You can test the results of the run with:
-<<<<<<< HEAD
 1. The [inflight_batcher_llm_client.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/inflight_batcher_llm/client/inflight_batcher_llm_client.py) script.
 
 ```bash
@@ -161,14 +156,6 @@ docker run --rm -it --net host --shm-size=2g \
     -v /path/to/engines:/engines \
     nvcr.io/nvidia/tritonserver:23.10-py3-sdk
 # Install extra dependencies for the script
-=======
-1. The [inflight_batcher_llm_client.py script](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/inflight_batcher_llm).
-
-```bash
-# Using the SDK container as an example
-docker run --rm -it --net host --shm-size=2g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all -v /path/to/tensorrtllm_backend:/tensorrtllm_backend -v /path/to/Llama2/repo:/Llama-2-7b-hf -v /path/to/engines:/engines nvcr.io/nvidia/tritonserver:23.10-py3-sdk
-# install extra dependencies for the script
->>>>>>> add extra comments to make tutorial smoother
 pip3 install transformers sentencepiece
 python3 /tensorrtllm_backend/inflight_batcher_llm/client/inflight_batcher_llm_client.py --request-output-len 200 --tokenizer_type llama --tokenizer_dir /Llama-2-7b-hf
 ```
