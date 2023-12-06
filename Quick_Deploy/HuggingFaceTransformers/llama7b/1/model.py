@@ -25,9 +25,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os
 
-os.environ[
-    "TRANSFORMERS_CACHE"
-] = "/opt/tritonserver/model_repository/meta-llama/Llama-2-7b-hf"
+os.environ["TRANSFORMERS_CACHE"] = "/opt/tritonserver/model_repository/llama7b/hf-cache"
 
 import json
 
@@ -65,11 +63,9 @@ class TritonPythonModel:
         self.logger.log_info(f"Max output length: {self.max_output_length}")
         self.logger.log_info(f"Loading HuggingFace model: {hf_model}...")
         # Assume tokenizer available for same model
-        self.logger.log_info(f"model: {hf_model}, token: {private_repo_token}")
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(
             hf_model, token=private_repo_token
         )
-        self.logger.log_info(f"got tokenizer...")
 
         self.pipeline = transformers.pipeline(
             "text-generation",
@@ -79,31 +75,27 @@ class TritonPythonModel:
             device_map="auto",
             token=private_repo_token,
         )
-        self.logger.log_info(f"got pipeline...")
 
     def execute(self, requests):
         responses = []
-        self.logger.log_info(f"got {len(requests)} requests")
         for request in requests:
             # Assume input named "prompt", specified in autocomplete above
             input_tensor = pb_utils.get_input_tensor_by_name(request, "text_input")
             prompt = input_tensor.as_numpy()[0].decode("utf-8")
 
-            self.logger.log_info(f"Generating sequences for text_input: {prompt}")
             response = self.generate(prompt)
             responses.append(response)
 
         return responses
 
     def generate(self, prompt):
-        self.logger.log_info(f"generating responses for {prompt}")
         sequences = self.pipeline(
             prompt,
             do_sample=True,
             top_k=10,
             num_return_sequences=1,
             eos_token_id=self.tokenizer.eos_token_id,
-            max_length=max_output_length,
+            max_length=self.max_output_length,
         )
 
         output_tensors = []
