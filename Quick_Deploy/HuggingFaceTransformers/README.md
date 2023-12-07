@@ -42,6 +42,8 @@ sufficient infrastructure.
 *NOTE*: The tutorial is intended to be a reference example only. It may not be tuned for
 optimal performance.
 
+*NOTE*: Llama 2 models are not specifically mentioned in the steps below, but can be run if `tiiuae/falcon-7b` is replaced with `meta-llama/Llama-2-7b-hf`, and `falcon7b` folder is replaced by `llama7b` folder.
+
 ## Step 1: Create a Model Repository
 
 The first step is to create a model repository containing the models we want the Triton

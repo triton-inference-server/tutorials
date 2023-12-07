@@ -25,24 +25,56 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
+
+The vLLM backend uses the vLLM Backend to do inference. Read more about vLLM [here](https://blog.vllm.ai/2023/06/20/vllm.html) and the vLLM Backend [here](https://github.com/triton-inference-server/vllm_backend).
+
 ## Pre-build instructions
 
 For this tutorial, we are using the Llama2-7B HuggingFace model with pre-trained weights. Please follow the [README.md](README.md) for pre-build instructions and links for how to run Llama with other backends.
 
-## Infer with vLLM Backend
+## Installation
 
-The vLLM backend uses vLLM to do inference. The triton vLLM container can be cloned with
+The triton vLLM container can be pulled from [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) with
 
 ```bash
 docker run --rm -it --net host --shm-size=2g \
     --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
-    -v /path/to/Llama2/repo:/Llama-2-7b-hf \
+    -v $PWD/llama2vllm:/opt/tritonserver/model_repository/llama2vllm \
     nvcr.io/nvidia/tritonserver:23.11-vllm-python-py3
 ```
+This will create a `/opt/tritonserver/model_repository` folder that contains the `llama2vllm` model. The model itself will be pulled from the HuggingFace
 
-Once in the container, install the `huggingface-cli` and login.
+Once in the container, install the `huggingface-cli` and login with your own credentials.
 ```bash
 pip install --upgrade huggingface_hub
-huggingface-cli login --token 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
+huggingface-cli login --token <your access token here>
 ```
 
+
+## Serving with Triton
+
+Then you can run the tritonserver as usual
+```bash
+tritonserver --model-repository model-repository
+```
+The server has launched successfully when you see the following outputs in your console:
+
+```
+I0922 23:28:40.351809 1 grpc_server.cc:2451] Started GRPCInferenceService at 0.0.0.0:8001
+I0922 23:28:40.352017 1 http_server.cc:3558] Started HTTPService at 0.0.0.0:8000
+I0922 23:28:40.395611 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8002
+```
+
+## Sending requests
+
+As a simple example to make sure the server works, you can use the `generate` endpoint to test. More about the generate endpoint [here](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_generate.md).
+
+```bash
+$ curl -X POST localhost:8000/v2/models/llama2vllm/generate -d '{"text_input": "What is Triton Inference Server?", "parameters": {"stream": false, "temperature": 0}}'
+# returns (formatted for better visualization)
+> {
+    "model_name":"llama2vllm",
+    "model_version":"1",
+    "text_output":"What is Triton Inference Server?\nTriton Inference Server is a lightweight, high-performance"
+  }
+```

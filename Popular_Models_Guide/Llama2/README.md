@@ -28,7 +28,6 @@
 
 # Deploying Hugging Face Transformer Models in Triton
 
-For this tutorial, we are using the Llama2-7B HuggingFace model with pre-trained weights.
 There are multiple ways to run Llama2 with Tritonserver.
 1. Infer with [TensorRT-LLM Backend](trtllm_guide.md#infer-with-tensorrt-llm-backend)
 2. Infer with [vLLM Backend](vllm_guide.md#infer-with-vllm-backend)

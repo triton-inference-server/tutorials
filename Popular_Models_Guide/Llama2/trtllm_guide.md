@@ -26,6 +26,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
+TensorRT-LLM is Nvidia's recommended solution of running Large Language Models(LLMs) on Nvidia GPUs. Read more about TensoRT-LLM [here](https://github.com/NVIDIA/TensorRT-LLM) and Triton's TensorRTLLM Backend [here](https://github.com/triton-inference-server/tensorrtllm_backend).
+
 ## Pre-build instructions
 
 For this tutorial, we are using the Llama2-7B HuggingFace model with pre-trained weights. Please follow the [README.md](README.md) for pre-build instructions and links for how to run Llama with other backends.
@@ -110,9 +112,9 @@ To run our Llama2-7B model, you will need to:
 
 1. Copy over the inflight batcher models repository
 
- ```bash
- cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/.
- ```
+    ```bash
+    cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/.
+    ```
 
 2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps. See details in [documentation](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/README.md#create-the-model-repository):
 
@@ -134,6 +136,13 @@ To run our Llama2-7B model, you will need to:
     ```bash
     python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=<world size of the engine> --model_repo=/opt/tritonserver/inflight_batcher_llm
     ```
+    The server has launched successfully when you see the following outputs in your console:
+
+    ```
+    I0922 23:28:40.351809 1 grpc_server.cc:2451] Started GRPCInferenceService at 0.0.0.0:8001
+    I0922 23:28:40.352017 1 http_server.cc:3558] Started HTTPService at 0.0.0.0:8000
+    I0922 23:28:40.395611 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8002
+    ```
 
 ## Client
 
@@ -154,6 +163,14 @@ python3 /tensorrtllm_backend/inflight_batcher_llm/client/inflight_batcher_llm_cl
 ```
 
 2. The [generate endpoint](https://github.com/triton-inference-server/tensorrtllm_backend/tree/release/0.5.0#query-the-server-with-the-triton-generate-endpoint) if you are using the Triton TensorRT-LLM Backend container with versions greater than `r23.10`.
-
+```bash
+$ curl -X POST localhost:8000/v2/models/llama7b/generate -d '{"text_input": "What is Triton Inference Server?", "parameters": {"stream": false, "temperature": 0}}'
+# returns (formatted for better visualization)
+> {
+    "model_name":"llama2vllm",
+    "model_version":"1",
+    "text_output":"What is Triton Inference Server?\nTriton Inference Server is a lightweight, high-performance"
+  }
+```
 
 
