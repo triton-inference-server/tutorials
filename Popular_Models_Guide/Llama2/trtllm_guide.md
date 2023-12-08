@@ -27,20 +27,19 @@
 -->
 
 TensorRT-LLM is Nvidia's recommended solution of running Large Language
-Models(LLMs) on Nvidia GPUs. Read more about TensoRT-LLM
-[here](https://github.com/NVIDIA/TensorRT-LLM) and Triton's TensorRTLLM
-Backend [here](https://github.com/triton-inference-server/tensorrtllm_backend).
+Models(LLMs) on Nvidia GPUs. Read more about TensoRT-LLM [here](https://github.com/NVIDIA/TensorRT-LLM)
+and Triton's TensorRTLLM Backend [here](https://github.com/triton-inference-server/tensorrtllm_backend).
 
 *NOTE:* If some parts of this tutorial doesn't work, it is possible that there
- are some version mismatches between the `tutorials` and `tensorrt_backend`
- repository. Refer to [llama.md](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md)
- for more detailed modifications if necessary.
+are some version mismatches between the `tutorials` and `tensorrt_backend` repository.
+Refer to [llama.md](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md)
+for more detailed modifications if necessary.
 
 ## Pre-build instructions
 
 For this tutorial, we are using the Llama2-7B HuggingFace model with pre-trained
- weights. Please follow the [README.md](README.md) for pre-build instructions
- and links for how to run Llama with other backends.
+weights. Please follow the [README.md](README.md) for pre-build instructions
+and links for how to run Llama with other backends.
 
 ## Installation
 
@@ -66,7 +65,7 @@ docker run --rm -it --net host --shm-size=2g \
     -v $PWD/tensorrtllm_backend:/tensorrtllm_backend \
     -v $PWD/Llama-2-7b-hf:/Llama-2-7b-hf \
     -v $PWD/engines:/engines \
-    nvcr.io/nvidia/tritonserver:23.10-trtllm-python-py3
+    nvcr.io/nvidia/tritonserver:23.11-trtllm-python-py3
 
 # Install Sentencepiece
 pip3 install SentencePiece protobuf
