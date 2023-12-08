@@ -29,8 +29,8 @@
 # Deploying Hugging Face Transformer Models in Triton
 
 The following tutorial demonstrates how to deploy an arbitrary hugging face transformer
-model on the Triton Inference Server using Triton's [Python backend](https://github.com/triton-inference-server/python_backend). For the purposes of this example, two transformer
-models will be deployed:
+model on the Triton Inference Server using Triton's [Python backend](https://github.com/triton-inference-server/python_backend).
+For the purposes of this example, the following transformer models will be deployed:
 - [tiiuae/falcon-7b](https://huggingface.co/tiiuae/falcon-7b)
 - [adept/persimmon-8b-base](https://huggingface.co/adept/persimmon-8b-base)
 - [meta-llama/Llama-2-7b-hf](https://huggingface.co/meta-llama/Llama-2-7b)
@@ -42,7 +42,9 @@ sufficient infrastructure.
 *NOTE*: The tutorial is intended to be a reference example only. It may not be tuned for
 optimal performance.
 
-*NOTE*: Llama 2 models are not specifically mentioned in the steps below, but can be run if `tiiuae/falcon-7b` is replaced with `meta-llama/Llama-2-7b-hf`, and `falcon7b` folder is replaced by `llama7b` folder.
+*NOTE*: Llama 2 models are not specifically mentioned in the steps below, but
+can be run if `tiiuae/falcon-7b` is replaced with `meta-llama/Llama-2-7b-hf`,
+and `falcon7b` folder is replaced by `llama7b` folder.
 
 ## Step 1: Create a Model Repository
 

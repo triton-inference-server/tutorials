@@ -47,7 +47,7 @@ This will create a `/opt/tritonserver/model_repository` folder that contains the
 Once in the container, install the `huggingface-cli` and login with your own credentials.
 ```bash
 pip install --upgrade huggingface_hub
-huggingface-cli login --token <your access token here>
+huggingface-cli login --token <your huggingface access token>
 ```
 
 
@@ -55,7 +55,7 @@ huggingface-cli login --token <your access token here>
 
 Then you can run the tritonserver as usual
 ```bash
-tritonserver --model-repository model-repository
+tritonserver --model-repository model_repository
 ```
 The server has launched successfully when you see the following outputs in your console:
 
@@ -65,7 +65,7 @@ I0922 23:28:40.352017 1 http_server.cc:3558] Started HTTPService at 0.0.0.0:8000
 I0922 23:28:40.395611 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8002
 ```
 
-## Sending requests
+## Sending requests via the `generate` endpoint
 
 As a simple example to make sure the server works, you can use the `generate` endpoint to test. More about the generate endpoint [here](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_generate.md).
 
@@ -77,4 +77,41 @@ $ curl -X POST localhost:8000/v2/models/llama2vllm/generate -d '{"text_input": "
     "model_version":"1",
     "text_output":"What is Triton Inference Server?\nTriton Inference Server is a lightweight, high-performance"
   }
+```
+
+## Sending requests via the Triton client
+
+The Triton vLLM Backend repository has a [samples folder](https://github.com/triton-inference-server/vllm_backend/tree/main/samples) that has an example client.py to test the Llama2 model.
+
+```bash
+pip3 install tritonclient[all]
+# Assuming Tritonserver server is running already
+$ git clone https://github.com/triton-inference-server/vllm_backend.git
+$ cd vllm_backend/samples
+$ python3 client.py -m llama2vllm
+
+```
+The following steps should result in a `results.txt` that has the following content
+```bash
+Hello, my name is
+I am a 20 year old student from the Netherlands. I am currently
+
+=========
+
+The most dangerous animal is
+The most dangerous animal is the one that is not there.
+The most dangerous
+
+=========
+
+The capital of France is
+The capital of France is Paris.
+The capital of France is Paris. The
+
+=========
+
+The future of AI is
+The future of AI is in the hands of the people who use it.
+
+=========
 ```
