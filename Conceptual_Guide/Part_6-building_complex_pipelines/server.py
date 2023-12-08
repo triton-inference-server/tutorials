@@ -35,10 +35,10 @@ import tritonserver
 
 def main():
 
-    server = tritonserver.Server(model_repository="/workspace/models")
-    server.start()
+    server = tritonserver.Server(model_repository="/workspace/models", exit_timeout=5)
+    server.start(blocking=True)
     
-    prompt = "Jerry Garcia with a hat, 4k, 3d render"
+    prompt = "singing cowboy sitting on an alligator in a night club, realistic"
     text_obj = np.array([prompt], dtype="object").reshape((-1, 1))
 
     model = server.models["pipeline"]
