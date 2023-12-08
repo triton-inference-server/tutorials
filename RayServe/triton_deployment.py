@@ -3,10 +3,11 @@ import time
 
 import numpy
 import requests
-import tritonserver_api
+import tritonserver
 from fastapi import FastAPI
 from PIL import Image
 from ray import serve
+import json
 
 # 1: Define a FastAPI app and wrap it in a deployment with a route handler.
 app = FastAPI()
@@ -16,28 +17,14 @@ app = FastAPI()
 @serve.ingress(app)
 class TritonDeployment:
     def __init__(self):
-        #        options = tritonserver_api.Options(model_repository_paths=["/workspace/models"],
-        #                                          model_control_mode=tritonserver_api.ModelControlMode.POLL,
-        #                                         server_id="hello"
-        #                                        )
 
-        # self._triton_server = tritonserver_api.Server(
-        #     server_id="hello",
-        #     startup_models=["foo"],
-        #     model_repository_paths=["/workspace/models"],
-        #     strict_model_config=True,
-        #     exit_on_error=False,
-        #     log_verbose=False,
-        #     log_error=True,
-        #     log_warn=True,
-        # )
-
-        self._triton_server = tritonserver_api.serve(
-            model_repository_paths=["/workspace/models"]
+        self._triton_server = tritonserver.Server(
+            model_repository=["/workspace/models"]
         )
-        self._metric = tritonserver_api.Metric(
-            tritonserver_api.MetricFamily(
-                tritonserver_api.MetricKind.COUNTER, "custom_counter", "custom"
+        self._triton_server.start(blocking=True)
+        self._metric = tritonserver.Metric(
+            tritonserver.MetricFamily(
+                tritonserver.MetricKind.COUNTER, "custom_counter", "custom"
             ),
             {"test": "test"},
         )
@@ -49,17 +36,17 @@ class TritonDeployment:
 
         #    time.sleep(0.5)
 
-        self._models = self._triton_server.model_index()
-        for model in self._models:
+        self._models = self._triton_server.models
+        for (name, version), model in self._models.items():
             print(model)
             print(model.batch_properties())
             print(model.transaction_properties())
             print(model.config())
 
     @app.get("/test")
-    def generate(self, text_input: str, fp16_input: float) -> dict:
-        test = self._triton_server.model("test")
-        responses = test.infer_async(
+    def test(self, text_input: str, fp16_input: float) -> dict:
+        test = self._triton_server.get_model("test")
+        responses = test.infer(
             inputs={
                 "text_input": numpy.array([text_input], dtype=numpy.object_),
                 "fp16_input": numpy.array([[fp16_input]], dtype=numpy.float16),
@@ -69,17 +56,36 @@ class TritonDeployment:
             text_output = response.outputs["text_output"].astype(str)[0]
             fp16_output = response.outputs["fp16_output"].astype(float)[0]
 
-        return {"text_output": text_output, "fp16_output": fp16_output}
+        print(response)
+        ret_val = {"text_output": text_output, "fp16_output": list(fp16_output)}
+        return ret_val
+
+    @app.get("/async_test")
+    async def async_test(self, text_input: str, fp16_input: float) -> dict:
+        test = self._triton_server.get_model("test")
+        responses = test.async_infer(
+            inputs={
+                "text_input": numpy.array([text_input], dtype=numpy.object_),
+                "fp16_input": numpy.array([[fp16_input]], dtype=numpy.float16),
+            }
+        )
+        async for response in responses:
+            text_output = response.outputs["text_output"].astype(str)[0]
+            fp16_output = response.outputs["fp16_output"].astype(float)[0]
+
+        ret_val = {"text_output": text_output, "fp16_output": list(fp16_output)}
+        return ret_val
+
 
     @app.get("/classify")
     def classify(self, image_name: str) -> str:
-        model = self._triton_server.model("resnet50_libtorch")
+        model = self._triton_server.models["resnet50_libtorch"]
 
         # print(model.metadata())
 
         input_ = numpy.random.rand(1, 3, 224, 224).astype(numpy.float32)
 
-        responses = model.infer_async(inputs={"INPUT__0": input_})
+        responses = model.infer(inputs={"INPUT__0": input_})
         for response in responses:
             output_ = response.outputs["OUTPUT__0"]
             max_ = numpy.argmax(output_[0])
@@ -88,14 +94,14 @@ class TritonDeployment:
 
     @app.get("/generate")
     def generate(self, text_input: str) -> str:
-        trt_llm = self._triton_server.model("ensemble")
+        trt_llm = self._triton_server.get_model("ensemble")
         try:
             if not trt_llm.ready():
                 return ""
         except:
             return ""
 
-        responses = trt_llm.infer_async(
+        responses = trt_llm.infer(
             inputs={
                 "text_input": numpy.array([[text_input]], dtype=numpy.object_),
                 "max_tokens": numpy.array([[100]], dtype=numpy.uint32),
@@ -148,6 +154,14 @@ if __name__ == "__main__":
             params={"image_name": "Theodore"},
         ).json()
     )
+
+    print(
+        requests.get(
+            "http://localhost:8000/async_test",
+            params={"text_input": "Theodore", "fp16_input": 0.5},
+        ).json()
+    )
+
 
     print(requests.get("http://localhost:8000/metrics").json())
 
