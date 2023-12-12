@@ -110,12 +110,12 @@ configuration you want with the following steps:
 
     ```bash
     python /tensorrtllm_backend/tensorrt_llm/examples/llama/build.py --model_dir /Llama-2-7b-hf/ \
-                    --dtype bfloat16 \
-                    --use_gpt_attention_plugin bfloat16 \
+                    --dtype float16 \
+                    --use_gpt_attention_plugin float16 \
                     --use_inflight_batching \
                     --paged_kv_cache \
                     --remove_input_padding \
-                    --use_gemm_plugin bfloat16 \
+                    --use_gemm_plugin float16 \
                     --enable_context_fmha \
                     --max_batch_size 64 \
                     --output_dir /engines/1-gpu/ \
@@ -141,6 +141,7 @@ To run our Llama2-7B model, you will need to:
     ```bash
     mkdir -p /opt/tritonserver/model_repository
     cp -r /tensorrtllm_backend/all_models/inflight_batcher_llm/* /opt/tritonserver/model_repository/.
+    rm -r /opt/tritonserver/model_repository/tensorrt_llm_bls
     ```
 
 2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps.
@@ -163,8 +164,6 @@ To run our Llama2-7B model, you will need to:
             tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},preprocessing_instance_count:${INSTANCE_COUNT}
     python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/postprocessing/config.pbtxt \
             tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},postprocessing_instance_count:${INSTANCE_COUNT}
-    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm_bls/config.pbtxt \
-            triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:False,bls_instance_count:${INSTANCE_COUNT},accumulate_tokens:False
     python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/ensemble/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE}
     python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt \
             triton_max_batch_size:${MAX_BATCH_SIZE},engine_dir:${ENGINES_DIR},batching_strategy:${BATCHING_STRATEGY},decoupled_mode:False,max_beam_width:1,max_tokens_in_paged_kv_cache:2560,max_kv_cache_length:2560,kv_cache_free_gpu_mem_fraction:0.5,exclude_input_in_output:True,max_queue_delay_microseconds:600
