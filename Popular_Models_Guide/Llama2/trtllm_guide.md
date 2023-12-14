@@ -62,7 +62,7 @@ docker run --rm -it --net host --shm-size=2g \
     -v /path/to/tensorrtllm_backend:/tensorrtllm_backend \
     -v /path/to/Llama2/repo:/Llama-2-7b-hf \
     -v /path/to/engines:/engines \
-    nvcr.io/nvidia/tritonserver:23.10-trtllm-python-py3
+    nvcr.io/nvidia/tritonserver:23.12-trtllm-python-py3
 ```
 
 Alternatively, you can follow instructions [here](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/README.md) to build Triton Server with Tensorrt-LLM Backend if you want to build a specialized container.
@@ -159,12 +159,12 @@ docker run --rm -it --net host --shm-size=2g \
     -v /path/to/tensorrtllm_backend:/tensorrtllm_backend \
     -v /path/to/Llama2/repo:/Llama-2-7b-hf \
     -v /path/to/engines:/engines \
-    nvcr.io/nvidia/tritonserver:23.10-py3-sdk
+    nvcr.io/nvidia/tritonserver:23.12-py3-sdk
 # Install extra dependencies for the script
 pip3 install transformers sentencepiece
 python3 /tensorrtllm_backend/inflight_batcher_llm/client/inflight_batcher_llm_client.py --request-output-len 200 --tokenizer_type llama --tokenizer_dir /Llama-2-7b-hf
 ```
 
-2. The [generate endpoint](https://github.com/triton-inference-server/tensorrtllm_backend/tree/release/0.5.0#query-the-server-with-the-triton-generate-endpoint) if you are using the Triton TensorRT-LLM Backend container with versions greater than `r23.10`.
+2. The [generate endpoint](https://github.com/triton-inference-server/tensorrtllm_backend/tree/release/0.5.0#query-the-server-with-the-triton-generate-endpoint) if you are using the Triton TensorRT-LLM Backend container with versions greater than `r23.12`.
 
 

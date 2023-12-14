@@ -40,7 +40,7 @@ The triton vLLM container can be pulled from [NGC](https://catalog.ngc.nvidia.co
 docker run --rm -it --net host --shm-size=2g \
     --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
     -v $PWD/llama2vllm:/opt/tritonserver/model_repository/llama2vllm \
-    nvcr.io/nvidia/tritonserver:23.11-vllm-python-py3
+    nvcr.io/nvidia/tritonserver:23.12-vllm-python-py3
 ```
 This will create a `/opt/tritonserver/model_repository` folder that contains the `llama2vllm` model. The model itself will be pulled from the HuggingFace
 

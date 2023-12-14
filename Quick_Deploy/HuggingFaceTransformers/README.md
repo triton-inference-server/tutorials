@@ -156,7 +156,7 @@ In our testing, these queries returned the following parsed results:
 # persimmon8b
 "Where is the nearest starbucks?"
 ```
-Beginning in the 23.10 release, users can now interact with large language models (LLMs) hosted
+Beginning in the 23.12 release, users can now interact with large language models (LLMs) hosted
 by Triton in a simplified fashion by using Triton's generate endpoint:
 
 ```bash
@@ -220,7 +220,7 @@ the Triton server using the `docker run` command from above.
 Once Triton launches successfully, start a Triton SDK container by running the following in a separate window:
 
 ```bash
-docker run -it --net=host nvcr.io/nvidia/tritonserver:23.10-py3-sdk bash
+docker run -it --net=host nvcr.io/nvidia/tritonserver:23.12-py3-sdk bash
 ```
 This container comes with all of Triton's deployment analyzers pre-installed, meaning
 we can simply enter the following to get feedback on our model's inference performance:

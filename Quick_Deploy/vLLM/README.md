@@ -98,7 +98,7 @@ to understand how to configure this sample for your use-case.
 ## Step 2: Launch Triton Inference Server
 
 Once you have the model repository setup, it is time to launch the triton server.
-Starting with 23.10 release, a dedicated container with vLLM pre-installed
+Starting with 23.12 release, a dedicated container with vLLM pre-installed
 is available on [NGC.](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver)
 To use this container to launch Triton, you can use the docker command below.
 ```
@@ -106,7 +106,7 @@ docker run --gpus all -it --net=host --rm -p 8001:8001 --shm-size=1G --ulimit me
 ```
 Throughout the tutorial, \<xx.yy\> is the version of Triton
 that you want to use. Please note, that Triton's vLLM
-container was first published in 23.10 release, so any prior version
+container was first published in 23.12 release, so any prior version
 will not work.
 
 After you start Triton you will see output on the console showing
