@@ -26,11 +26,15 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-The vLLM backend uses the vLLM Backend to do inference. Read more about vLLM [here](https://blog.vllm.ai/2023/06/20/vllm.html) and the vLLM Backend [here](https://github.com/triton-inference-server/vllm_backend).
+The vLLM Backend uses vLLM to do inference. Read more about vLLM
+[here](https://blog.vllm.ai/2023/06/20/vllm.html) and the vLLM Backend
+[here](https://github.com/triton-inference-server/vllm_backend).
 
 ## Pre-build instructions
 
-For this tutorial, we are using the Llama2-7B HuggingFace model with pre-trained weights. Please follow the [README.md](README.md) for pre-build instructions and links for how to run Llama with other backends.
+For this tutorial, we are using the Llama2-7B HuggingFace model with pre-trained
+weights. Please follow the [README.md](README.md) for pre-build instructions
+and links for how to run Llama with other backends.
 
 ## Installation
 
@@ -42,7 +46,8 @@ docker run --rm -it --net host --shm-size=2g \
     -v $PWD/llama2vllm:/opt/tritonserver/model_repository/llama2vllm \
     nvcr.io/nvidia/tritonserver:23.11-vllm-python-py3
 ```
-This will create a `/opt/tritonserver/model_repository` folder that contains the `llama2vllm` model. The model itself will be pulled from the HuggingFace
+This will create a `/opt/tritonserver/model_repository` folder that contains the
+ `llama2vllm` model. The model itself will be pulled from the HuggingFace
 
 Once in the container, install the `huggingface-cli` and login with your own credentials.
 ```bash
@@ -67,7 +72,8 @@ I0922 23:28:40.395611 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8
 
 ## Sending requests via the `generate` endpoint
 
-As a simple example to make sure the server works, you can use the `generate` endpoint to test. More about the generate endpoint [here](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_generate.md).
+As a simple example to make sure the server works, you can use the `generate`
+endpoint to test. More about the generate endpoint [here](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_generate.md).
 
 ```bash
 $ curl -X POST localhost:8000/v2/models/llama2vllm/generate -d '{"text_input": "What is Triton Inference Server?", "parameters": {"stream": false, "temperature": 0}}'

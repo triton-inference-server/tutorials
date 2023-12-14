@@ -211,4 +211,3 @@ $ curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "Wh
   }
 ```
 
-
