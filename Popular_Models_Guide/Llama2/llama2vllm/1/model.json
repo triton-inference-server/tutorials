@@ -1,0 +1,7 @@
+{
+    "model":"meta-llama/Llama-2-7b-hf",
+    "trust_remote_code":true,
+    "download_dir":"/opt/tritonserver/model_repository/llama2vllm/hf-cache",
+    "disable_log_requests": "true",
+    "gpu_memory_utilization": 0.5
+}

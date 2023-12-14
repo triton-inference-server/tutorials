@@ -29,10 +29,11 @@
 # Deploying Hugging Face Transformer Models in Triton
 
 The following tutorial demonstrates how to deploy an arbitrary hugging face transformer
-model on the Triton Inference Server using Triton's [Python backend](https://github.com/triton-inference-server/python_backend). For the purposes of this example, two transformer
-models will be deployed:
+model on the Triton Inference Server using Triton's [Python backend](https://github.com/triton-inference-server/python_backend).
+For the purposes of this example, the following transformer models will be deployed:
 - [tiiuae/falcon-7b](https://huggingface.co/tiiuae/falcon-7b)
 - [adept/persimmon-8b-base](https://huggingface.co/adept/persimmon-8b-base)
+- [meta-llama/Llama-2-7b-hf](https://huggingface.co/meta-llama/Llama-2-7b)
 
 These models were selected because of their popularity and consistent response quality.
 However, this tutorial is also generalizable for any transformer model provided
@@ -40,6 +41,10 @@ sufficient infrastructure.
 
 *NOTE*: The tutorial is intended to be a reference example only. It may not be tuned for
 optimal performance.
+
+*NOTE*: Llama 2 models are not specifically mentioned in the steps below, but
+can be run if `tiiuae/falcon-7b` is replaced with `meta-llama/Llama-2-7b-hf`,
+and `falcon7b` folder is replaced by `llama7b` folder.
 
 ## Step 1: Create a Model Repository
 
@@ -76,9 +81,13 @@ docker build -t triton_transformer_server .
 
 Once the ```triton_transformer_server``` image is created, you can launch the Triton Inference
 Server in a container with the following command:
-
 ```bash
 docker run --gpus all -it --rm --net=host --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}/model_repository:/opt/tritonserver/model_repository triton_transformer_server tritonserver --model-repository=model_repository
+```
+
+**Note**: For private models like `Llama2`, you need to [request access to the model](https://huggingface.co/meta-llama/Llama-2-7b-hf/tree/main) and add the [access token](https://huggingface.co/settings/tokens) to the docker command `-e PRIVATE_REPO_TOKEN=<hf_your_huggingface_access_token>`.
+```bash
+docker run --gpus all -it --rm --net=host --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -e PRIVATE_REPO_TOKEN=<hf_your_huggingface_access_token> -v ${PWD}/model_repository:/opt/tritonserver/model_repository triton_transformer_server tritonserver --model-repository=model_repository
 ```
 
 The server has launched successfully when you see the following outputs in your console:

@@ -26,6 +26,16 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
+TensorRT-LLM is Nvidia's recommended solution of running Large Language
+Models(LLMs) on Nvidia GPUs. Read more about TensoRT-LLM [here](https://github.com/NVIDIA/TensorRT-LLM)
+and Triton's TensorRTLLM Backend [here](https://github.com/triton-inference-server/tensorrtllm_backend).
+
+*NOTE:* If some parts of this tutorial doesn't work, it is possible that there
+are some version mismatches between the `tutorials` and `tensorrt_backend` repository.
+Refer to [llama.md](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md)
+for more detailed modifications if necessary.
+
+
 ## Pre-build instructions
 
 For this tutorial, we are using the Llama2-7B HuggingFace model with pre-trained weights.
@@ -156,6 +166,5 @@ python3 /tensorrtllm_backend/inflight_batcher_llm/client/inflight_batcher_llm_cl
 ```
 
 2. The [generate endpoint](https://github.com/triton-inference-server/tensorrtllm_backend/tree/release/0.5.0#query-the-server-with-the-triton-generate-endpoint) if you are using the Triton TensorRT-LLM Backend container with versions greater than `r23.10`.
-
 
 
