@@ -12,3 +12,4 @@ RUN pip install --force-reinstall /tmp/deps/tritonserver-2.41.0.dev0-py3-none-an
 COPY . /workspace
 COPY ./models_test /workspace/models
 RUN pytest /tmp/deps
+RUN pip install awscli
