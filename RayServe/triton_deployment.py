@@ -12,14 +12,24 @@ import json
 # 1: Define a FastAPI app and wrap it in a deployment with a route handler.
 app = FastAPI()
 
+S3_BUCKET_URL = None
+
+if "S3_BUCKET_URL" in os.environ:
+    S3_BUCKET_URL = os.environ["S3_BUCKET_URL"]
 
 @serve.deployment(route_prefix="/", ray_actor_options={"num_gpus": 1})
 @serve.ingress(app)
 class TritonDeployment:
     def __init__(self):
 
+        if S3_BUCKET_URL is not None:
+            model_repository = S3_BUCKET_URL
+        else:
+            model_repository = "/worksace/models"
+
         self._triton_server = tritonserver.Server(
-            model_repository=["/workspace/models"]
+            model_repository=model_repository,
+            model_control_mode=tritonserver.ModelControlMode.EXPLICIT
         )
         self._triton_server.start(blocking=True)
         self._metric = tritonserver.Metric(
@@ -39,13 +49,14 @@ class TritonDeployment:
         self._models = self._triton_server.models
         for (name, version), model in self._models.items():
             print(model)
-            print(model.batch_properties())
-            print(model.transaction_properties())
-            print(model.config())
+#            print(model.batch_properties())
+ #           print(model.transaction_properties())
+  #          print(model.config())
 
     @app.get("/test")
     def test(self, text_input: str, fp16_input: float) -> dict:
-        test = self._triton_server.get_model("test")
+        test = self._triton_server.load_model("test")
+ #       test = self._triton_server.get_model("test")
         responses = test.infer(
             inputs={
                 "text_input": numpy.array([text_input], dtype=numpy.object_),
@@ -62,7 +73,8 @@ class TritonDeployment:
 
     @app.get("/async_test")
     async def async_test(self, text_input: str, fp16_input: float) -> dict:
-        test = self._triton_server.get_model("test")
+        test = self._triton_server.load_model("test")
+  #      test = self._triton_server.get_model("test")
         responses = test.async_infer(
             inputs={
                 "text_input": numpy.array([text_input], dtype=numpy.object_),
@@ -79,7 +91,9 @@ class TritonDeployment:
 
     @app.get("/classify")
     def classify(self, image_name: str) -> str:
-        model = self._triton_server.models["resnet50_libtorch"]
+        model = self._triton_server.load_model("resnet50_libtorch")
+        
+   #     model = self._triton_server.models["resnet50_libtorch"]
 
         # print(model.metadata())
 

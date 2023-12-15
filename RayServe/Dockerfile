@@ -9,7 +9,7 @@ RUN pip install cupy-cuda12x
 COPY ./deps /tmp/deps
 RUN ls -al /tmp
 RUN pip install --force-reinstall /tmp/deps/tritonserver-2.41.0.dev0-py3-none-any.whl
+RUN pip install awscli
 COPY . /workspace
 COPY ./models_test /workspace/models
 RUN pytest /tmp/deps
-RUN pip install awscli

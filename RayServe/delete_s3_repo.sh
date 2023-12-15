@@ -1,5 +1,4 @@
 #!/bin/bash
-#!/bin/bash
 # Copyright (c) 2018-2023, NVIDIA CORPORATION. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,10 +25,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-export AWS_DEFAULT_REGION=<REPLACE_ME>
-export AWS_ACCESS_KEY_ID=<REPLACE_ME>
-export AWS_SECRET_ACCESS_KEY=<REPLACE_ME>
+SUFFIX=$(cat /sys/class/net/docker0/address)
+SUFFIX=${SUFFIX//:}
 
-export S3_BUCKET_URL="s3://model-repo-example"
+# S3 credentials
+aws configure set default.region $AWS_DEFAULT_REGION && \
+    aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID && \
+    aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
-docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${PWD}:/workspace -v${PWD}/models_test:/workspace/models -w /workspace --name rayserve-triton rayserve-triton
+# S3 bucket path (Point to bucket when testing cloud storage)
+S3_BUCKET_URL=${S3_BUCKET_URL:="s3://triton-model-repo-$SUFFIX"}
+LOCAL_SRC="/workspace/models"
+
+# Cleanup and delete S3 test bucket if it already exists (due to test failure)
+aws s3 rm $S3_BUCKET_URL --recursive --include "*" && \
+    aws s3 rb $S3_BUCKET_URL || true
+
