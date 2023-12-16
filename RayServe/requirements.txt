@@ -1,0 +1,13 @@
+pytest
+cupy-cuda12x
+awscli
+ray[all]==2.8
+torch
+torchvision
+torchaudio
+transformers
+ftfy
+scipy
+accelerate
+diffusers==0.9.0
+transformers[onnxruntime]
