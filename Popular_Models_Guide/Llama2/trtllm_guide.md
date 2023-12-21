@@ -44,7 +44,7 @@ and links for how to run Llama with other backends.
 ## Installation
 
 1. The installation starts with cloning the TensorRT-LLM Backend and update the
-   TensorRT-LLM submodule. Note the release that has been tested is `v0.6.0`
+   TensorRT-LLM submodule. Note the release that has been tested is `v0.5.0`
 ```bash
 git clone https://github.com/triton-inference-server/tensorrtllm_backend.git --branch <release branch>
 # Update the submodules
@@ -65,7 +65,7 @@ docker run --rm -it --net host --shm-size=2g \
     -v /your_path_to/tensorrtllm_backend:/tensorrtllm_backend \
     -v /your_path_to/Llama-2-7b-hf:/Llama-2-7b-hf \
     -v /your_path_to/engines:/engines \
-    nvcr.io/nvidia/tritonserver:23.11-trtllm-python-py3
+    nvcr.io/nvidia/tritonserver:23.10-trtllm-python-py3
 
 # Install Sentencepiece
 pip3 install SentencePiece protobuf
@@ -111,8 +111,8 @@ configuration you want with the following steps:
     ```bash
     BUILD_SCRIPT=/tensorrtllm_backend/tensorrt_llm/examples/llama/build.py
     export TOKENIZER_DIR=/Llama-2-7b-hf
-    export ENGINE_DIR=/engines/h100/batch_64
-    export MAX_BATCH_SIZE=64
+    export ENGINE_DIR=/engines/h100/batch_128
+    export MAX_BATCH_SIZE=128
     python ${BUILD_SCRIPT} \
                 --model_dir ${TOKENIZER_DIR} \
                 --dtype float16 \
@@ -143,7 +143,7 @@ To run our Llama2-7B model, you will need to:
 
     ```bash
     mkdir -p /opt/tritonserver/model_repository
-    cp -r /work/tensorrtllm_backend/all_models/inflight_batcher_llm/* /opt/tritonserver/model_repository/.
+    cp -r /tensorrtllm_backend/all_models/inflight_batcher_llm/* /opt/tritonserver/model_repository/.
     ```
 
 2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps.
@@ -152,7 +152,10 @@ To run our Llama2-7B model, you will need to:
    provided `fill_template.py` script.
 
     ```bash
-    FILL_TEMPLATE_SCRIPT=/work/tensorrtllm_backend/tools/fill_template.py
+    export TOKENIZER_DIR=/Llama-2-7b-hf
+    export ENGINE_DIR=/engines/h100/batch_128
+    export MAX_BATCH_SIZE=128
+    FILL_TEMPLATE_SCRIPT=/tensorrtllm_backend/tools/fill_template.py
     MODEL_FOLDER=/opt/tritonserver/model_repository
     TOKENIZER_TYPE="llama"
     # Batch size here is same as what we specified in the engine as ${MAX_BATCH_SIZE}
@@ -162,8 +165,6 @@ To run our Llama2-7B model, you will need to:
             tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},preprocessing_instance_count:${INSTANCE_COUNT}
     python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/postprocessing/config.pbtxt \
             tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},postprocessing_instance_count:${INSTANCE_COUNT}
-    python3 ${FILL_TEMPLATE_SCRIPT} -i  ${MODEL_FOLDER}/tensorrt_llm_bls/config.pbtxt \
-            triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:False,bls_instance_count:${INSTANCE_COUNT},accumulate_tokens:False
     python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/ensemble/config.pbtxt \
             triton_max_batch_size:${MAX_BATCH_SIZE}
     python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt \
@@ -196,7 +197,7 @@ docker run --rm -it --net host --shm-size=2g \
     -v /your_path_to/tensorrtllm_backend:/tensorrtllm_backend \
     -v /your_path_to/Llama2/repo:/Llama-2-7b-hf \
     -v /your_path_to/engines:/engines \
-    nvcr.io/nvidia/tritonserver:23.11-py3-sdk
+    nvcr.io/nvidia/tritonserver:23.10-py3-sdk
 # Install extra dependencies for the script
 pip3 install transformers sentencepiece
 python3 /tensorrtllm_backend/inflight_batcher_llm/client/inflight_batcher_llm_client.py --request-output-len 200 --tokenizer_type llama --tokenizer_dir /Llama-2-7b-hf
