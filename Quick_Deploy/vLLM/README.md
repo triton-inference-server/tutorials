@@ -55,7 +55,7 @@ required to serve the [facebook/opt-125m](https://huggingface.co/facebook/opt-12
 ```
 mkdir -p model_repository/vllm_model/1
 wget -P model_repository/vllm_model/1 https://raw.githubusercontent.com/triton-inference-server/vllm_backend/main/samples/model_repository/vllm_model/1/model.json
-wget -P model_repository/vllm_model/ https://raw.githubusercontent.com/triton-inference-server/vllm_backend/912896b12d66ac63fc7c0758fc39317985e6bcd5/samples/model_repository/vllm_model/config.pbtxt
+wget -P model_repository/vllm_model/ https://raw.githubusercontent.com/triton-inference-server/vllm_backend/r<xx.yy>/samples/model_repository/vllm_model/config.pbtxt
 ```
 
 The model repository should look like this:
