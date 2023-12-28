@@ -54,9 +54,10 @@ and
 required to serve the [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model.
 ```
 mkdir -p model_repository/vllm_model/1
-wget -P model_repository/vllm_model/1 https://raw.githubusercontent.com/triton-inference-server/vllm_backend/main/samples/model_repository/vllm_model/1/model.json
-wget -P model_repository/vllm_model/ https://raw.githubusercontent.com/triton-inference-server/vllm_backend/main/samples/model_repository/vllm_model/config.pbtxt
+wget -P model_repository/vllm_model/1 https://raw.githubusercontent.com/triton-inference-server/vllm_backend/r<xx.yy>/samples/model_repository/vllm_model/1/model.json
+wget -P model_repository/vllm_model/ https://raw.githubusercontent.com/triton-inference-server/vllm_backend/r<xx.yy>/samples/model_repository/vllm_model/config.pbtxt
 ```
+where <xx.yy> is the version of Triton that you want to use. Please note, that Triton's vLLM container has been introduced starting from 23.10 release.
 
 The model repository should look like this:
 ```
