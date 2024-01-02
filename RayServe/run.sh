@@ -26,10 +26,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-export AWS_DEFAULT_REGION=<REPLACE_ME>
-export AWS_ACCESS_KEY_ID=<REPLACE_ME>
-export AWS_SECRET_ACCESS_KEY=<REPLACE_ME>
+#export AWS_DEFAULT_REGION=<REPLACE_ME>
+#export AWS_ACCESS_KEY_ID=<REPLACE_ME>
+#export AWS_SECRET_ACCESS_KEY=<REPLACE_ME>
 
 export S3_BUCKET_URL="s3://model-repo-example"
 
-docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${PWD}:/workspace -v${PWD}/models_test:/workspace/models -w /workspace --name rayserve-triton rayserve-triton
+INSTALL_DIR=/usr/local/lib/python3.10/dist-packages/tritonserver
+LOCAL_DIR=~/core/python/tritonserver
+
+docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${PWD}:/workspace -v${PWD}/models_test:/workspace/models -w /workspace --name rayserve-triton -v${LOCAL_DIR}/__init__.py:${INSTALL_DIR}/__init__.py -v${LOCAL_DIR}/_api:${INSTALL_DIR}/_api rayserve-triton
+
+
+# docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${PWD}:/workspace -v${PWD}/models_test:/workspace/models -w /workspace --name rayserve-triton -v${LOCAL_DIR}/__init__.py:${INSTALL_DIR}/__init__.py -v${LOCAL_DIR}/_api:${INSTALL_DIR}/_api -v${LOCAL_DIR}/_c/__init__.pyi:${INSTALL_DIR}/_c/__init__.pyi -v${LOCAL_DIR}/__init__.pyi:${INSTALL_DIR}/__init__.pyi -v${LOCAL_DIR}/_c/triton_bindings.pyi:${INSTALL_DIR}/_c/triton_bindings.pyi rayserve-triton
+
+#docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${PWD}:/workspace -v${PWD}/models_test:/workspace/models -w /workspace --name rayserve-triton rayserve-triton
