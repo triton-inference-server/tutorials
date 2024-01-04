@@ -27,7 +27,6 @@
 import asyncio
 import json
 import threading
-from typing import AsyncGenerator
 
 import numpy as np
 import triton_python_backend_utils as pb_utils
@@ -35,7 +34,6 @@ from vllm import SamplingParams
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.utils import random_uuid
-
 
 class TritonPythonModel:
     def initialize(self, args):

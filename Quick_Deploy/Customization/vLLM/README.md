@@ -39,9 +39,18 @@ backend.
 *NOTE*: The tutorial is intended to be a reference example only and has [known limitations](#limitations).
 
 
-## Step 1: Prepare your model repository
 
-To use Triton, we need to build a model repository. A sample model repository for deploying `facebook/opt-125m` using vLLM in Triton is
+## Step 1: Prepare Triton vllm_backend
+[vllm_backend](https://github.com/triton-inference-server/vllm_backend/tree/main) has been released 
+as [xx.yy-vllm-python-py3](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver/tags) in Triton NGC,
+where <xx.yy> is the version of Triton vllm_backend, such as `23.10-vllm-python-py3`.
+
+You can just get the vllm_backend docker image above.
+
+
+## Step 2: Prepare your model repository
+
+To use Triton vllm_backend, we need to build a model repository. A sample model repository for deploying `facebook/opt-125m` using Triton vllm_backend is
 included with this demo as `model_repository` directory.
 
 The model repository should look like this:
@@ -49,7 +58,6 @@ The model repository should look like this:
 model_repository/
 └── vllm_model
     ├── 1
-    │   └── model.py
     └── config.pbtxt
 ```
 
@@ -76,6 +84,7 @@ parameters {
     string_value: "0.5"
   }
 }
+
 ```
 
 This file can be modified to provide further settings to the vLLM engine. See vLLM
@@ -92,22 +101,48 @@ This tutorial updates this behavior by setting `gpu_memory_utilization` to 50%.
 You can tweak this behavior using fields like `gpu_memory_utilization` and other settings
 in [`config.pbtxt`](model_repository/vllm_model/config.pbtxt).
 
-Read through the documentation in [`model.py`](model_repository/vllm_model/1/model.py) to understand how
+Read through the documentation in [`model.py`](model.py) to understand how
 to configure this sample for your use-case.
 
-## Step 2: Launch Triton Inference Server
+## Step 3: Launch Triton Inference Server
 
 Once you have the model repository setup, it is time to launch the triton server.
 Starting with 23.10 release, a dedicated container with vLLM pre-installed
 is available on [NGC.](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver)
 To use this container to launch Triton, you can use the docker command below.
 ```
-docker run --gpus all -it --net=host --rm -p 8001:8001 --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 -v ${PWD}:/work -w /work nvcr.io/nvidia/tritonserver:<xx.yy>-vllm-python-py3 tritonserver --model-store ./model_repository
+docker run -idt -p 8000:8000 -p 8001:8001 -p 8002:8002 --shm-size=2g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all -v ${PWD}:/model_repository nvcr.io/nvidia/tritonserver:<xx.yy>-vllm-python-py3 tritonserver /bin/sh
 ```
 Throughout the tutorial, \<xx.yy\> is the version of Triton
 that you want to use. Please note, that Triton's vLLM
 container was first published in 23.10 release, so any prior version
 will not work.
+
+Now, you can get the `CONTAINER ID`, and use the command to enter the container like this:
+```
+docker exec -it CONTAINER_ID /bin/bash
+```
+
+Now, you can see the model repository in the container like this:
+```
+model_repository/
+└── vllm_model
+    ├── 1
+    └── config.pbtxt
+```
+
+And, you can see the vllm_backend in the container which path is `/opt/tritonserver/backends/vllm/model.py`, 
+you need to use [`model.py`](model.py) to replace the model.py in `/opt/tritonserver/backends/vllm`.
+
+If you want to get a new docker image, you can commit it like this:
+```
+docker commit CONTAINER_ID nvcr.io/nvidia/tritonserver:<xx.yy>-vllm-new-python-py3
+```
+
+You need to start the Triton with command like this:
+```
+/opt/tritonserver/bin/tritonserver --model-store=/model_repository
+```
 
 After you start Triton you will see output on the console showing
 the server starting up and loading the model. When you see output
@@ -119,7 +154,7 @@ I1030 22:33:28.292879 1 http_server.cc:4497] Started HTTPService at 0.0.0.0:8000
 I1030 22:33:28.335154 1 http_server.cc:270] Started Metrics Service at 0.0.0.0:8002
 ```
 
-## Step 3: Use a Triton Client to Send Your First Inference Request
+## Step 4: Use a Triton Client to Send Your First Inference Request
 
 In this tutorial, we will show how to send an inference request to the
 [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model in 2 ways:
