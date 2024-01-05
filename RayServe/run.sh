@@ -1,5 +1,4 @@
 #!/bin/bash
-#!/bin/bash
 # Copyright (c) 2018-2023, NVIDIA CORPORATION. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,9 +32,11 @@
 export S3_BUCKET_URL="s3://model-repo-example"
 
 INSTALL_DIR=/usr/local/lib/python3.10/dist-packages/tritonserver
-LOCAL_DIR=~/core/python/tritonserver
+LOCAL_DIR=~/python_beta_api/core/python/tritonserver
 
-docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${PWD}:/workspace -v${PWD}/models_test:/workspace/models -w /workspace --name rayserve-triton -v${LOCAL_DIR}/__init__.py:${INSTALL_DIR}/__init__.py -v${LOCAL_DIR}/_api:${INSTALL_DIR}/_api rayserve-triton
+docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${PWD}:/workspace -v${PWD}/models_test:/workspace/models -w /workspace --name rayserve-triton rayserve-triton
+
+# docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${PWD}:/workspace -v${PWD}/models_test:/workspace/models -w /workspace --name rayserve-triton -v${LOCAL_DIR}/__init__.py:${INSTALL_DIR}/__init__.py -v${LOCAL_DIR}/_api:${INSTALL_DIR}/_api rayserve-triton
 
 
 # docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${PWD}:/workspace -v${PWD}/models_test:/workspace/models -w /workspace --name rayserve-triton -v${LOCAL_DIR}/__init__.py:${INSTALL_DIR}/__init__.py -v${LOCAL_DIR}/_api:${INSTALL_DIR}/_api -v${LOCAL_DIR}/_c/__init__.pyi:${INSTALL_DIR}/_c/__init__.pyi -v${LOCAL_DIR}/__init__.pyi:${INSTALL_DIR}/__init__.pyi -v${LOCAL_DIR}/_c/triton_bindings.pyi:${INSTALL_DIR}/_c/triton_bindings.pyi rayserve-triton

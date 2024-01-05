@@ -27,28 +27,176 @@
 import time
 
 import numpy as np
-# import tritonclient.http as httpclient
+import cupy as cupy
 from PIL import Image
-#from tritonclient.utils import *
 import tritonserver
+import torch
 
 
+class TorchAllocator(tritonserver.MemoryAllocator):
+    def allocate(self,
+                 size,
+                 memory_type,
+                 memory_type_id,
+                 tensor_name):
+
+        device = "cpu"
+
+        if memory_type == tritonserver.MemoryType.GPU:
+            device = "cuda"
+        
+        tensor = torch.zeros(size,dtype=torch.uint8,device=device)
+        print("torch allocator!")
+        return tritonserver.MemoryBuffer.from_dlpack(tensor)
+
+def example_1():
+    server = tritonserver.Server(
+        model_repository="/workspace/models_stable_diffusion",
+        exit_timeout=5,
+        log_error=True,
+    )
+    server.start(wait_until_ready=True)
+
+    model = server.models()["pipeline"]
+
+    responses = model.infer(
+        inputs={
+            "prompt": np.array(
+                ["boy with balloon, gritty, urban, charcoal sketch"], dtype="object"
+            ).reshape(-1, 1)
+        }
+    )
+
+    for response in responses:
+        output_tensor = response.outputs["generated_image"]
+        ndarray = output_tensor.to_ndarray(np)
+        generated_image = ndarray.squeeze().astype(np.uint8)
+        im = Image.fromarray(generated_image)
+        im.save("generated_image_1.jpg")
+
+def example_2():
+    server = tritonserver.Server(
+        model_repository="/workspace/models_stable_diffusion",
+        exit_timeout=5,
+        log_error=True,
+    )
+    server.start(wait_until_ready=True)
+
+    model = server.models()["pipeline"]
+
+    responses = model.infer(
+        inputs={
+            "prompt": np.array(
+                ["boy with balloon, gritty, urban, charcoal sketch"], dtype="object"
+            ).reshape(-1, 1)
+        },
+        output_memory_type="CPU",
+        output_array_module=np
+    )
+
+    for response in responses:
+        output_tensor = response.outputs["generated_image"]
+        generated_image = output_tensor.squeeze().astype(np.uint8)
+        im = Image.fromarray(generated_image)
+        im.save("generated_image_2.jpg")
+
+
+def example_3():
+    server = tritonserver.Server(
+        model_repository="/workspace/models_stable_diffusion",
+        exit_timeout=5,
+        log_error=True,
+    )
+    server.start(wait_until_ready=True)
+
+    model = server.models()["pipeline"]
+
+    responses = model.infer(
+        inputs={
+            "prompt": np.array(
+                ["boy with balloon, gritty, urban, charcoal sketch"], dtype="object"
+            ).reshape(-1, 1)
+        },
+        output_memory_type="GPU",
+        output_array_module=cupy
+    )
+
+    for response in responses:
+        output_tensor = response.outputs["generated_image"]
+        generated_image = output_tensor.squeeze().astype(np.uint8)
+        im = Image.fromarray(generated_image.get())
+        im.save("generated_image_3.jpg")
+
+
+def example_4():
+    server = tritonserver.Server(
+        model_repository="/workspace/models_stable_diffusion",
+        exit_timeout=5,
+        log_error=True,
+    )
+    server.start(wait_until_ready=True)
+
+    model = server.models()["pipeline"]
+
+    responses = model.infer(
+        inputs={
+            "prompt": np.array(
+                ["boy with balloon, gritty, urban, charcoal sketch"], dtype="object"
+            ).reshape(-1, 1)
+        },
+        output_memory_type="GPU",
+        output_array_module=torch,
+        output_memory_allocator = TorchAllocator()
+    )
+
+    for response in responses:
+        output_tensor = response.outputs["generated_image"]
+        generated_image = output_tensor.squeeze().type(torch.uint8)
+        im = Image.fromarray(generated_image.to("cpu").numpy())
+        im.save("generated_image_4.jpg")
+
+
+def example_5():
+    server = tritonserver.Server(
+        model_repository="/workspace/models_stable_diffusion",
+        exit_timeout=5,
+        log_error=True,
+    )
+    server.start(wait_until_ready=True)
+
+    tritonserver.default_memory_allocators[tritonserver.MemoryType.GPU] = TorchAllocator()
+    
+    model = server.models()["pipeline"]
+
+    responses = model.infer(
+        inputs={
+            "prompt": np.array(
+                ["boy with balloon, gritty, urban, charcoal sketch"], dtype="object"
+            ).reshape(-1, 1)
+        },
+        output_memory_type="GPU",
+        output_array_module=torch,
+    )
+
+    for response in responses:
+        output_tensor = response.outputs["generated_image"]
+        generated_image = output_tensor.squeeze().type(torch.uint8)
+        im = Image.fromarray(generated_image.to("cpu").numpy())
+        im.save("generated_image_5.jpg")
+
+        
 def main():
 
-    server = tritonserver.Server(model_repository="/workspace/models_stable_diffusion", exit_timeout=5)
-    server.start(blocking=True)
+    example_1()
+
+    example_2()
+
+    example_3()
+
+    example_4()
+
+    example_5()
     
-    prompt = "singing cowboy sitting on an alligator in a night club, realistic"
-    text_obj = np.array([prompt], dtype="object").reshape((-1, 1))
-
-    model = server.models["pipeline"]
-
-    responses = model.infer(inputs={"prompt":text_obj})
-
-    generated_image = list(responses)[0].outputs["generated_image"]
-
-    im = Image.fromarray(np.squeeze(generated_image.astype(np.uint8)))
-    im.save("generated_image2.jpg")
 
 
 if __name__ == "__main__":
