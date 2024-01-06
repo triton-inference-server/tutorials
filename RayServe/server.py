@@ -90,13 +90,12 @@ def example_2():
                 ["boy with balloon, gritty, urban, charcoal sketch"], dtype="object"
             ).reshape(-1, 1)
         },
-        output_memory_type="CPU",
-        output_array_module=np
+        output_memory_type="CPU"
     )
 
     for response in responses:
         output_tensor = response.outputs["generated_image"]
-        generated_image = output_tensor.squeeze().astype(np.uint8)
+        generated_image = np.from_dlpack(output_tensor).squeeze().astype(np.uint8)
         im = Image.fromarray(generated_image)
         im.save("generated_image_2.jpg")
 
@@ -117,13 +116,12 @@ def example_3():
                 ["boy with balloon, gritty, urban, charcoal sketch"], dtype="object"
             ).reshape(-1, 1)
         },
-        output_memory_type="GPU",
-        output_array_module=cupy
+        output_memory_type="GPU"
     )
 
     for response in responses:
         output_tensor = response.outputs["generated_image"]
-        generated_image = output_tensor.squeeze().astype(np.uint8)
+        generated_image = cupy.from_dlpack(output_tensor).squeeze().astype(np.uint8)
         im = Image.fromarray(generated_image.get())
         im.save("generated_image_3.jpg")
 
@@ -145,13 +143,12 @@ def example_4():
             ).reshape(-1, 1)
         },
         output_memory_type="GPU",
-        output_array_module=torch,
         output_memory_allocator = TorchAllocator()
     )
 
     for response in responses:
         output_tensor = response.outputs["generated_image"]
-        generated_image = output_tensor.squeeze().type(torch.uint8)
+        generated_image = torch.from_dlpack(output_tensor).squeeze().type(torch.uint8)
         im = Image.fromarray(generated_image.to("cpu").numpy())
         im.save("generated_image_4.jpg")
 
@@ -174,13 +171,12 @@ def example_5():
                 ["boy with balloon, gritty, urban, charcoal sketch"], dtype="object"
             ).reshape(-1, 1)
         },
-        output_memory_type="GPU",
-        output_array_module=torch,
+        output_memory_type="GPU"
     )
 
     for response in responses:
         output_tensor = response.outputs["generated_image"]
-        generated_image = output_tensor.squeeze().type(torch.uint8)
+        generated_image = output_tensor.to_ndarray(torch).squeeze().type(torch.uint8)
         im = Image.fromarray(generated_image.to("cpu").numpy())
         im.save("generated_image_5.jpg")
 
