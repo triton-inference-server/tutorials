@@ -19,9 +19,11 @@ r23.12 release of Triton.
 
 ## Requirements
 
-The following instructions require a linux system with bash and Docker
-installed. For GPU support a CUDA device compatible with CUDA 12.x is
-required.
+The following instructions require a linux system with Docker
+installed. For CUDA support, make sure your CUDA driver meets the
+requirements in "NVIDIA Driver" section of Deep Learning Framework
+support matrix:
+https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
 
 ## Build / Installation
 
@@ -74,7 +76,23 @@ directory as `workspace`.
 
 ```bash
    ./run.sh
-   python3
+```
+
+#### Example Output
+
+```bash
+   
+=============================
+== Triton Inference Server ==
+=============================
+
+NVIDIA Release 23.12 (build 77457706)
+Triton Server Version 2.41.0
+
+Copyright (c) 2018-2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
 ```
 
 ### Create and Start a Server Instance
