@@ -40,6 +40,16 @@ examples.
    ./build.sh
 ```
 
+#### Example Output
+```bash
+#18 naming to docker.io/library/triton-python-api:r23.12 0.0s done
+#18 DONE 0.2s
++ [[ TEST == TRT_LLM ]]
++ [[ TEST == TEST ]]
++ mkdir -p /home/user/tutorials/Triton_Inference_Server_Python_API/models
++ cp -rf /home/user/tutorials/Triton_Inference_Server_Python_API/deps/test/test_api_models/test /home/user/tutorials/Triton_Inference_Server_Python_API/models/.
+```
+
 #### Supported Backends
 ```
 dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  tensorflow  tensorrt
