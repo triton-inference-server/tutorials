@@ -18,11 +18,13 @@ ARG FRAMEWORK=HF_DIFFUSERS
 COPY ./deps/requirements_torch.txt /tmp/requirements_torch.txt
 RUN if [[ "$FRAMEWORK" == "HF_DIFFUSERS" ]] ; then pip install --timeout=2000 -r /tmp/requirements_torch.txt ; fi
 
-COPY . /workspace
+COPY ./deps/tritonserver-2.41.0-py3-none-any.whl /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl
 
-RUN pip3 install --force-reinstall --upgrade /workspace/deps/tritonserver-2.41.0-py3-none-any.whl[all]
+RUN pip3 install --force-reinstall --upgrade /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl[all]
 
 RUN ln -sf /bin/bash /bin/sh
+
+COPY . /workspace
 
 ARG RUN_TESTS=FALSE
 

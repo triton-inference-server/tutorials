@@ -27,21 +27,17 @@
 
 TAG=
 RUN_PREFIX=
-BUILD_MODELS=
 
 # Frameworks
 declare -A FRAMEWORKS=(["HF_DIFFUSERS"]=1 ["TRT_LLM"]=2 ["TEST"]=3)
-DEFAULT_FRAMEWORK=TEST
+DEFAULT_FRAMEWORK=HF_DIFFUSERS
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
-DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
-
 
 # Base Images
-BASE_IMAGE=nvcr.io/nvidia/tritonserver
-BASE_IMAGE_TAG_TEST=23.12-py3
-BASE_IMAGE_TAG_HF_DIFFUSERS=23.12-py3
-BASE_IMAGE_TAG_TRT_LLM=23.12-trtllm-python-py3
+IMAGE=rayserve-triton:r23.12
+IMAGE_TAG_HF_DIFFUSERS=hf-diffusers
+IMAGE_TAG_TRT_LLM=trt-llm
 
 get_options() {
     while :; do
@@ -58,39 +54,12 @@ get_options() {
                 error 'ERROR: "--framework" requires an argument.'
             fi
             ;;
-	--build-models)
-	    BUILD_MODELS=TRUE
-            ;;
-        --base)
+        --image)
             if [ "$2" ]; then
                 BASE_IMAGE=$2
                 shift
             else
                 error 'ERROR: "--base" requires an argument.'
-            fi
-            ;;
-	--base-image-tag)
-            if [ "$2" ]; then
-                BASE_IMAGE_TAG=$2
-                shift
-            else
-                error 'ERROR: "--base" requires an argument.'
-            fi
-            ;;
-        --build-arg)
-            if [ "$2" ]; then
-                BUILD_ARGS+="--build-arg $2 "
-                shift
-            else
-                error 'ERROR: "--build-arg" requires an argument.'
-            fi
-            ;;
-        --tag)
-            if [ "$2" ]; then
-                TAG=$2
-                shift
-            else
-                error 'ERROR: "--tag" requires an argument.'
             fi
             ;;
         --dry-run)
@@ -100,9 +69,6 @@ get_options() {
             echo "DRY RUN: COMMANDS PRINTED ONLY"
             echo "=============================="
             echo ""
-            ;;
-	--no-cache)
-	    NO_CACHE=" --no-cache"
             ;;
         --)
             shift
@@ -131,48 +97,27 @@ get_options() {
 	if [[ ! -n "${FRAMEWORKS[$FRAMEWORK]}" ]]; then
 	    error 'ERROR: Unknown framework: ' $FRAMEWORK
 	fi
-	if [ -z $BASE_IMAGE_TAG ]; then
-	    BASE_IMAGE_TAG=BASE_IMAGE_TAG_${FRAMEWORK}
-	    BASE_IMAGE_TAG=${!BASE_IMAGE_TAG}
-	fi
     fi
 
-    if [ -z "$TAG" ]; then
-        TAG="rayserve-triton:r23.12"
+    if [ -z "$IMAGE" ]; then
+        IMAGE="rayserve-triton:r23.12"
     
 	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
-	    TAG+="-trt-llm"
+	    IMAGE+="-trt-llm"
 	fi
 
 	if [[ $FRAMEWORK == "HF_DIFFUSERS" ]]; then
-	    TAG+="-hf-diffusers"
+	    IMAGE+="-hf-diffusers"
 	fi
 
     fi
 
 }
 
-
-show_image_options() {
-    echo ""
-    echo "Building Rayserve + Triton Inference Server Image: '${TAG}'"
-    echo ""
-    echo "   Base: '${BASE_IMAGE}'"
-    echo "   Base_Image_Tag: '${BASE_IMAGE_TAG}'"
-    echo "   Build Context: '${SOURCE_DIR}'"
-    echo "   Build Options: '${BUILD_OPTIONS}'"
-    echo "   Build Arguments: '${BUILD_ARGS}'"
-    echo "   Framework: '${FRAMEWORK}'"
-    echo ""
-}
-
 show_help() {
-    echo "usage: build.sh"
-    echo "  [--base base image]"
-    echo "  [--base-imge-tag base image tag]"
+    echo "usage: run.sh"
+    echo "  [--imag image]"
     echo "  [--framework framework one of ${!FRAMEWORKS[@]}]"
-    echo "  [--build-arg additional build args to pass to docker build]"
-    echo "  [--tag tag for image]"
     echo "  [--dry-run print docker commands without running]"
     exit 0
 }
@@ -184,35 +129,13 @@ error() {
 
 get_options "$@"
 
-# BUILD RUN TIME IMAGE
-
-BUILD_ARGS+=" --build-arg BASE_IMAGE=$BASE_IMAGE --build-arg BASE_IMAGE_TAG=$BASE_IMAGE_TAG --build-arg FRAMEWORK=$FRAMEWORK "
-
-if [ ! -z ${GITHUB_TOKEN} ]; then
-    BUILD_ARGS+=" --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} "
-fi
-
-if [ ! -z ${HF_TOKEN} ]; then
-    BUILD_ARGS+=" --build-arg HF_TOKEN=${HF_TOKEN} "
-fi
-
-show_image_options
+# RUN the image
 
 if [ -z "$RUN_PREFIX" ]; then
     set -x
 fi
 
-$RUN_PREFIX docker build -f $DOCKERFILE $BUILD_OPTIONS $BUILD_ARGS -t $TAG $SOURCE_DIR $NO_CACHE
-
-if [[ $FRAMEWORK == TRT_LLM ]]; then
-    $RUN_PREFIX docker build -f $SOURCE_DIR/docker/Dockerfile.trt-llm-engine-builder  $BUILD_OPTIONS $BUILD_ARGS -t trt-llm-engine-builder  $SOURCE_DIR $NO_CACHE
-fi;
-
-if [[ $BUILD_MODELS == TRUE ]]; then
-    $RUN_PREFIX mkdir -p $SOURCE_DIR/models
-    $RUN_PREFIX cp -rf $SOURCE_DIR/deps/test/test_api_models/test $SOURCE_DIR/models/.
-fi
-
+$RUN_PREFIX docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eGITHUB_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${SOURCE_DIR}:/workspace -w /workspace --name rayserve-triton  $IMAGE
 
 { set +x; } 2>/dev/null
 

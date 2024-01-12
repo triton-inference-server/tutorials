@@ -6,3 +6,5 @@ ftfy
 scipy
 mypy
 pyright
+sphinx
+sphinx-markdown-builder
