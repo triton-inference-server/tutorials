@@ -62,7 +62,7 @@ exercising basic operations including sending input tensors of
 different data types. The `test` model copies provided inputs of
 `shape [-1, -1]` to outputs of shape `[-1, -1]`. Inputs are named
 `data_type_input` and outputs are named `data_type_output`
-(e.g. `string_input`, `string_outpu`).
+(e.g. `string_input`, `string_output`).
 
 
 ## Hello World
