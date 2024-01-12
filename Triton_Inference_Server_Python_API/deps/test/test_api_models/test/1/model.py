@@ -3,6 +3,11 @@ import json
 import numpy as np
 import triton_python_backend_utils as pb_utils
 
+try:
+    import cupy
+except:
+    cupy = None
+
 
 class TritonPythonModel:
     @staticmethod
@@ -44,6 +49,14 @@ class TritonPythonModel:
         self._decoupled = self._model_config.get("model_transaction_policy", {}).get(
             "decoupled"
         )
+        self._request_gpu_memory = False
+        if "parameters" in self._model_config:
+            parameters = self._model_config["parameters"]
+            if (
+                "request_gpu_memory" in parameters
+                and parameters["request_gpu_memory"]["string_value"] == "True"
+            ):
+                self._request_gpu_memory = True
 
     def execute_decoupled(self, requests):
         for request in requests:
@@ -67,9 +80,17 @@ class TritonPythonModel:
             output_tensors = []
             for input_tensor in request.inputs():
                 input_value = input_tensor.as_numpy()
-                output_tensor = pb_utils.Tensor(
-                    input_tensor.name().replace("input", "output"), input_value
-                )
+
+                if self._request_gpu_memory:
+                    input_value = cupy.array(input_value)
+
+                    output_tensor = pb_utils.Tensor.from_dlpack(
+                        input_tensor.name().replace("input", "output"), input_value
+                    )
+                else:
+                    output_tensor = pb_utils.Tensor(
+                        input_tensor.name().replace("input", "output"), input_value
+                    )
                 output_tensors.append(output_tensor)
 
             responses.append(pb_utils.InferenceResponse(output_tensors=output_tensors))

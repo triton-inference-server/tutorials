@@ -71,6 +71,118 @@ class ModelTests(unittest.TestCase):
 
 
 class AllocatorTests(unittest.TestCase):
+    class MockMemoryAllocator(tritonserver.MemoryAllocator):
+        def __init__(self):
+            pass
+
+        def allocate(self, *args, **kwargs):
+            raise Exception("foo")
+
+    @pytest.mark.skipif(cupy is None, reason="Skipping gpu memory, cupy not installed")
+    def test_memory_fallback_to_cpu(self):
+        server = tritonserver.Server(server_options).start(wait_until_ready=True)
+
+        self.assertTrue(server.ready())
+
+        allocator = tritonserver.default_memory_allocators[tritonserver.MemoryType.GPU]
+
+        del tritonserver.default_memory_allocators[tritonserver.MemoryType.GPU]
+
+        server.load(
+            "test",
+            {
+                "config": json.dumps(
+                    {
+                        "backend": "python",
+                        "parameters": {
+                            "decoupled": {"string_value": "False"},
+                            "request_gpu_memory": {"string_value": "True"},
+                        },
+                    }
+                )
+            },
+        )
+
+        fp16_input = numpy.random.rand(1, 100).astype(dtype=numpy.float16)
+
+        for response in server.model("test").infer(
+            inputs={"fp16_input": fp16_input},
+        ):
+            self.assertEqual(
+                response.outputs["fp16_output"].memory_type, tritonserver.MemoryType.CPU
+            )
+            fp16_output = numpy.from_dlpack(response.outputs["fp16_output"])
+            self.assertEqual(fp16_input[0][0], fp16_output[0][0])
+
+        tritonserver.default_memory_allocators[tritonserver.MemoryType.GPU] = allocator
+
+    def test_memory_allocator_exception(self):
+        server = tritonserver.Server(server_options).start(wait_until_ready=True)
+
+        self.assertTrue(server.ready())
+
+        server.load(
+            "test",
+            {
+                "config": json.dumps(
+                    {
+                        "backend": "python",
+                        "parameters": {"decoupled": {"string_value": "False"}},
+                    }
+                )
+            },
+        )
+
+        with self.assertRaises(tritonserver.InternalError):
+            for response in server.model("test").infer(
+                inputs={
+                    "string_input": tritonserver.Tensor.from_string_array([["hello"]])
+                },
+                output_memory_type="gpu",
+                output_memory_allocator=AllocatorTests.MockMemoryAllocator(),
+            ):
+                pass
+
+    def test_unsupported_memory_type(self):
+        server = tritonserver.Server(server_options).start(wait_until_ready=True)
+
+        self.assertTrue(server.ready())
+
+        server.load(
+            "test",
+            {
+                "config": json.dumps(
+                    {
+                        "backend": "python",
+                        "parameters": {"decoupled": {"string_value": "False"}},
+                    }
+                )
+            },
+        )
+
+        if tritonserver.MemoryType.GPU in tritonserver.default_memory_allocators:
+            allocator = tritonserver.default_memory_allocators[
+                tritonserver.MemoryType.GPU
+            ]
+
+            del tritonserver.default_memory_allocators[tritonserver.MemoryType.GPU]
+        else:
+            allocator = None
+
+        with self.assertRaises(tritonserver.InvalidArgumentError):
+            for response in server.model("test").infer(
+                inputs={
+                    "string_input": tritonserver.Tensor.from_string_array([["hello"]])
+                },
+                output_memory_type="gpu",
+            ):
+                pass
+
+        if allocator is not None:
+            tritonserver.default_memory_allocators[
+                tritonserver.MemoryType.GPU
+            ] = allocator
+
     @pytest.mark.skipif(torch is None, reason="Skipping test, torch not installed")
     def test_allocate_on_cpu_and_reshape(self):
         allocator = tritonserver.default_memory_allocators[tritonserver.MemoryType.CPU]
@@ -204,6 +316,48 @@ class ServerTests(unittest.TestCase):
 
 
 class InferenceTests(unittest.TestCase):
+    @pytest.mark.skipif(cupy is None, reason="Skipping gpu memory, cupy not installed")
+    def test_gpu_output(self):
+        server = tritonserver.Server(server_options).start(wait_until_ready=True)
+
+        self.assertTrue(server.ready())
+
+        server.load(
+            "test",
+            {
+                "config": json.dumps(
+                    {
+                        "backend": "python",
+                        "parameters": {"decoupled": {"string_value": "False"}},
+                    }
+                )
+            },
+        )
+
+        fp16_input = numpy.random.rand(1, 100).astype(dtype=numpy.float16)
+
+        for response in server.model("test").infer(
+            inputs={"fp16_input": fp16_input},
+            output_memory_type="gpu",
+        ):
+            fp16_output = cupy.from_dlpack(response.outputs["fp16_output"])
+            self.assertEqual(fp16_input[0][0], fp16_output[0][0])
+
+        for response in server.model("test").infer(
+            inputs={"string_input": [["hello"]]},
+            output_memory_type="gpu",
+        ):
+            text_output = response.outputs["string_output"].to_string_array()
+            self.assertEqual(text_output[0][0], "hello")
+
+        for response in server.model("test").infer(
+            inputs={"string_input": tritonserver.Tensor.from_string_array([["hello"]])},
+            output_memory_type="gpu",
+        ):
+            text_output = response.outputs["string_output"].to_string_array()
+            text_output = response.outputs["string_output"].to_string_array()
+            self.assertEqual(text_output[0][0], "hello")
+
     def test_basic_inference(self):
         server = tritonserver.Server(server_options).start(wait_until_ready=True)
 
@@ -231,25 +385,4 @@ class InferenceTests(unittest.TestCase):
             fp16_output = numpy.from_dlpack(response.outputs["fp16_output"])
             numpy.testing.assert_array_equal(fp16_input, fp16_output)
 
-        for response in server.model("test").infer(
-            inputs={"fp16_input": fp16_input},
-            output_memory_type="gpu",
-        ):
-            fp16_output = cupy.from_dlpack(response.outputs["fp16_output"])
-            self.assertEqual(fp16_input[0][0], fp16_output[0][0])
-
-        for response in server.model("test").infer(
-            inputs={"string_input": [["hello"]]},
-            output_memory_type="gpu",
-        ):
-            text_output = response.outputs["string_output"].to_string_array()
-            self.assertEqual(text_output[0][0], "hello")
-
-        for response in server.model("test").infer(
-            inputs={"string_input": tritonserver.Tensor.from_string_array([["hello"]])},
-            output_memory_type="gpu",
-        ):
-            text_output = response.outputs["string_output"].to_string_array()
-            text_output = response.outputs["string_output"].to_string_array()
-            self.assertEqual(text_output[0][0], "hello")
         server.stop()
