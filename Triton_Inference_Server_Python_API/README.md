@@ -69,7 +69,7 @@ different data types. The `test` model copies provided inputs of
 
 ## Hello World
 
-### Start Container and Python Shell
+### Start Container
 
 The following command starts a container and volume mounts the current
 directory as `workspace`.
@@ -99,8 +99,23 @@ https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
 NOTE: CUDA Forward Compatibility mode ENABLED.
   Using CUDA 12.3 driver version 545.23.08 with kernel driver version 525.85.12.
   See https://docs.nvidia.com/deploy/cuda-compatibility/ for details. 
+
+root@user-machine:/workspace# 
 ```
 
+### Python Shell
+
+```bash
+python3
+```
+
+#### Example Output
+
+```bash
+Python 3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> 
+```
 ### Create and Start a Server Instance
 
 ```python
