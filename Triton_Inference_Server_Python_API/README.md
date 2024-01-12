@@ -28,10 +28,80 @@ required.
 The tutorial and Python API package are designed to be installed and
 run within the `nvcr.io/nvidia/tritonserver:23.12-py3` docker image.
 
-A set of convenience scripts are provided to create a 
+A set of convenience scripts are provided to create a docker image
+based on the `nvcr.io/nvidia/tritonserver:23.12-py3` image with the
+Python API installed plus additional dependencies required for the
+examples.
+
+### Trition Inference Server 23.12 + Python API
+
+#### Build Image
+```bash
+   ./build.sh
+```
+
+#### Supported Backends
+```
+dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  tensorflow  tensorrt
+```
+
+#### Included Models
+
+The default build includes a `test` model that can be used for
+exercising basic operations including sending input tensors of
+different data types. The `test` model copies provided inputs of
+`shape [-1, -1]` to outputs of shape `[-1, -1]`. Inputs are named
+`data_type_input` and outputs are named `data_type_output`
+(e.g. `string_input`, `string_outpu`).
 
 
 ## Hello World
 
+### Start Container and Python Shell
 
+The following command starts a container and volume mounts the current
+directory as `workspace`.
 
+```bash
+   ./run.sh
+   python3
+```
+
+### Create and Start a Server Instance
+
+```python
+import tritonserver
+
+server = tritonserver.Server(model_repository="/workspace/models")
+server.start()
+```
+
+### List Models
+
+```
+server.models()
+```
+
+#### Example Output
+```python
+{('test', 1): {'name': 'test', 'version': 1, 'state': 'READY'}}
+```
+
+### Send an Inference
+
+```python
+model = server.model("test")
+responses = model.infer(inputs={"string_input":[["hello world!"]]})
+```
+
+### Iterate through Responses
+
+```python
+for response in responses:
+    print(response.outputs["string_output"].to_string_array())
+```
+
+#### Example Output
+```python
+[['hello world!']]
+```

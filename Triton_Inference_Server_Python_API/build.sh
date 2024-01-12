@@ -208,7 +208,7 @@ if [[ $FRAMEWORK == TRT_LLM ]]; then
     $RUN_PREFIX docker build -f $SOURCE_DIR/docker/Dockerfile.trt-llm-engine-builder  $BUILD_OPTIONS $BUILD_ARGS -t trt-llm-engine-builder  $SOURCE_DIR $NO_CACHE
 fi;
 
-if [[ $BUILD_MODELS == TRUE ]]; then
+if [[ $FRAMEWORK == TEST ]] || [[ $BUILD_MODELS == TRUE ]]; then
     $RUN_PREFIX mkdir -p $SOURCE_DIR/models
     $RUN_PREFIX cp -rf $SOURCE_DIR/deps/test/test_api_models/test $SOURCE_DIR/models/.
 fi
