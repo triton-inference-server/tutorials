@@ -1,7 +1,7 @@
 ARG BASE_IMAGE=nvcr.io/nvidia/tritonserver
 ARG BASE_IMAGE_TAG=23.12-py3
 
-FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as rayserve-triton
+FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as triton-python-api
 
 RUN apt-get update; apt-get install -y gdb
 
@@ -11,7 +11,7 @@ RUN pip install --timeout=2000 -r /tmp/requirements.txt
 
 # Finish pyright install
 
-RUN pyright --help
+ RUN pyright --help
 
 ARG FRAMEWORK=HF_DIFFUSERS
 

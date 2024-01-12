@@ -30,12 +30,12 @@ RUN_PREFIX=
 
 # Frameworks
 declare -A FRAMEWORKS=(["HF_DIFFUSERS"]=1 ["TRT_LLM"]=2 ["TEST"]=3)
-DEFAULT_FRAMEWORK=HF_DIFFUSERS
+DEFAULT_FRAMEWORK=TEST
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 
 # Base Images
-IMAGE=rayserve-triton:r23.12
+IMAGE=
 IMAGE_TAG_HF_DIFFUSERS=hf-diffusers
 IMAGE_TAG_TRT_LLM=trt-llm
 

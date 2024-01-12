@@ -1,5 +1,6 @@
+fastapi==0.97.0
+starlette==0.27.0
 pytest
-cupy-cuda12x
 awscli
 ray[all]==2.9
 ftfy
