@@ -17,6 +17,21 @@ r23.12 release of Triton.
 > test out different features and get feedback.
 > All feedback is weclome and we look forward to hearing from you!
 
+## Requirements
+
+The following instructions require a linux system with bash and Docker
+installed. For GPU support a CUDA device compatible with CUDA 12.x is
+required.
+
+## Build / Installation
+
+The tutorial and Python API package are designed to be installed and
+run within the `nvcr.io/nvidia/tritonserver:23.12-py3` docker image.
+
+A set of convenience scripts are provided to create a 
+
+
+## Hello World
 
 
 

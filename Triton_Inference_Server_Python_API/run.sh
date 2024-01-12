@@ -100,7 +100,7 @@ get_options() {
     fi
 
     if [ -z "$IMAGE" ]; then
-        IMAGE="rayserve-triton:r23.12"
+        IMAGE="triton-python-api:r23.12"
     
 	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
 	    IMAGE+="-trt-llm"
@@ -135,7 +135,7 @@ if [ -z "$RUN_PREFIX" ]; then
     set -x
 fi
 
-$RUN_PREFIX docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eGITHUB_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${SOURCE_DIR}:/workspace -w /workspace --name rayserve-triton  $IMAGE
+$RUN_PREFIX docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eGITHUB_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${SOURCE_DIR}:/workspace -w /workspace --name triton-python-api  $IMAGE
 
 { set +x; } 2>/dev/null
 

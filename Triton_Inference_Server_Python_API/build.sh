@@ -138,7 +138,7 @@ get_options() {
     fi
 
     if [ -z "$TAG" ]; then
-        TAG="rayserve-triton:r23.12"
+        TAG="triton-python-api:r23.12"
     
 	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
 	    TAG+="-trt-llm"
@@ -155,7 +155,7 @@ get_options() {
 
 show_image_options() {
     echo ""
-    echo "Building Rayserve + Triton Inference Server Image: '${TAG}'"
+    echo "Building Triton Inference Server Python API Image: '${TAG}'"
     echo ""
     echo "   Base: '${BASE_IMAGE}'"
     echo "   Base_Image_Tag: '${BASE_IMAGE_TAG}'"
