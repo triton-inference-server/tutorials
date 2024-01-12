@@ -81,7 +81,6 @@ directory as `workspace`.
 #### Example Output
 
 ```bash
-   
 =============================
 == Triton Inference Server ==
 =============================
@@ -93,6 +92,13 @@ Copyright (c) 2018-2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
 
 Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
 
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+NOTE: CUDA Forward Compatibility mode ENABLED.
+  Using CUDA 12.3 driver version 545.23.08 with kernel driver version 525.85.12.
+  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details. 
 ```
 
 ### Create and Start a Server Instance
