@@ -68,9 +68,9 @@ class TritonDeployment:
                 if not self._stable_diffusion.ready():
                     raise Exception("Model not ready")
             except Exception as error:
-                print("Error can't load model!")
+                print("Error can't load stable diffusion model!")
                 print(
-                    f"Please ensure dependencies are met and you have set the environment variable HF_TOKEN {e}"
+                    f"Please ensure dependencies are met and you have set the environment variable HF_TOKEN {error}"
                 )
                 return
 
