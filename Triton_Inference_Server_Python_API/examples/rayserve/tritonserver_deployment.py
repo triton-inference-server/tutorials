@@ -125,7 +125,7 @@ if __name__ == "__main__":
     print(
         requests.get(
             "http://localhost:8000/generate",
-            params={"prompt": "Alvin, Simon, Theodore", "filename": "foo.bmp"},
+            params={"prompt": "Alvin, Simon, Theodore"},
         )
     )
 
