@@ -22,7 +22,7 @@ def _print_heading(message):
     print("-" * len(message))
 
 
-@serve.deployment(ray_actor_options={"num_gpus":1})
+@serve.deployment(ray_actor_options={"num_gpus": 1})
 @serve.ingress(app)
 class TritonDeployment:
     def __init__(self):
@@ -58,13 +58,13 @@ class TritonDeployment:
         return "".join(output)
 
     @app.get("/generate")
-    def generate(self, prompt: str, filename: str = "generated_image") -> None:
+    def generate(self, prompt: str, filename: str = "generated_image.jpg") -> None:
         if not self._triton_server.model("stable_diffusion").ready():
             self._triton_server.load("text_encoder")
             self._triton_server.load("vae")
 
             self._stable_diffusion = self._triton_server.load("stable_diffusion")
-            
+
         for response in self._stable_diffusion.infer(inputs={"prompt": [[prompt]]}):
             generated_image = (
                 numpy.from_dlpack(response.outputs["generated_image"])
@@ -73,7 +73,7 @@ class TritonDeployment:
             )
 
             image_ = Image.fromarray(generated_image)
-            image_.save(filename + ".jpg")
+            image_.save(filename)
 
 
 if __name__ == "__main__":
@@ -87,7 +87,10 @@ if __name__ == "__main__":
 
     # 3: Query the deployment and print the result.
     print(
-        requests.get("http://localhost:8000/generate", params={"prompt": "Alvin, Simon, Theodore"})
+        requests.get(
+            "http://localhost:8000/generate",
+            params={"prompt": "Alvin, Simon, Theodore", "filename": "foo.bmp"},
+        )
     )
 
     # "Hello Theodore!"

@@ -154,3 +154,112 @@ for response in responses:
 ```python
 [['hello world!']]
 ```
+
+
+## Stable Diffusion
+
+Please note in order to run the stable diffusion example you will need
+a hugging face token and need to set the environment variable
+`HF_TOKEN` before running the container. 
+
+
+#### Build Image and Models
+
+Please note the following command will take may minutes dependeing on
+your hardware configuration and network connection.
+
+```bash
+   ./build.sh --framework hf_diffusers --build-models
+```
+
+### Start Container
+
+The following command starts a container and volume mounts the current
+directory as `workspace`.
+
+```bash
+   ./run.sh --framework hf_diffusers
+```
+
+#### Example Output
+
+```bash
+=============================
+== Triton Inference Server ==
+=============================
+
+NVIDIA Release 23.12 (build 77457706)
+Triton Server Version 2.41.0
+
+Copyright (c) 2018-2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+NOTE: CUDA Forward Compatibility mode ENABLED.
+  Using CUDA 12.3 driver version 545.23.08 with kernel driver version 525.85.12.
+  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details. 
+
+root@user-machine:/workspace# 
+```
+
+### Python Shell
+
+```bash
+python3
+```
+
+#### Example Output
+
+```bash
+Python 3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> 
+```
+### Create and Start a Server Instance
+
+```python
+import tritonserver
+import numpy
+from PIL import Image
+
+server = tritonserver.Server(model_repository="/workspace/models")
+server.start()
+```
+
+### List Models
+
+```
+server.models()
+```
+
+#### Example Output
+```python
+{('stable_diffusion', 1): {'name': 'stable_diffusion', 'version': 1, 'state': 'READY'}, ('test', 1): {'name': 'test', 'version': 1, 'state': 'READY'}, ('text_encoder', 1): {'name': 'text_encoder', 'version': 1, 'state': 'READY'}, ('vae', 1): {'name': 'vae', 'version': 1, 'state': 'READY'}}
+```
+
+### Send an Inference
+
+```python
+model = server.model("stable_diffusion")
+responses = model.infer(inputs={"prompt":[["butterfly in new york, realistic, 4k, photograph"]]})
+```
+
+### Iterate through Responses and save image
+
+
+```python
+for response in responses:
+	generated_image = numpy.from_dlpack(response.outputs["generated_image"])
+	generated_image = generated_image.squeeze().astype(numpy.uint8)
+	image_ = Image.fromarray(generated_image)
+	image_.save("sample_generated_image.jpg")
+```
+
+#### Example Output
+
+![sample_generated_image](./docs/sample_generated_image.jpg)
+
