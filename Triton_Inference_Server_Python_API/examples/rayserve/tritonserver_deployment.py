@@ -60,10 +60,19 @@ class TritonDeployment:
     @app.get("/generate")
     def generate(self, prompt: str, filename: str = "generated_image.jpg") -> None:
         if not self._triton_server.model("stable_diffusion").ready():
-            self._triton_server.load("text_encoder")
-            self._triton_server.load("vae")
+            try:
+                self._triton_server.load("text_encoder")
+                self._triton_server.load("vae")
 
-            self._stable_diffusion = self._triton_server.load("stable_diffusion")
+                self._stable_diffusion = self._triton_server.load("stable_diffusion")
+                if not self._stable_diffusion.ready():
+                    raise Exception("Model not ready")
+            except Exception as error:
+                print("Error can't load model!")
+                print(
+                    f"Please ensure dependencies are met and you have set the environment variable HF_TOKEN {e}"
+                )
+                return
 
         for response in self._stable_diffusion.infer(inputs={"prompt": [[prompt]]}):
             generated_image = (
