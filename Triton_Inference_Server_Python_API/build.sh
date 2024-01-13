@@ -139,7 +139,7 @@ get_options() {
 
     if [ -z "$TAG" ]; then
         TAG="triton-python-api:r23.12"
-    
+
 	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
 	    TAG+="-trt-llm"
 	fi

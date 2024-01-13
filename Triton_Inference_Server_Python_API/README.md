@@ -7,13 +7,13 @@ designed to match the functionality of the in-process C API while
 providing a higher level abstraction. At its core in fact the API
 relies on a 1:1 python binding of the C API created with pybind-c++
 and thus provides all the flexibility and power of the C API with a
-simpler to use interface. 
+simpler to use interface.
 
 This tutorial repository includes a preview of the API based on the
 r23.12 release of Triton.
 
 > [!Note]
-> As the API is in BETA please expect some changes as we 
+> As the API is in BETA please expect some changes as we
 > test out different features and get feedback.
 > All feedback is weclome and we look forward to hearing from you!
 
@@ -98,9 +98,9 @@ https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
 
 NOTE: CUDA Forward Compatibility mode ENABLED.
   Using CUDA 12.3 driver version 545.23.08 with kernel driver version 525.85.12.
-  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details. 
+  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details.
 
-root@user-machine:/workspace# 
+root@user-machine:/workspace#
 ```
 
 ### Python Shell
@@ -114,7 +114,7 @@ python3
 ```bash
 Python 3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0] on linux
 Type "help", "copyright", "credits" or "license" for more information.
->>> 
+>>>
 ```
 ### Create and Start a Server Instance
 
@@ -160,12 +160,12 @@ for response in responses:
 
 Please note in order to run the stable diffusion example you will need
 a hugging face token and need to set the environment variable
-`HF_TOKEN` before running the container. 
+`HF_TOKEN` before running the container.
 
 
 #### Build Image and Models
 
-Please note the following command will take may minutes dependeing on
+Please note the following command will take may minutes depending on
 your hardware configuration and network connection.
 
 ```bash
@@ -201,9 +201,9 @@ https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
 
 NOTE: CUDA Forward Compatibility mode ENABLED.
   Using CUDA 12.3 driver version 545.23.08 with kernel driver version 525.85.12.
-  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details. 
+  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details.
 
-root@user-machine:/workspace# 
+root@user-machine:/workspace#
 ```
 
 ### Python Shell
@@ -217,7 +217,7 @@ python3
 ```bash
 Python 3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0] on linux
 Type "help", "copyright", "credits" or "license" for more information.
->>> 
+>>>
 ```
 ### Create and Start a Server Instance
 

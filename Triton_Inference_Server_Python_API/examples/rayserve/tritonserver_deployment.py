@@ -1,11 +1,12 @@
-import requests
-from fastapi import FastAPI
-from ray import serve
-import tritonserver
 import os
 from pprint import pprint
-from PIL import Image
+
 import numpy
+import requests
+import tritonserver
+from fastapi import FastAPI
+from PIL import Image
+from ray import serve
 
 # 1: Define a FastAPI app and wrap it in a deployment with a route handler.
 app = FastAPI()

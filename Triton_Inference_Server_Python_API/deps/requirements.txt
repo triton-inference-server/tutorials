@@ -1,11 +1,11 @@
-fastapi==0.97.0
-starlette==0.27.0
-pytest
 awscli
-ray[all]==2.9
+fastapi==0.97.0
 ftfy
-scipy
 mypy
 pyright
+pytest
+ray[all]==2.9
+scipy
 sphinx
 sphinx-markdown-builder
+starlette==0.27.0

@@ -101,7 +101,7 @@ get_options() {
 
     if [ -z "$IMAGE" ]; then
         IMAGE="triton-python-api:r23.12"
-    
+
 	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
 	    IMAGE+="-trt-llm"
 	fi
