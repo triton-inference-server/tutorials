@@ -1,8 +1,0 @@
-pytest
-cupy-cuda12x
-awscli
-ray[all]==2.8
-ftfy
-scipy
-mypy
-pyright
