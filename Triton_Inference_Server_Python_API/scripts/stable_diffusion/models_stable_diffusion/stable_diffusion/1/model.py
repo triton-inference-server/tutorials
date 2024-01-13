@@ -37,7 +37,7 @@ from transformers import CLIPTokenizer
 
 class TritonPythonModel:
     def finalize(self):
-        print("finalizing!")
+        pass
     def initialize(self, args):
         self.output_dtype = pb_utils.triton_string_to_numpy(
             pb_utils.get_output_config_by_name(
