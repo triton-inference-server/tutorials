@@ -4,6 +4,8 @@ from ray import serve
 import tritonserver
 import os
 from pprint import pprint
+from PIL import Image
+import numpy
 
 # 1: Define a FastAPI app and wrap it in a deployment with a route handler.
 app = FastAPI()
@@ -20,7 +22,7 @@ def _print_heading(message):
     print("-" * len(message))
 
 
-@serve.deployment
+@serve.deployment(ray_actor_options={"num_gpus":1})
 @serve.ingress(app)
 class TritonDeployment:
     def __init__(self):
@@ -55,9 +57,23 @@ class TritonDeployment:
 
         return "".join(output)
 
-    @app.get("/hello")
-    def say_hello(self, name: str) -> str:
-        return f"Hello {name}!"
+    @app.get("/generate")
+    def generate(self, prompt: str, filename: str = "generated_image") -> None:
+        if not self._triton_server.model("stable_diffusion").ready():
+            self._triton_server.load("text_encoder")
+            self._triton_server.load("vae")
+
+            self._stable_diffusion = self._triton_server.load("stable_diffusion")
+            
+        for response in self._stable_diffusion.infer(inputs={"prompt": [[prompt]]}):
+            generated_image = (
+                numpy.from_dlpack(response.outputs["generated_image"])
+                .squeeze()
+                .astype(numpy.uint8)
+            )
+
+            image_ = Image.fromarray(generated_image)
+            image_.save(filename + ".jpg")
 
 
 if __name__ == "__main__":
@@ -68,6 +84,12 @@ if __name__ == "__main__":
     print(
         requests.get("http://localhost:8000/test", params={"name": "Theodore"}).json()
     )
+
+    # 3: Query the deployment and print the result.
+    print(
+        requests.get("http://localhost:8000/generate", params={"prompt": "Alvin, Simon, Theodore"})
+    )
+
     # "Hello Theodore!"
 else:
     triton_app = TritonDeployment.bind()
