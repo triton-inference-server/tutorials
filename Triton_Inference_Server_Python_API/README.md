@@ -1,16 +1,43 @@
+<!--
+# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
 # Triton Inference Server In-Process Python API [BETA]
 
-Starting with release r24.01 Triton Inference Server will include a
+Starting with release 24.01 Triton Inference Server will include a
 Python package enabling developers to embed Triton Inference Server
 instances in their Python applications. The in-process Python API is
 designed to match the functionality of the in-process C API while
-providing a higher level abstraction. At its core in fact the API
-relies on a 1:1 python binding of the C API created with pybind-c++
-and thus provides all the flexibility and power of the C API with a
-simpler to use interface.
+providing a higher level abstraction. At its core the API relies on a
+1:1 python binding of the C API and provides all the flexibility and
+power of the C API with a simpler to use interface.
 
 This tutorial repository includes a preview of the API based on the
-r23.12 release of Triton.
+23.12 release of Triton.
 
 > [!Note]
 > As the API is in BETA please expect some changes as we
@@ -165,7 +192,7 @@ a hugging face token and need to set the environment variable
 
 #### Build Image and Models
 
-Please note the following command will take may minutes depending on
+Please note the following command will take many minutes depending on
 your hardware configuration and network connection.
 
 ```bash
