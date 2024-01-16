@@ -35,6 +35,9 @@ including FastAPI and Ray Serve.
 This directory contains an example Triton Inference Server Ray Serve
 deployment based on FastAPI.
 
+| [Installation](#installation) | [Run Deployment](#run_ray_serve_deployment) | [Send Requests(#send_requests_to_deployments) |
+
+
 ## Installation
 
 Please note in order to run the stable diffusion pipeline included in
@@ -63,7 +66,7 @@ your hardware configuration and network connection.
    ./build.sh --framework diffusers --build-models
 ```
 
-## Start Container and Run Deployment
+## Run Ray Serve Deployment
 
 ### Start Container
 
@@ -75,7 +78,7 @@ directory as `workspace`.
 
 ```
 
-### Run Ray Serve Deployment
+### Run Deployment
 ```bash
    cd examples/rayserve
    serve run tritonserver_deployment:triton_app
