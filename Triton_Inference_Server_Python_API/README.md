@@ -86,9 +86,9 @@ dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  ten
 
 #### Included Models
 
-The default build includes a `test` model that can be used for
+The default build includes a `identity` model that can be used for
 exercising basic operations including sending input tensors of
-different data types. The `test` model copies provided inputs of
+different data types. The `identity` model copies provided inputs of
 `shape [-1, -1]` to outputs of shape `[-1, -1]`. Inputs are named
 `data_type_input` and outputs are named `data_type_output`
 (e.g. `string_input`, `string_output`).
@@ -163,7 +163,7 @@ server.models()
 {('test', 1): {'name': 'test', 'version': 1, 'state': 'READY'}}
 ```
 
-### Send an Inference
+### Send an Inference Request
 
 ```python
 model = server.model("test")
@@ -269,7 +269,7 @@ server.models()
 {('stable_diffusion', 1): {'name': 'stable_diffusion', 'version': 1, 'state': 'READY'}, ('test', 1): {'name': 'test', 'version': 1, 'state': 'READY'}, ('text_encoder', 1): {'name': 'text_encoder', 'version': 1, 'state': 'READY'}, ('vae', 1): {'name': 'vae', 'version': 1, 'state': 'READY'}}
 ```
 
-### Send an Inference
+### Send an Inference Request
 
 ```python
 model = server.model("stable_diffusion")
