@@ -35,7 +35,7 @@ including FastAPI and Ray Serve.
 This directory contains an example Triton Inference Server Ray Serve
 deployment based on FastAPI.
 
-| [Installation](#installation) | [Run Deployment](#run_ray_serve_deployment) | [Send Requests](#send_requests_to_deployments) |
+| [Installation](#installation) | [Run Deployment](#run_ray_serve_deployment) | [Send Requests](#send_requests_to_deployment) |
 
 
 ## Installation
