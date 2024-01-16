@@ -44,6 +44,8 @@ This tutorial repository includes a preview of the API based on the
 > test out different features and get feedback.
 > All feedback is weclome and we look forward to hearing from you!
 
+| [Requirements](#requirements) | [Installation](#installation) | [Hello World](#hello_world) | [Stable Diffusion](#stable_diffustion) | [Ray Serve Deployment](examples/rayserve) |
+
 ## Requirements
 
 The following instructions require a linux system with Docker
