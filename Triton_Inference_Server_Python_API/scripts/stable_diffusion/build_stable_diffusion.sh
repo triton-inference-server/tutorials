@@ -1,4 +1,5 @@
-# Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#!/bin/bash -e
+# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -24,27 +25,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-backend: "python"
-max_batch_size: 8
+SOURCE_DIR=$(dirname "$(readlink -f "$0")")
+DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
-input [
-  {
-    name: "prompt"
-    data_type: TYPE_STRING
-    dims: [1]
-  }
-]
-output [
-  {
-    name: "generated_image"
-    data_type: TYPE_FP32
-    dims: [ -1, -1, -1]
-  }
-]
+if [ -z "$HF_TOKEN" ]; then
+    echo "Please set environment variable HF_TOKEN"
+    exit 1
+fi
 
-instance_group [
-  {
-    kind: KIND_GPU
-  }
-]
-
+if ! test -f $SOURCE_DIR/models/vae/1/model.plan; then
+    docker run --pull missing --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -e HF_TOKEN -v $SOURCE_DIR:/mount nvcr.io/nvidia/pytorch:23.12-py3 /bin/bash -c /mount/export_and_convert.sh
+else
+    echo SKIPPING BUILD! Plan file: "$SOURCE_DIR/models/vae/1/model.plan" exists
+fi
