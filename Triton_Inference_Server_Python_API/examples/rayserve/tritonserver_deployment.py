@@ -115,6 +115,10 @@ class TritonDeployment:
             image_.save(filename)
 
 
+def triton_app(_args):
+    return TritonDeployment.bind()
+
+
 if __name__ == "__main__":
     # 2: Deploy the deployment.
     serve.run(TritonDeployment.bind(), route_prefix="/")
@@ -133,5 +137,3 @@ if __name__ == "__main__":
             params={"prompt": "pigeon in new york, realistic, 4k, photograph"},
         )
     )
-else:
-    triton_app = TritonDeployment.bind()
