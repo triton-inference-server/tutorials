@@ -54,5 +54,7 @@ COPY . /workspace
 
 ARG RUN_TESTS=FALSE
 
+RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then cd /tmp && git clone -b r23.12-python-api https://github.com/triton-inference-server/core.git && cp -rf /tmp/core/python/test /workspace/deps/ ; fi
+
 RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then pytest /workspace/deps ; fi
 
