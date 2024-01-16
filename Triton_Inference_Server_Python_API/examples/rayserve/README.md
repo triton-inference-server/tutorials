@@ -109,7 +109,7 @@ the prompt using stable diffusion, and saves the image to a file.
 
 #### Example Request
 ```
-curl --request GET "http://127.0.0.1:8000/generate?prompt=car,realistic,4k&filename=car_sample.jpg"
+curl --request GET "http://127.0.0.1:8000/generate?prompt=car,model-t,realistic,4k&filename=car_sample.jpg"
 ```
 
 #### Example Output
