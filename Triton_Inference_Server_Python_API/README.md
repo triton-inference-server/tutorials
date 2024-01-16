@@ -64,6 +64,12 @@ examples.
 
 ### Trition Inference Server 23.12 + Python API
 
+#### Clone Repository
+```bash
+git clone https://github.com/triton-inference-server/tutorials.git
+cd tutorials/Triton_Inference_Server_Python_API
+```
+
 #### Build `triton-python-api:r23.12` Image
 ```bash
    ./build.sh
@@ -80,7 +86,7 @@ dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  ten
 
 #### Included Models
 
-The default build includes a `identity` model that can be used for
+The `default` build includes an `identity` model that can be used for
 exercising basic operations including sending input tensors of
 different data types. The `identity` model copies provided inputs of
 `shape [-1, -1]` to outputs of shape `[-1, -1]`. Inputs are named
@@ -163,7 +169,7 @@ This example is based on the
 tutorial.
 
 
-#### Build Image and Models
+#### Build `triton-python-api:r23.12-diffusers` Image and Stable Diffusion Models
 
 Please note the following command will take many minutes depending on
 your hardware configuration and network connection.
@@ -171,6 +177,23 @@ your hardware configuration and network connection.
 ```bash
    ./build.sh --framework diffusers --build-models
 ```
+
+#### Supported Backends
+
+The built image includes all the backends shipped by default in the
+tritonserver `nvcr.io/nvidia/tritonserver:23.12-py3` container.
+
+```
+dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  tensorflow  tensorrt
+```
+
+#### Included Models
+
+The `diffusers` build includes a `stable_diffustion` pipeline that
+takes a text prompt and returns a generated image. For more details on
+the models and pipeline please see the
+[building_complex_pipelines](/Conceptual_Guide/Part_6-building_complex_pipelines)
+gtutorial.
 
 ### Start Container
 
@@ -181,44 +204,12 @@ directory as `workspace`.
    ./run.sh --framework hf_diffusers
 ```
 
-#### Example Output
-
-```bash
-=============================
-== Triton Inference Server ==
-=============================
-
-NVIDIA Release 23.12 (build 77457706)
-Triton Server Version 2.41.0
-
-Copyright (c) 2018-2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
-
-Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
-
-This container image and its contents are governed by the NVIDIA Deep Learning Container License.
-By pulling and using the container, you accept the terms and conditions of this license:
-https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
-
-NOTE: CUDA Forward Compatibility mode ENABLED.
-  Using CUDA 12.3 driver version 545.23.08 with kernel driver version 525.85.12.
-  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details.
-
-root@user-machine:/workspace#
-```
-
-### Python Shell
+### Enter Python Shell
 
 ```bash
 python3
 ```
 
-#### Example Output
-
-```bash
-Python 3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0] on linux
-Type "help", "copyright", "credits" or "license" for more information.
->>>
-```
 ### Create and Start a Server Instance
 
 ```python

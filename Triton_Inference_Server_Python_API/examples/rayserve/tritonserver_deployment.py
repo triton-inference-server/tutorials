@@ -77,12 +77,14 @@ class TritonDeployment:
         pprint(self._triton_server.models())
 
     @app.get("/identity")
-    def test(self, name: str) -> str:
+    def test(self, string_input: str) -> str:
         if not self._triton_server.model("identity").ready():
             self._test_model = self._triton_server.load("identity")
 
         output = []
-        for response in self._test_model.infer(inputs={"string_input": [[name]]}):
+        for response in self._test_model.infer(
+            inputs={"string_input": [[string_input]]}
+        ):
             output.append(response.outputs["string_output"].to_string_array()[0][0])
 
         return "".join(output)
