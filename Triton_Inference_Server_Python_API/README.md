@@ -52,7 +52,7 @@ requirements in "NVIDIA Driver" section of Deep Learning Framework
 support matrix:
 https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
 
-## Build / Installation
+## Installation
 
 The tutorial and Python API package are designed to be installed and
 run within the `nvcr.io/nvidia/tritonserver:23.12-py3` docker image.
@@ -64,20 +64,16 @@ examples.
 
 ### Trition Inference Server 23.12 + Python API
 
-#### Build Image
+#### Build `triton-python-api:r23.12` Image
 ```bash
    ./build.sh
 ```
 
-#### Example Output
-```bash
-#18 naming to docker.io/library/triton-python-api:r23.12 0.0s done
-#18 DONE 0.2s
-+ mkdir -p /home/user/tutorials/Triton_Inference_Server_Python_API/models
-+ cp -rf /home/user/tutorials/Triton_Inference_Server_Python_API/deps/test/test_api_models/test /home/user/tutorials/Triton_Inference_Server_Python_API/models/.
-```
-
 #### Supported Backends
+
+The built image includes all the backends shipped by default in the
+tritonserver `nvcr.io/nvidia/tritonserver:23.12-py3` container.
+
 ```
 dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  tensorflow  tensorrt
 ```
@@ -94,7 +90,7 @@ different data types. The `identity` model copies provided inputs of
 
 ## Hello World
 
-### Start Container
+### Start `triton-python-api:r23.12` Container
 
 The following command starts a container and volume mounts the current
 directory as `workspace`.
@@ -103,44 +99,12 @@ directory as `workspace`.
    ./run.sh
 ```
 
-#### Example Output
-
-```bash
-=============================
-== Triton Inference Server ==
-=============================
-
-NVIDIA Release 23.12 (build 77457706)
-Triton Server Version 2.41.0
-
-Copyright (c) 2018-2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
-
-Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
-
-This container image and its contents are governed by the NVIDIA Deep Learning Container License.
-By pulling and using the container, you accept the terms and conditions of this license:
-https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
-
-NOTE: CUDA Forward Compatibility mode ENABLED.
-  Using CUDA 12.3 driver version 545.23.08 with kernel driver version 525.85.12.
-  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details.
-
-root@user-machine:/workspace#
-```
-
-### Python Shell
+### Enter Python Shell
 
 ```bash
 python3
 ```
 
-#### Example Output
-
-```bash
-Python 3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0] on linux
-Type "help", "copyright", "credits" or "license" for more information.
->>>
-```
 ### Create and Start a Server Instance
 
 ```python
@@ -157,6 +121,10 @@ server.models()
 ```
 
 #### Example Output
+
+`server.models()` returns a dictionary of the available models with
+their current state.
+
 ```python
 {('identity', 1): {'name': 'identity', 'version': 1, 'state': 'READY'}}
 ```
@@ -169,6 +137,8 @@ responses = model.infer(inputs={"string_input":[["hello world!"]]})
 ```
 
 ### Iterate through Responses
+`model.infer()` returns an iterator that can be used to process the
+results of an inference request.
 
 ```python
 for response in responses:
@@ -187,6 +157,10 @@ Please note in order to run the stable diffusion example you will need
 a hugging face token and need to set the environment variable
 `HF_TOKEN` before running the container or set the token by using the
 `huggingface-cli login` command after running the container.
+
+This example is based on the
+[building_complex_pipelines](Conceptual_Guide/Part_6-building_complex_pipelines)
+tutorial.
 
 
 #### Build Image and Models
