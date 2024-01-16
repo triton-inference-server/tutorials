@@ -63,7 +63,7 @@ your hardware configuration and network connection.
    ./build.sh --framework diffusers --build-models
 ```
 
-## Start Container And Run Deployment
+## Start Container and Run Deployment
 
 ### Start Container
 
@@ -81,11 +81,13 @@ directory as `workspace`.
    serve run tritonserver_deployment:triton_app
 ```
 
-## Send Requessts to Deployment
+## Send Requests to Deployment
 
 The deployment includes two endpoints:
 
-### 1.  `/identity`. The identity endpoint accepts a string and returns the same string.
+### `/identity`
+
+The identity endpoint accepts a string and returns the same string.
 
 #### Example Request
 ```
@@ -98,9 +100,9 @@ curl --request GET "http://127.0.0.1:8000/identity?string_input=hello_world!"
 ```
 
 
-### 2. `/generate`. The generate endpoint accepts a prompt, generates an
-   image based on the prompt using stable diffusion, and saves the
-   image to a file.
+### `/generate`
+The generate endpoint accepts a prompt, generates an image based on
+the prompt using stable diffusion, and saves the image to a file.
 
 #### Example Request
 ```
