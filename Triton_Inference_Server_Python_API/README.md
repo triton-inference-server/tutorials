@@ -159,7 +159,7 @@ a hugging face token and need to set the environment variable
 `huggingface-cli login` command after running the container.
 
 This example is based on the
-[building_complex_pipelines](Conceptual_Guide/Part_6-building_complex_pipelines)
+[building_complex_pipelines](/Conceptual_Guide/Part_6-building_complex_pipelines)
 tutorial.
 
 
