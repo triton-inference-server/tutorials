@@ -73,8 +73,6 @@ examples.
 ```bash
 #18 naming to docker.io/library/triton-python-api:r23.12 0.0s done
 #18 DONE 0.2s
-+ [[ TEST == TRT_LLM ]]
-+ [[ TEST == TEST ]]
 + mkdir -p /home/user/tutorials/Triton_Inference_Server_Python_API/models
 + cp -rf /home/user/tutorials/Triton_Inference_Server_Python_API/deps/test/test_api_models/test /home/user/tutorials/Triton_Inference_Server_Python_API/models/.
 ```
@@ -91,7 +89,7 @@ exercising basic operations including sending input tensors of
 different data types. The `identity` model copies provided inputs of
 `shape [-1, -1]` to outputs of shape `[-1, -1]`. Inputs are named
 `data_type_input` and outputs are named `data_type_output`
-(e.g. `string_input`, `string_output`).
+(e.g. `string_input`, `string_output`, `fp16_input`, `fp16_output`).
 
 
 ## Hello World
@@ -148,7 +146,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 ```python
 import tritonserver
 
-server = tritonserver.Server(model_repository="/workspace/models")
+server = tritonserver.Server(model_repository="/workspace/identity-models")
 server.start()
 ```
 
@@ -160,13 +158,13 @@ server.models()
 
 #### Example Output
 ```python
-{('test', 1): {'name': 'test', 'version': 1, 'state': 'READY'}}
+{('identity', 1): {'name': 'identity', 'version': 1, 'state': 'READY'}}
 ```
 
 ### Send an Inference Request
 
 ```python
-model = server.model("test")
+model = server.model("identity")
 responses = model.infer(inputs={"string_input":[["hello world!"]]})
 ```
 
@@ -197,7 +195,7 @@ Please note the following command will take many minutes depending on
 your hardware configuration and network connection.
 
 ```bash
-   ./build.sh --framework hf_diffusers --build-models
+   ./build.sh --framework diffusers --build-models
 ```
 
 ### Start Container
@@ -254,7 +252,7 @@ import tritonserver
 import numpy
 from PIL import Image
 
-server = tritonserver.Server(model_repository="/workspace/models")
+server = tritonserver.Server(model_repository="/workspace/diffuser-models")
 server.start()
 ```
 
@@ -266,7 +264,7 @@ server.models()
 
 #### Example Output
 ```python
-{('stable_diffusion', 1): {'name': 'stable_diffusion', 'version': 1, 'state': 'READY'}, ('test', 1): {'name': 'test', 'version': 1, 'state': 'READY'}, ('text_encoder', 1): {'name': 'text_encoder', 'version': 1, 'state': 'READY'}, ('vae', 1): {'name': 'vae', 'version': 1, 'state': 'READY'}}
+{('stable_diffusion', 1): {'name': 'stable_diffusion', 'version': 1, 'state': 'READY'}, ('text_encoder', 1): {'name': 'text_encoder', 'version': 1, 'state': 'READY'}, ('vae', 1): {'name': 'vae', 'version': 1, 'state': 'READY'}}
 ```
 
 ### Send an Inference Request

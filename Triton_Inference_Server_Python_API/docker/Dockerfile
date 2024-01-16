@@ -42,7 +42,7 @@ RUN pip install --timeout=2000 -r /tmp/requirements.txt
 ARG FRAMEWORK=HF_DIFFUSERS
 
 COPY ./deps/requirements_torch.txt /tmp/requirements_torch.txt
-RUN if [[ "$FRAMEWORK" == "HF_DIFFUSERS" ]] ; then pip install --timeout=2000 -r /tmp/requirements_torch.txt ; fi
+RUN if [[ "$FRAMEWORK" == "DIFFUSERS" ]] ; then pip install --timeout=2000 -r /tmp/requirements_torch.txt ; fi
 
 COPY ./deps/tritonserver-2.41.0.dev0-py3-none-any.whl /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl
 

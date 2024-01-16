@@ -29,14 +29,14 @@ TAG=
 RUN_PREFIX=
 
 # Frameworks
-declare -A FRAMEWORKS=(["HF_DIFFUSERS"]=1 ["TRT_LLM"]=2 ["TEST"]=3)
-DEFAULT_FRAMEWORK=TEST
+declare -A FRAMEWORKS=(["DIFFUSERS"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
+DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 
 # Base Images
 IMAGE=
-IMAGE_TAG_HF_DIFFUSERS=hf-diffusers
+IMAGE_TAG_DIFFUSERS=diffusers
 IMAGE_TAG_TRT_LLM=trt-llm
 
 get_options() {
@@ -106,8 +106,8 @@ get_options() {
 	    IMAGE+="-trt-llm"
 	fi
 
-	if [[ $FRAMEWORK == "HF_DIFFUSERS" ]]; then
-	    IMAGE+="-hf-diffusers"
+	if [[ $FRAMEWORK == "DIFFUSERS" ]]; then
+	    IMAGE+="-diffusers"
 	fi
 
     fi

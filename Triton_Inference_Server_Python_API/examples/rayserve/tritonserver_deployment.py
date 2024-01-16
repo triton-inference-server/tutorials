@@ -58,7 +58,10 @@ class TritonDeployment:
         if S3_BUCKET_URL is not None:
             model_repository = S3_BUCKET_URL
         else:
-            model_repository = "/workspace/models"
+            model_repository = [
+                "/workspace/identity-models",
+                "/workspace/diffuser-models",
+            ]
 
         self._triton_server = tritonserver.Server(
             model_repository=model_repository,

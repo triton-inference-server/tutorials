@@ -30,8 +30,8 @@ RUN_PREFIX=
 BUILD_MODELS=
 
 # Frameworks
-declare -A FRAMEWORKS=(["HF_DIFFUSERS"]=1 ["TRT_LLM"]=2 ["TEST"]=3)
-DEFAULT_FRAMEWORK=TEST
+declare -A FRAMEWORKS=(["DIFFUSERS"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
+DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
@@ -39,8 +39,8 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
 # Base Images
 BASE_IMAGE=nvcr.io/nvidia/tritonserver
-BASE_IMAGE_TAG_TEST=23.12-py3
-BASE_IMAGE_TAG_HF_DIFFUSERS=23.12-py3
+BASE_IMAGE_TAG_IDENTITY=23.12-py3
+BASE_IMAGE_TAG_DIFFUSERS=23.12-py3
 BASE_IMAGE_TAG_TRT_LLM=23.12-trtllm-python-py3
 
 get_options() {
@@ -144,8 +144,8 @@ get_options() {
 	    TAG+="-trt-llm"
 	fi
 
-	if [[ $FRAMEWORK == "HF_DIFFUSERS" ]]; then
-	    TAG+="-hf-diffusers"
+	if [[ $FRAMEWORK == "DIFFUSERS" ]]; then
+	    TAG+="-diffusers"
 	fi
 
     fi
@@ -204,21 +204,37 @@ fi
 
 $RUN_PREFIX docker build -f $DOCKERFILE $BUILD_OPTIONS $BUILD_ARGS -t $TAG $SOURCE_DIR $NO_CACHE
 
+{ set +x; } 2>/dev/null
+
+
 if [[ $FRAMEWORK == TRT_LLM ]]; then
+    if [ -z "$RUN_PREFIX" ]; then
+	set -x
+    fi
+
     $RUN_PREFIX docker build -f $SOURCE_DIR/docker/Dockerfile.trt-llm-engine-builder  $BUILD_OPTIONS $BUILD_ARGS -t trt-llm-engine-builder  $SOURCE_DIR $NO_CACHE
+
+    { set +x; } 2>/dev/null
+
 fi;
 
-if [[ $FRAMEWORK == TEST ]] || [[ $BUILD_MODELS == TRUE ]]; then
-    $RUN_PREFIX mkdir -p $SOURCE_DIR/models_identity
-    $RUN_PREFIX cp -rf $SOURCE_DIR/deps/test/test_api_models/identity $SOURCE_DIR/models_identity/identity
+if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 
-    if [[ $FRAMEWORK == HF_DIFFUSERS ]]; then
+    if [[ $FRAMEWORK == DIFFUSERS ]]; then
+	if [ -z "$RUN_PREFIX" ]; then
+	    set -x
+	fi
+
+	$RUN_PREFIX mkdir -p $SOURCE_DIR/diffuser-models
+	$RUN_PREFIX cp -rf $SOURCE_DIR/../Conceptual_Guide/Part_6-building_complex_pipelines/model_repository/. $SOURCE_DIR/scripts/stable_diffusion/models
+	$RUN_PREFIX rm -rf $SOURCE_DIR/scripts/stable_diffusion/models/stable_diffusion
+	$RUN_PREFIX mv $SOURCE_DIR/scripts/stable_diffusion/models/pipeline $SOURCE_DIR/scripts/stable_diffusion/models/stable_diffusion
 	$RUN_PREFIX $SOURCE_DIR/scripts/stable_diffusion/build_stable_diffusion.sh
-	$RUN_PREFIX cp -rf $SOURCE_DIR/scripts/stable_diffusion/models_stable_diffusion/. $SOURCE_DIR/models/.
+	$RUN_PREFIX cp -rf $SOURCE_DIR/scripts/stable_diffusion/models/. $SOURCE_DIR/diffuser-models/.
+
+	{ set +x; } 2>/dev/null
     fi
 fi
 
-
-{ set +x; } 2>/dev/null
 
 
