@@ -85,31 +85,31 @@ directory as `workspace`.
 
 The deployment includes two endpoints:
 
-1. `/identity`. The identity endpoint accepts a string and returns the same string.
+### 1.  `/identity`. The identity endpoint accepts a string and returns the same string.
 
-### Example Request
+#### Example Request
 ```
 curl --request GET "http://127.0.0.1:8000/identity?string_input=hello_world!"
 ```
 
-### Example Output
+#### Example Output
 ```bash
 "hello_world!"
 ```
 
 
-1. `/generate`. The generate endpoint accepts a prompt, generates an
+### 2. `/generate`. The generate endpoint accepts a prompt, generates an
    image based on the prompt using stable diffusion, and saves the
    image to a file.
 
-### Example Request
+#### Example Request
 ```
 curl --request GET "http://127.0.0.1:8000/generate?prompt=car,realistic,4k&filename=car_sample.jpg"
 ```
 
-### Example Output
+#### Example Output
 
-![car_sample](./docs/car_sample.jpg)
+![car_sample](../docs/car_sample.jpg)
 
 
 
