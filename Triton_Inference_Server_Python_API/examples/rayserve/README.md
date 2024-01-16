@@ -74,7 +74,7 @@ The following command starts a container and volume mounts the current
 directory as `workspace`.
 
 ```bash
-   ./run.sh --framework hf_diffusers
+   ./run.sh --framework diffusers
 
 ```
 
