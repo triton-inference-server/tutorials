@@ -111,7 +111,7 @@ curl --request GET "http://127.0.0.1:8000/generate?prompt=car,realistic,4k&filen
 
 #### Example Output
 
-![car_sample](../docs/car_sample.jpg)
+![car_sample](../../docs/car_sample.jpg)
 
 
 
