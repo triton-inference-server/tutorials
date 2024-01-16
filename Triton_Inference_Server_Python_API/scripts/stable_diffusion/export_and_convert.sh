@@ -31,7 +31,7 @@ huggingface-cli login --token $HF_TOKEN
 python export.py
 trtexec --onnx=vae.onnx --saveEngine=vae.plan --minShapes=latent_sample:1x4x64x64 --optShapes=latent_sample:4x4x64x64 --maxShapes=latent_sample:8x4x64x64 --fp16
 mkdir -p models/vae/1
-mkdir -p modelstext_encoder/1
+mkdir -p models/text_encoder/1
 mv vae.plan models/vae/1/model.plan
 mv encoder.onnx models/text_encoder/1/model.onnx
 
