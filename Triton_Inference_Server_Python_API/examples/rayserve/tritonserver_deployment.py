@@ -76,10 +76,10 @@ class TritonDeployment:
         _print_heading("Models")
         pprint(self._triton_server.models())
 
-    @app.get("/test")
+    @app.get("/identity")
     def test(self, name: str) -> str:
-        if not self._triton_server.model("test").ready():
-            self._test_model = self._triton_server.load("test")
+        if not self._triton_server.model("identity").ready():
+            self._test_model = self._triton_server.load("identity")
 
         output = []
         for response in self._test_model.infer(inputs={"string_input": [[name]]}):
@@ -121,17 +121,17 @@ if __name__ == "__main__":
 
     # 3: Query the deployment and print the result.
     print(
-        requests.get("http://localhost:8000/test", params={"name": "Theodore"}).json()
+        requests.get(
+            "http://localhost:8000/identity", params={"name": "Theodore"}
+        ).json()
     )
 
     # 3: Query the deployment and print the result.
     print(
         requests.get(
             "http://localhost:8000/generate",
-            params={"prompt": "Alvin, Simon, Theodore"},
+            params={"prompt": "pigeon in new york, realistic, 4k, photograph"},
         )
     )
-
-    # "Hello Theodore!"
 else:
     triton_app = TritonDeployment.bind()
