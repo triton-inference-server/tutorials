@@ -74,7 +74,7 @@ cd tutorials/Triton_Inference_Server_Python_API
 
 #### Build `triton-python-api:r23.12` Image
 ```bash
-   ./build.sh
+./build.sh
 ```
 
 #### Supported Backends
@@ -104,7 +104,7 @@ The following command starts a container and volume mounts the current
 directory as `workspace`.
 
 ```bash
-   ./run.sh
+./run.sh
 ```
 
 ### Enter Python Shell
@@ -203,7 +203,7 @@ The following command starts a container and volume mounts the current
 directory as `workspace`.
 
 ```bash
-   ./run.sh --framework diffusers
+./run.sh --framework diffusers
 ```
 
 ### Enter Python Shell

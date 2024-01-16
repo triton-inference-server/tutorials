@@ -63,7 +63,7 @@ Please note the following command will take many minutes depending on
 your hardware configuration and network connection.
 
 ```bash
-   ./build.sh --framework diffusers --build-models
+./build.sh --framework diffusers --build-models
 ```
 
 ## Run Ray Serve Deployment
@@ -74,14 +74,14 @@ The following command starts a container and volume mounts the current
 directory as `workspace`.
 
 ```bash
-   ./run.sh --framework diffusers
+./run.sh --framework diffusers
 
 ```
 
 ### Run Deployment
 ```bash
-   cd examples/rayserve
-   serve run tritonserver_deployment:triton_app
+cd examples/rayserve
+serve run tritonserver_deployment:triton_app
 ```
 
 ## Send Requests to Deployment
