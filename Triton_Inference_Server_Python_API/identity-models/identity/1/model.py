@@ -31,7 +31,7 @@ import triton_python_backend_utils as pb_utils
 
 try:
     import cupy
-except:
+except ImportError:
     cupy = None
 
 
