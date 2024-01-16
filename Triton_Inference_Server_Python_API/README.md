@@ -187,7 +187,8 @@ for response in responses:
 
 Please note in order to run the stable diffusion example you will need
 a hugging face token and need to set the environment variable
-`HF_TOKEN` before running the container.
+`HF_TOKEN` before running the container or set the token by using the
+`huggingface-cli login` command after running the container.
 
 
 #### Build Image and Models
