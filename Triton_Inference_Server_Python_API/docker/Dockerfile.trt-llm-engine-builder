@@ -1,0 +1,74 @@
+# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ARG BASE_IMAGE=nvcr.io/nvidia/tritonserver
+ARG BASE_IMAGE_TAG=23.12-trtllm-python-py3
+
+FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as trt-llm-engine-builder
+
+ARG TRT_LLM_BACKEND_REPO=https://github.com/triton-inference-server/tensorrtllm_backend.git
+ARG TRT_LLM_BACKEND_TAG=r23.12
+
+# Update the submodule TensorRT-LLM repository
+RUN git clone -b $TRT_LLM_BACKEND_TAG $TRT_LLM_BACKEND_REPO
+WORKDIR tensorrtllm_backend
+RUN apt-get update; apt-get install -y git-lfs
+RUN git lfs install &&  git lfs pull
+RUN git submodule update --init --recursive
+
+
+# TensorRT-LLM is required for generating engines. You can skip this step if
+# you already have the package installed. If you are generating engines within
+# the Triton container, you have to install the TRT-LLM package.
+RUN (cd tensorrt_llm && \
+    bash docker/common/install_cmake.sh && \
+    export PATH=/usr/local/cmake/bin:$PATH && \
+    python3 ./scripts/build_wheel.py --trt_root="/usr/local/tensorrt" && \
+    pip3 install ./build/tensorrt_llm*.whl)
+
+# # Go to the tensorrt_llm/examples/gpt directory
+# cd tensorrt_llm/examples/gpt
+
+# # Download weights from HuggingFace Transformers
+# rm -rf gpt2 && git clone https://huggingface.co/gpt2-medium gpt2
+# pushd gpt2 && rm pytorch_model.bin model.safetensors && wget -q https://huggingface.co/gpt2-medium/resolve/main/pytorch_model.bin && popd
+
+# # Convert weights from HF Tranformers to FT format
+# python3 hf_gpt_convert.py -p 8 -i gpt2 -o ./c-model/gpt2 --tensor-parallelism 4 --storage-type float16
+
+# # Build TensorRT engines
+# python3 build.py --model_dir=./c-model/gpt2/4-gpu/ \
+#                  --world_size=4 \
+#                  --dtype float16 \
+#                  --use_inflight_batching \
+#                  --use_gpt_attention_plugin float16 \
+#                  --paged_kv_cache \
+#                  --use_gemm_plugin float16 \
+#                  --remove_input_padding \
+#                  --use_layernorm_plugin float16 \
+#                  --hidden_act gelu \
+#                  --parallel_build \
+#                  --output_dir=engines/fp16/4-gpu
