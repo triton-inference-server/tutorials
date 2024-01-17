@@ -64,8 +64,13 @@ class TritonPythonModel:
 
         auto_complete_model_config.set_max_batch_size(0)
 
-        if config["parameters"]["decoupled"]["string_value"] == "True":
-            auto_complete_model_config.set_model_transaction_policy({"decoupled": True})
+        auto_complete_model_config.set_model_transaction_policy({"decoupled": False})
+
+        if "parameters" in config and "decoupled" in config["parameters"]:
+            if config["parameters"]["decoupled"]["string_value"] == "True":
+                auto_complete_model_config.set_model_transaction_policy(
+                    {"decoupled": True}
+                )
 
         return auto_complete_model_config
 
