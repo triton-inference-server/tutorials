@@ -195,7 +195,7 @@ The `diffusers` build includes a `stable_diffustion` pipeline that
 takes a text prompt and returns a generated image. For more details on
 the models and pipeline please see the
 [building_complex_pipelines](/Conceptual_Guide/Part_6-building_complex_pipelines)
-gtutorial.
+tutorial.
 
 ### Start Container
 
