@@ -26,6 +26,7 @@
 
 import os
 from pprint import pprint
+from typing import Optional
 
 import numpy
 import requests
@@ -89,8 +90,8 @@ class TritonDeployment:
 
         return "".join(output)
 
-    @app.get("/generate")
-    def generate(self, prompt: str, filename: str = "generated_image.jpg") -> None:
+    @app.get("/imagine")
+    def generate(self, prompt: str, filename: Optional[str] = None) -> None:
         if not self._triton_server.model("stable_diffusion").ready():
             try:
                 self._triton_server.load("text_encoder")
@@ -112,12 +113,16 @@ class TritonDeployment:
                 .squeeze()
                 .astype(numpy.uint8)
             )
-
             image_ = Image.fromarray(generated_image)
-            image_.save(filename)
+            if filename:
+                image_.save(filename)
 
 
 def triton_app(_args):
+    return TritonDeployment.bind()
+
+
+def entrypoint(_args):
     return TritonDeployment.bind()
 
 
