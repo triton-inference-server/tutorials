@@ -34,13 +34,56 @@ Server objects allow users to instantiate and interact with an
 in-process Triton Inference Server. Server objects provide methods
 to access models, server metadata, and metrics.
 
+Initialize Triton Inference Server
+
+Initialize Triton Inference Server based on configuration
+options. Options can be passed as an object or key, value pairs
+that will be used to construct an object.
+
+Note: options will be validated on start().
+
+* **Parameters:**
+  * **options** (*Optional**[*[*Options*](#tritonserver.Options)*]*) – Server configuration options.
+  * **kwargs** (*Unpack**[*[*Options*](#tritonserver.Options)*]*) – Keyname arguments passed to Options constructor. See
+    Options documentation for details.
+
+### Examples
+
+```pycon
+>>> server = tritonserver.Server(model_repository="/workspace/models")
+server = tritonserver.Server(model_repository="/workspace/models")
+```
+
+```pycon
+>>> tritonserver.Options(model_repository="/workspace/models")
+tritonserver.Options(model_repository="/workspace/models")
+```
+
+Options(server_id=’triton’, model_repository=’/workspace/models’,
+model_control_mode=<TRITONSERVER_ModelControlMode.NONE: 0>,
+startup_models=[], strict_model_config=True,
+rate_limiter_mode=<TRITONSERVER_RateLimitMode.OFF: 0>,
+rate_limiter_resources=[], pinned_memory_pool_size=268435456,
+cuda_memory_pool_sizes={}, cache_config={},
+cache_directory=’/opt/tritonserver/caches’,
+min_supported_compute_capability=6.0, exit_on_error=True,
+strict_readiness=True, exit_timeout=30, buffer_manager_thread_count=0,
+model_load_thread_count=4, model_namespacing=False, log_file=None,
+log_info=False, log_warn=False, log_error=False,
+log_format=<TRITONSERVER_LogFormat.DEFAULT: 0>, log_verbose=False,
+metrics=True, gpu_metrics=True, cpu_metrics=True,
+metrics_interval=2000, backend_directory=’/opt/tritonserver/backends’,
+repo_agent_directory=’/opt/tritonserver/repoagents’,
+model_load_device_limits=[], backend_configuration={},
+host_policies={}, metrics_configuration={})
+
 <a id="tritonserver.Server.live"></a>
 
 #### live()
 
 Returns true if the server is live.
 
-See :c:func\`TRITONSERVER_ServerIsLive()\`
+See `TRITONSERVER_ServerIsLive()`
 
 * **Returns:**
   True if server is live. False
@@ -65,7 +108,7 @@ Load a model
 Load a model from the repository and wait for it to be
 ready. Only available if ModelControlMode is EXPLICIT.
 
-See c:func:TRITONSERVER_ServerLoadModel
+See `TRITONSERVER_ServerLoadModel()`
 
 * **Parameters:**
   * **model_name** (*str*) – model name
@@ -98,7 +141,7 @@ Returns metadata for server
 Returns metadata for server including name, version and
 enabled extensions.
 
-See :c:func\`TRITONSERVER_ServerMetadata\`
+See `TRITONSERVER_ServerMetadata()`
 
 * **Returns:**
   Dictionary of key value pairs of metadata information
@@ -124,7 +167,7 @@ server.metadata()
 
 Return server and custom metrics
 
-See c:func:TRITONSERVER_ServerMetrics()
+See `TRITONSERVER_ServerMetrics()`
 
 * **Parameters:**
   **metric_format** (*MetricFormat*) – format for metrics
@@ -177,7 +220,7 @@ server.model("test").metadata()
 
 Returns a dictionary of known models in the model repository
 
-See c:func:TRTIONSERVER_ServerModelIndex()
+See `TRTIONSERVER_ServerModelIndex()`
 
 * **Parameters:**
   **exclude_not_ready** (*bool*) – exclude any models which are not in a ready state
@@ -210,7 +253,7 @@ Poll model repository for changes
 
 Only available if ModelControlMode.POLL is enabled.
 
-See c:func:TRITONSERVER_ServerPollModelRepository
+See `TRITONSERVER_ServerPollModelRepository()`
 
 * **Return type:**
   [Server](#tritonserver.Server)
@@ -221,7 +264,7 @@ See c:func:TRITONSERVER_ServerPollModelRepository
 
 Returns True if the server is ready
 
-See c:func:TRITONSERVER_ServerIsReady()
+See `TRITONSERVER_ServerIsReady()`
 
 * **Returns:**
   True if server is ready. False otherwise.
@@ -322,7 +365,7 @@ server.start()
 
 Stop server and unload models
 
-See c:func:TRITONSERVER_ServerStop
+See `TRITONSERVER_ServerStop()`
 
 * **Return type:**
   [Server](#tritonserver.Server)
@@ -342,7 +385,7 @@ Unload model
 
 Unloads a model and its dependents (optional).
 
-See c:func:TRITONSERVER_ServerUnloadModel()
+See `TRITONSERVER_ServerUnloadModel()`
 
 * **Parameters:**
   * **model** (*str* *|* [*Model*](#tritonserver.Model)) – model name or model object
@@ -375,7 +418,7 @@ Unregister model repository
 
 Only available when ModelControlMode is set to explicit
 
-See c:func:TRITONSERVER_ServerUnregisterModelRepository
+See `TRITONSERVER_ServerUnregisterModelRepository()`
 
 * **Parameters:**
   **repository_path** (*str*) – path to unregister
@@ -430,13 +473,13 @@ Server Options.
   * **rate_limiter_mode** (*RateLimitMode**,* *default RateLimitMode.OFF*) –
 
     Rate limit mode.
-    RateLimitMode.EXEC_COUNT : Rate limiting prioritizes execution based on
-    > the number of times each instance has run and if
-    > resource constraints can be satisfied.
+    - RateLimitMode.EXEC_COUNT
+      : the number of times each instance has run and if
+        resource constraints can be satisfied.
+    - RateLimitMode.OFF : Rate limiting is disabled.
 
-    RateLimitMode.OFF : Rate limiting is disabled.
     See `TRITONSERVER_ServerOptionsSetRateLimiterMode()`
-  * **rate_limiter_resources** (*list**[**RateLimiterResource**]**,* *default* *[**]*) – Resource counts for rate limiting.
+  * **rate_limiter_resources** (*list**[*[*RateLimiterResource*](#tritonserver.RateLimiterResource)*]**,* *default* *[**]*) – Resource counts for rate limiting.
     See `TRITONSERVER_ServerOptionsAddRateLimiterResource()`
   * **pinned_memory_pool_size** (*uint**,* *default 1 << 28*) – Total pinned memory size.
     See `TRITONSERVER_ServerOptionsSetPinnedMemoryPoolByteSize()`
@@ -512,6 +555,26 @@ Model objects are returned from server factory methods and allow
 users to query metadata and execute inference
 requests.
 
+Initialize model
+
+Model objects should be obtainted from Server factory methods
+and not instantiated directly. See Server documentation.
+
+* **Parameters:**
+  * **server** ([*Server*](#tritonserver.Server)) – Server instance.
+  * **name** (*str*) – model name
+  * **version** (*int*) – model version
+  * **state** (*Optional**[**str**]*) – state of model (if known)
+  * **reason** (*Optional**[**str**]*) – reason for model state (if known)
+
+### Examples
+
+```pycon
+>>> server.model("test")
+server.model("test")
+{'name': 'test', 'version': -1, 'state': None}
+```
+
 <a id="tritonserver.Model.async_infer"></a>
 
 #### async_infer(inference_request: Optional[[InferenceRequest](#tritonserver.InferenceRequest)] = None, raise_on_error: bool = True, \*\*kwargs: Unpack[[InferenceRequest](#tritonserver.InferenceRequest)])
@@ -520,7 +583,7 @@ Send an inference request to the model for execution
 
 Sends an inference request to the model. Responses are
 returned using an asyncio compatible iterator. See
-c:func:TRITONSERVER_ServerInferAsync
+`TRITONSERVER_ServerInferAsync()`
 
 * **Parameters:**
   * **inference_request** (*Optional**[*[*InferenceRequest*](#tritonserver.InferenceRequest)*]*) – inference request object. If not provided inference
@@ -646,7 +709,7 @@ Send an inference request to the model for execution
 
 Sends an inference request to the model. Responses are
 returned asynchronously using an iterator. See
-c:func:TRITONSERVER_ServerInferAsync
+`TRITONSERVER_ServerInferAsync()`
 
 * **Parameters:**
   * **inference_request** (*Optional**[*[*InferenceRequest*](#tritonserver.InferenceRequest)*]*) – inference request object. If not provided inference
@@ -701,7 +764,7 @@ array([b'hello'], dtype=object)
 
 Returns medatadata about a model and its inputs and outputs
 
-See c:func:TRITONSERVER_ServerModelMetadata()
+See `TRITONSERVER_ServerModelMetadata()`
 
 * **Returns:**
   Model metadata as a dictionary of key value pairs
@@ -796,7 +859,7 @@ server.model("resnet50_libtorch").transaction_properties()
 
 <a id="tritonserver.InferenceRequest"></a>
 
-### *class* tritonserver.InferenceRequest(model: ~tritonserver.Model, request_id: ~typing.Optional[str] = None, flags: int = 0, correlation_id: ~typing.Optional[~typing.Union[int, str]] = None, priority: int = 0, timeout: int = 0, inputs: dict[str, typing.Union[tritonserver.Tensor, typing.Any]] = <factory>, parameters: dict[str, str | int | bool] = <factory>, output_memory_type: ~typing.Optional[~typing.Union[tuple[tritonserver.TRITONSERVER_MemoryType, int], ~tritonserver.TRITONSERVER_MemoryType, tuple[tritonserver._api._dlpack.DLDeviceType, int], str]] = None, output_memory_allocator: ~typing.Optional[~tritonserver.MemoryAllocator] = None, response_queue: ~typing.Optional[~typing.Union[~_queue.SimpleQueue, ~asyncio.queues.Queue]] = None)
+### *class* tritonserver.InferenceRequest(model: ~tritonserver.Model, request_id: ~typing.Optional[str] = None, flags: int = 0, correlation_id: ~typing.Optional[~typing.Union[int, str]] = None, priority: int = 0, timeout: int = 0, inputs: dict[str, typing.Union[tritonserver.Tensor, typing.Any]] = <factory>, parameters: dict[str, str | int | bool] = <factory>, output_memory_type: ~typing.Optional[~typing.Union[tuple[tritonserver.TRITONSERVER_MemoryType, int], ~tritonserver.TRITONSERVER_MemoryType, tuple[tritonserver.DLDeviceType, int], str]] = None, output_memory_allocator: ~typing.Optional[~tritonserver.MemoryAllocator] = None, response_queue: ~typing.Optional[~typing.Union[~_queue.SimpleQueue, ~asyncio.queues.Queue]] = None)
 
 Bases: `object`
 
@@ -806,7 +869,7 @@ Inference request objects are created using Model factory
 methods. They contain input parameters and input data as well as
 configuration for response output memory allocation.
 
-See c:func:TRITONSERVER_InferenceRequest for more details
+See `TRITONSERVER_InferenceRequest()` for more details
 
 * **Parameters:**
   * **model** ([*Model*](#tritonserver.Model)) – Model instance associated with the inference request.
@@ -880,7 +943,7 @@ for response in server.model(“test_2”).infer(
 
 <a id="tritonserver.InferenceRequest.output_memory_type"></a>
 
-#### output_memory_type*: Optional[Union[tuple[[tritonserver.TRITONSERVER_MemoryType](#tritonserver.MemoryType), int], [TRITONSERVER_MemoryType](#tritonserver.MemoryType), tuple[tritonserver._api._dlpack.DLDeviceType, int], str]]* *= None*
+#### output_memory_type*: Optional[Union[tuple[[tritonserver.TRITONSERVER_MemoryType](#tritonserver.MemoryType), int], [TRITONSERVER_MemoryType](#tritonserver.MemoryType), tuple[tritonserver.DLDeviceType, int], str]]* *= None*
 
 <a id="tritonserver.InferenceRequest.parameters"></a>
 
@@ -916,7 +979,7 @@ contain output data, output parameters, any potential errors
 reported and a flag to indicate if the response is the final one
 for a request.
 
-See c:func:TRITONSERVER_InferenceResponse for more details
+See `TRITONSERVER_InferenceResponse()` for more details
 
 * **Parameters:**
   * **model** ([*Model*](#tritonserver.Model)) – Model instance associated with the response.
@@ -967,6 +1030,19 @@ Response iterators are returned from model inference methods and
 allow users to process inference responses in the order they were
 received for a request.
 
+Initialize ResponseIterator
+
+ResponseIterator objects are obtained from Model inference
+methods and not instantiated directly. See Model documentation.
+
+* **Parameters:**
+  * **model** ([*Model*](#tritonserver.Model)) – model associated with inference request
+  * **request** (*TRITONSERVER_InferenceRequest*) – Underlying C binding TRITONSERVER_InferenceRequest
+    object. Private.
+  * **user_queue** (*Optional**[**asyncio.Queue**]*) – Optional user queue for responses in addition to internal
+    iterator queue.
+  * **raise_on_error** (*bool*) – if True response errors will be raised as exceptions.
+
 <a id="tritonserver.ResponseIterator.cancel"></a>
 
 #### cancel()
@@ -977,7 +1053,7 @@ Cancels an in-flight request. Cancellation is handled on a
 best effort basis and may not prevent execution of a request
 if it is already started or completed.
 
-See c:func:TRITONSERVER_ServerInferenceRequestCancel
+See `TRITONSERVER_ServerInferenceRequestCancel()`
 
 ### Examples
 
@@ -997,6 +1073,20 @@ Response iterators are returned from model inference methods and
 allow users to process inference responses in the order they were
 received for a request.
 
+Initialize AsyncResponseIterator
+
+AsyncResponseIterator objects are obtained from Model inference
+methods and not instantiated directly. See Model documentation.
+
+* **Parameters:**
+  * **model** ([*Model*](#tritonserver.Model)) – model associated with inference request
+  * **request** (*TRITONSERVER_InferenceRequest*) – Underlying C binding TRITONSERVER_InferenceRequest
+    object. Private.
+  * **user_queue** (*Optional**[**asyncio.Queue**]*) – Optional user queue for responses in addition to internal
+    iterator queue.
+  * **raise_on_error** (*bool*) – if True response errors will be raised as exceptions.
+  * **loop** (*Optional**[**asyncio.AbstractEventLoop**]*) – asyncio loop object
+
 <a id="tritonserver.AsyncResponseIterator.cancel"></a>
 
 #### cancel()
@@ -1007,7 +1097,7 @@ Cancels an in-flight request. Cancellation is handled on a
 best effort basis and may not prevent execution of a request
 if it is already started or completed.
 
-See c:func:TRITONSERVER_ServerInferenceRequestCancel
+See `TRITONSERVER_ServerInferenceRequestCancel()`
 
 ### Examples
 
@@ -1017,7 +1107,7 @@ responses.cancel()
 
 <a id="tritonserver.Tensor"></a>
 
-### *class* tritonserver.Tensor(data_type: TRITONSERVER_DataType, shape: Sequence[int], memory_buffer: [MemoryBuffer](#tritonserver.MemoryBuffer))
+### *class* tritonserver.Tensor(data_type: [TRITONSERVER_DataType](#tritonserver._c.TRITONSERVER_DataType), shape: Sequence[int], memory_buffer: [MemoryBuffer](#tritonserver.MemoryBuffer))
 
 Bases: `object`
 
@@ -1199,7 +1289,7 @@ numpy_ndarray = response.outputs[“text_output”].to_bytes_array()
 
 <a id="tritonserver.Tensor.to_device"></a>
 
-#### to_device(device: tuple[[tritonserver.TRITONSERVER_MemoryType](#tritonserver.MemoryType), int] | [tritonserver.TRITONSERVER_MemoryType](#tritonserver.MemoryType) | tuple[tritonserver._api._dlpack.DLDeviceType, int] | str)
+#### to_device(device: tuple[[tritonserver.TRITONSERVER_MemoryType](#tritonserver.MemoryType), int] | [tritonserver.TRITONSERVER_MemoryType](#tritonserver.MemoryType) | tuple[tritonserver.DLDeviceType, int] | str)
 
 Move the tensor to the specified device.
 
@@ -1378,7 +1468,7 @@ memory_buffer = allocator.allocate(100, MemoryType.CPU, 0)
 
 <a id="tritonserver.MemoryType"></a>
 
-### *class* tritonserver.MemoryType
+### *class* tritonserver.MemoryType(self: tritonserver._c.triton_bindings.TRITONSERVER_MemoryType, value: int)
 
 Bases: `pybind11_object`
 
@@ -1414,11 +1504,40 @@ GPU
 
 ### tritonserver.DataType
 
-alias of `TRITONSERVER_DataType`
+alias of [`TRITONSERVER_DataType`](#tritonserver._c.TRITONSERVER_DataType)
+
+<a id="tritonserver.RateLimiterResource"></a>
+
+### *class* tritonserver.RateLimiterResource(name: str, count: int, device: int)
+
+Bases: `object`
+
+Resource count for rate limiting.
+
+The amount of a resource available.
+
+See `TRITONSERVER_ServerOptionsAddRateLimiterResource()`
+
+* **Parameters:**
+  * **name** (*str*) – Name of resource
+  * **count** (*uint*) – Count of resource available
+  * **device** (*uint*) – The id of the device
+
+<a id="tritonserver.RateLimiterResource.count"></a>
+
+#### count*: uint*
+
+<a id="tritonserver.RateLimiterResource.device"></a>
+
+#### device*: uint*
+
+<a id="tritonserver.RateLimiterResource.name"></a>
+
+#### name*: str*
 
 <a id="tritonserver.ModelControlMode"></a>
 
-### *class* tritonserver.ModelControlMode
+### *class* tritonserver.ModelControlMode(self: tritonserver._c.triton_bindings.TRITONSERVER_ModelControlMode, value: int)
 
 Bases: `pybind11_object`
 
@@ -1447,5 +1566,111 @@ EXPLICIT
 #### *property* name
 
 <a id="tritonserver.ModelControlMode.value"></a>
+
+#### *property* value
+
+<a id="tritonserver._c.TRITONSERVER_DataType"></a>
+
+### *class* tritonserver._c.TRITONSERVER_DataType(self: [tritonserver._c.triton_bindings.TRITONSERVER_DataType](#tritonserver._c.TRITONSERVER_DataType), value: int)
+
+Bases: `pybind11_object`
+
+Members:
+
+INVALID
+
+BOOL
+
+UINT8
+
+UINT16
+
+UINT32
+
+UINT64
+
+INT8
+
+INT16
+
+INT32
+
+INT64
+
+FP16
+
+FP32
+
+FP64
+
+BYTES
+
+BF16
+
+<a id="tritonserver._c.TRITONSERVER_DataType.BF16"></a>
+
+#### BF16 *= <TRITONSERVER_DataType.BF16: 14>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.BOOL"></a>
+
+#### BOOL *= <TRITONSERVER_DataType.BOOL: 1>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.BYTES"></a>
+
+#### BYTES *= <TRITONSERVER_DataType.BYTES: 13>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.FP16"></a>
+
+#### FP16 *= <TRITONSERVER_DataType.FP16: 10>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.FP32"></a>
+
+#### FP32 *= <TRITONSERVER_DataType.FP32: 11>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.FP64"></a>
+
+#### FP64 *= <TRITONSERVER_DataType.FP64: 12>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.INT16"></a>
+
+#### INT16 *= <TRITONSERVER_DataType.INT16: 7>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.INT32"></a>
+
+#### INT32 *= <TRITONSERVER_DataType.INT32: 8>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.INT64"></a>
+
+#### INT64 *= <TRITONSERVER_DataType.INT64: 9>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.INT8"></a>
+
+#### INT8 *= <TRITONSERVER_DataType.INT8: 6>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.INVALID"></a>
+
+#### INVALID *= <TRITONSERVER_DataType.INVALID: 0>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.UINT16"></a>
+
+#### UINT16 *= <TRITONSERVER_DataType.UINT16: 3>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.UINT32"></a>
+
+#### UINT32 *= <TRITONSERVER_DataType.UINT32: 4>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.UINT64"></a>
+
+#### UINT64 *= <TRITONSERVER_DataType.UINT64: 5>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.UINT8"></a>
+
+#### UINT8 *= <TRITONSERVER_DataType.UINT8: 2>*
+
+<a id="tritonserver._c.TRITONSERVER_DataType.name"></a>
+
+#### *property* name
+
+<a id="tritonserver._c.TRITONSERVER_DataType.value"></a>
 
 #### *property* value
