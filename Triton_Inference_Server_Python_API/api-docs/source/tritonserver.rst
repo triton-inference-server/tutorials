@@ -51,10 +51,22 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+
+.. autoclass:: tritonserver.RateLimiterResource
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. autoclass:: tritonserver.ModelControlMode
    :members:
    :undoc-members:
    :show-inheritance:
+
+.. autoclass:: tritonserver._c.TRITONSERVER_DataType
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 
 

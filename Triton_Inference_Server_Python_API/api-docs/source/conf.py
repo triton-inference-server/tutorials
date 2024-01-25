@@ -28,6 +28,7 @@ extensions = ["sphinx.ext.autodoc", "sphinx.ext.napoleon", "sphinx_markdown_buil
 templates_path = ["_templates"]
 exclude_patterns = []
 autodoc_typehints_format = "short"
+autoclass_content = "both"
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
