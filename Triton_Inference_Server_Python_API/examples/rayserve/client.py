@@ -1,13 +1,14 @@
 import time
 
 import requests
+from tqdm import tqdm
 
 prompt = "a cute cat is dancing on the grass."
 input = "%20".join(prompt.split(" "))
 
 request_count = 100
 start = time.time()
-for i in range(request_count):
+for i in tqdm(range(request_count)):
     resp = requests.get(f"http://127.0.0.1:8000/imagine?prompt={input}")
 end = time.time()
 print(f"Images per second: {request_count/(end-start)}")
