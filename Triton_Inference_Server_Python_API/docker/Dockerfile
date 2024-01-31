@@ -25,7 +25,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ARG BASE_IMAGE=nvcr.io/nvidia/tritonserver
-ARG BASE_IMAGE_TAG=23.12-py3
+ARG BASE_IMAGE_TAG=24.01-py3
 
 FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as triton-python-api
 
@@ -37,7 +37,7 @@ RUN pip install --timeout=2000 -r /tmp/requirements.txt
 
 # Finish pyright install
 
- RUN pyright --help
+RUN pyright --help
 
 ARG FRAMEWORK=HF_DIFFUSERS
 
@@ -46,7 +46,13 @@ RUN if [[ "$FRAMEWORK" == "DIFFUSERS" ]] ; then pip install --timeout=2000 -r /t
 
 COPY ./deps/tritonserver-2.41.0.dev0-py3-none-any.whl /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl
 
-RUN pip3 install --force-reinstall --upgrade /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl[all]
+RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
+    "tritonserver-*.whl" | xargs -I {} pip3 install --force-reinstall --upgrade {}[all]
+
+RUN pip3 show tritonserver 1>/dev/null || \
+    if [ $? != 0 ]; then \
+       pip3 install /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl[all] ;\
+    fi
 
 RUN ln -sf /bin/bash /bin/sh
 
@@ -54,7 +60,7 @@ COPY . /workspace
 
 ARG RUN_TESTS=FALSE
 
-RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then cd /tmp && git clone -b r23.12-python-api https://github.com/triton-inference-server/core.git && cp -rf /tmp/core/python/test /workspace/deps/ ; fi
+RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then cd /tmp && git clone -b r24.01 https://github.com/triton-inference-server/core.git && cp -rf /tmp/core/python/test /workspace/deps/ ; fi
 
 RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then pytest /workspace/deps ; fi
 

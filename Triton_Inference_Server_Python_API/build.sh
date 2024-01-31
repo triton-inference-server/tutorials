@@ -39,9 +39,9 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
 # Base Images
 BASE_IMAGE=nvcr.io/nvidia/tritonserver
-BASE_IMAGE_TAG_IDENTITY=23.12-py3
-BASE_IMAGE_TAG_DIFFUSERS=23.12-py3
-BASE_IMAGE_TAG_TRT_LLM=23.12-trtllm-python-py3
+BASE_IMAGE_TAG_IDENTITY=24.01-py3
+BASE_IMAGE_TAG_DIFFUSERS=24.01-py3
+BASE_IMAGE_TAG_TRT_LLM=24.01-trtllm-python-py3
 
 get_options() {
     while :; do
@@ -138,7 +138,7 @@ get_options() {
     fi
 
     if [ -z "$TAG" ]; then
-        TAG="triton-python-api:r23.12"
+        TAG="triton-python-api:r24.01"
 
 	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
 	    TAG+="-trt-llm"
