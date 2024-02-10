@@ -212,7 +212,7 @@ if [[ $FRAMEWORK == TRT_LLM ]]; then
 	set -x
     fi
 
-    $RUN_PREFIX docker build -f $SOURCE_DIR/docker/Dockerfile.trt-llm-engine-builder  $BUILD_OPTIONS $BUILD_ARGS -t trt-llm-engine-builder  $SOURCE_DIR $NO_CACHE
+#    $RUN_PREFIX docker build -f $SOURCE_DIR/docker/Dockerfile.trt-llm-engine-builder  $BUILD_OPTIONS $BUILD_ARGS -t trt-llm-engine-builder  $SOURCE_DIR $NO_CACHE
 
     { set +x; } 2>/dev/null
 
@@ -232,6 +232,13 @@ if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 	$RUN_PREFIX $SOURCE_DIR/scripts/stable_diffusion/build_stable_diffusion.sh
 	$RUN_PREFIX cp -rf $SOURCE_DIR/scripts/stable_diffusion/models/. $SOURCE_DIR/diffuser-models/.
 
+	
+	$RUN_PREFIX mkdir -p $SOURCE_DIR/resnet-models
+	$RUN_PREFIX $SOURCE_DIR/scripts/resnet50/build_resnet50.sh
+	$RUN_PREFIX cp -rf $SOURCE_DIR/scripts/resnet50/models/. $SOURCE_DIR/resnet50-models/.
+	$RUN_PREFIX cp -rf $SOURCE_DIR/scripts/resnet50/config.pbtxt $SOURCE_DIR/resnet50-models/resnet50/config.pbtxt
+	$RUN_PREFIX cp -rf $SOURCE_DIR/scripts/resnet50/resnet50_labels.txt $SOURCE_DIR/resnet50-models/resnet50/resnet50_labels.txt
+	
 	{ set +x; } 2>/dev/null
     fi
 fi

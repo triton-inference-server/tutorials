@@ -44,6 +44,12 @@ ARG FRAMEWORK=HF_DIFFUSERS
 COPY ./deps/requirements_torch.txt /tmp/requirements_torch.txt
 RUN if [[ "$FRAMEWORK" == "DIFFUSERS" ]] ; then pip install --timeout=2000 -r /tmp/requirements_torch.txt ; fi
 
+COPY ./deps/requirements_trtllm.txt /tmp/requirements_trtllm.txt
+RUN if [[ "$FRAMEWORK" == "TRT_LLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_trtllm.txt ; fi
+
+COPY ./deps/triton_cli /tmp/triton_cli
+RUN if [[ "$FRAMEWORK" == "TRT_LLM" ]] ; then cd /tmp/triton_cli && pip install . --timeout=2000 ; fi
+
 COPY ./deps/tritonserver-2.41.0.dev0-py3-none-any.whl /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl
 
 RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
