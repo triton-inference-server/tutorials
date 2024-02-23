@@ -30,7 +30,7 @@ RUN_PREFIX=
 BUILD_MODELS=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSERS"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
+declare -A FRAMEWORKS=(["DIFFUSERS"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3 ["DIFFUSERS_XL"]=4)
 DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
@@ -41,6 +41,7 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 BASE_IMAGE=nvcr.io/nvidia/tritonserver
 BASE_IMAGE_TAG_IDENTITY=24.01-py3
 BASE_IMAGE_TAG_DIFFUSERS=24.01-py3
+BASE_IMAGE_TAG_DIFFUSERS_XL=24.01-py3
 BASE_IMAGE_TAG_TRT_LLM=24.01-trtllm-python-py3
 
 get_options() {
@@ -148,6 +149,11 @@ get_options() {
 	    TAG+="-diffusers"
 	fi
 
+	if [[ $FRAMEWORK == "DIFFUSERS_XL" ]]; then
+	    TAG+="-diffusers-xl"
+	fi
+
+
     fi
 
 }
@@ -202,7 +208,7 @@ if [ -z "$RUN_PREFIX" ]; then
     set -x
 fi
 
-$RUN_PREFIX docker build -f $DOCKERFILE $BUILD_OPTIONS $BUILD_ARGS -t $TAG $SOURCE_DIR $NO_CACHE
+$RUN_PREFIX docker build --progress=plain -f $DOCKERFILE $BUILD_OPTIONS $BUILD_ARGS -t $TAG $SOURCE_DIR $NO_CACHE
 
 { set +x; } 2>/dev/null
 

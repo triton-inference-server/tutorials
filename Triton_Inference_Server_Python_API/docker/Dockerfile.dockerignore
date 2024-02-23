@@ -30,3 +30,4 @@
 **/scripts/stable_diffusion/models/*/*/*.plan
 **/*.onnx
 **/*.plan
+**/*.cache/*

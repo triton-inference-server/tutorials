@@ -39,10 +39,16 @@ RUN pip install --timeout=2000 -r /tmp/requirements.txt
 
 RUN pyright --help
 
-ARG FRAMEWORK=HF_DIFFUSERS
+ARG FRAMEWORK=DIFFUSERS
 
 COPY ./deps/requirements_torch.txt /tmp/requirements_torch.txt
 RUN if [[ "$FRAMEWORK" == "DIFFUSERS" ]] ; then pip install --timeout=2000 -r /tmp/requirements_torch.txt ; fi
+
+RUN if [[ "$FRAMEWORK" == "DIFFUSERS_XL" ]] ; then pip install --pre --upgrade --extra-index-url https://pypi.nvidia.com tensorrt ; fi
+
+RUN if [[ "$FRAMEWORK" == "DIFFUSERS_XL" ]] ; then git clone https://github.com/NVIDIA/TensorRT.git -b release/9.2 --single-branch /tmp/TensorRT ; fi
+
+RUN if [[ "$FRAMEWORK" == "DIFFUSERS_XL" ]] ; then pip3 install -r /tmp/TensorRT/demo/Diffusion/requirements.txt; fi
 
 COPY ./deps/requirements_trtllm.txt /tmp/requirements_trtllm.txt
 RUN if [[ "$FRAMEWORK" == "TRT_LLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_trtllm.txt ; fi
