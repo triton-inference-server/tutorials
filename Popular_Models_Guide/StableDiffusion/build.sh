@@ -1,5 +1,5 @@
 #!/bin/bash -e
-# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -27,17 +27,19 @@
 
 TAG=
 RUN_PREFIX=
+BUILD_MODELS=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSERS"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
-DEFAULT_FRAMEWORK=IDENTITY
+declare -A FRAMEWORKS=(["DIFFUSERS"]=1)
+DEFAULT_FRAMEWORK=DIFFUSERS
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
+DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
+
 
 # Base Images
-IMAGE=
-IMAGE_TAG_DIFFUSERS=diffusers
-IMAGE_TAG_TRT_LLM=trt-llm
+BASE_IMAGE=nvcr.io/nvidia/tritonserver
+BASE_IMAGE_TAG_DIFFUSERS=24.01-py3
 
 get_options() {
     while :; do
@@ -54,12 +56,47 @@ get_options() {
                 error 'ERROR: "--framework" requires an argument.'
             fi
             ;;
-        --image)
+	--models-dir)
+            if [ "$2" ]; then
+                MODELS_DIR=$2
+                shift
+            else
+                error 'ERROR: "--models-dir" requires an argument.'
+            fi
+            ;;
+	--build-models)
+	    BUILD_MODELS=TRUE
+            ;;
+        --base)
             if [ "$2" ]; then
                 BASE_IMAGE=$2
                 shift
             else
                 error 'ERROR: "--base" requires an argument.'
+            fi
+            ;;
+	--base-image-tag)
+            if [ "$2" ]; then
+                BASE_IMAGE_TAG=$2
+                shift
+            else
+                error 'ERROR: "--base" requires an argument.'
+            fi
+            ;;
+        --build-arg)
+            if [ "$2" ]; then
+                BUILD_ARGS+="--build-arg $2 "
+                shift
+            else
+                error 'ERROR: "--build-arg" requires an argument.'
+            fi
+            ;;
+        --tag)
+            if [ "$2" ]; then
+                TAG=$2
+                shift
+            else
+                error 'ERROR: "--tag" requires an argument.'
             fi
             ;;
         --dry-run)
@@ -69,6 +106,9 @@ get_options() {
             echo "DRY RUN: COMMANDS PRINTED ONLY"
             echo "=============================="
             echo ""
+            ;;
+	--no-cache)
+	    NO_CACHE=" --no-cache"
             ;;
         --)
             shift
@@ -97,27 +137,44 @@ get_options() {
 	if [[ ! -n "${FRAMEWORKS[$FRAMEWORK]}" ]]; then
 	    error 'ERROR: Unknown framework: ' $FRAMEWORK
 	fi
+	if [ -z $BASE_IMAGE_TAG ]; then
+	    BASE_IMAGE_TAG=BASE_IMAGE_TAG_${FRAMEWORK}
+	    BASE_IMAGE_TAG=${!BASE_IMAGE_TAG}
+	fi
     fi
 
-    if [ -z "$IMAGE" ]; then
-        IMAGE="triton-python-api:r24.01"
-
-	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
-	    IMAGE+="-trt-llm"
-	fi
+    if [ -z "$TAG" ]; then
+        TAG="tritonserver:r24.01"
 
 	if [[ $FRAMEWORK == "DIFFUSERS" ]]; then
-	    IMAGE+="-diffusers"
+	    TAG+="-diffusers"
 	fi
 
     fi
 
 }
 
+
+show_image_options() {
+    echo ""
+    echo "Building Triton Inference Server Image: '${TAG}'"
+    echo ""
+    echo "   Base: '${BASE_IMAGE}'"
+    echo "   Base_Image_Tag: '${BASE_IMAGE_TAG}'"
+    echo "   Build Context: '${SOURCE_DIR}'"
+    echo "   Build Options: '${BUILD_OPTIONS}'"
+    echo "   Build Arguments: '${BUILD_ARGS}'"
+    echo "   Framework: '${FRAMEWORK}'"
+    echo ""
+}
+
 show_help() {
-    echo "usage: run.sh"
-    echo "  [--imag image]"
+    echo "usage: build.sh"
+    echo "  [--base base image]"
+    echo "  [--base-imge-tag base image tag]"
     echo "  [--framework framework one of ${!FRAMEWORKS[@]}]"
+    echo "  [--build-arg additional build args to pass to docker build]"
+    echo "  [--tag tag for image]"
     echo "  [--dry-run print docker commands without running]"
     exit 0
 }
@@ -129,14 +186,44 @@ error() {
 
 get_options "$@"
 
-# RUN the image
+# BUILD RUN TIME IMAGE
+
+BUILD_ARGS+=" --build-arg BASE_IMAGE=$BASE_IMAGE --build-arg BASE_IMAGE_TAG=$BASE_IMAGE_TAG --build-arg FRAMEWORK=$FRAMEWORK "
+
+if [ ! -z ${GITHUB_TOKEN} ]; then
+    BUILD_ARGS+=" --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} "
+fi
+
+if [ ! -z ${HF_TOKEN} ]; then
+    BUILD_ARGS+=" --build-arg HF_TOKEN=${HF_TOKEN} "
+fi
+
+show_image_options
 
 if [ -z "$RUN_PREFIX" ]; then
     set -x
 fi
 
-$RUN_PREFIX docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eGITHUB_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${SOURCE_DIR}:/workspace -v${SOURCE_DIR}/.cache/huggingface:/root/.cache/huggingface -w /workspace --name triton-python-api  $IMAGE
+$RUN_PREFIX docker build -f $DOCKERFILE $BUILD_OPTIONS $BUILD_ARGS -t $TAG $SOURCE_DIR $NO_CACHE
 
 { set +x; } 2>/dev/null
+
+if [ -z "$MODELS_DIR" ]; then
+    MODELS_DIR="models/stable_diffusion/1"
+fi
+
+if [[ $BUILD_MODELS == TRUE ]]; then
+
+    if [[ $FRAMEWORK == DIFFUSERS ]]; then
+	if [ -z "$RUN_PREFIX" ]; then
+	    set -x
+	fi
+	$RUN_PREFIX mkdir -p $PWD/$MODELS_DIR
+	$RUN_PREFIX docker run --rm -it -v $PWD:/workspace $TAG /bin/bash -c "cp -rf /tmp/TensorRT/demo/Diffusion /workspace/$MODELS_DIR"
+
+	{ set +x; } 2>/dev/null
+    fi
+fi
+
 
 

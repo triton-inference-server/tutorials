@@ -39,9 +39,9 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
 # Base Images
 BASE_IMAGE=nvcr.io/nvidia/tritonserver
-BASE_IMAGE_TAG_IDENTITY=23.12-py3
-BASE_IMAGE_TAG_DIFFUSERS=23.12-py3
-BASE_IMAGE_TAG_TRT_LLM=23.12-trtllm-python-py3
+BASE_IMAGE_TAG_IDENTITY=24.01-py3
+BASE_IMAGE_TAG_DIFFUSERS=24.01-py3
+BASE_IMAGE_TAG_TRT_LLM=24.01-trtllm-python-py3
 
 get_options() {
     while :; do
@@ -138,7 +138,7 @@ get_options() {
     fi
 
     if [ -z "$TAG" ]; then
-        TAG="triton-python-api:r23.12"
+        TAG="triton-python-api:r24.01"
 
 	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
 	    TAG+="-trt-llm"
@@ -184,6 +184,11 @@ error() {
 
 get_options "$@"
 
+if [[ $FRAMEWORK == DIFFUSERS ]]; then
+    BASE_IMAGE="tritonserver"
+    BASE_IMAGE_TAG="r24.01-diffusers"
+fi
+
 # BUILD RUN TIME IMAGE
 
 BUILD_ARGS+=" --build-arg BASE_IMAGE=$BASE_IMAGE --build-arg BASE_IMAGE_TAG=$BASE_IMAGE_TAG --build-arg FRAMEWORK=$FRAMEWORK "
@@ -197,6 +202,16 @@ if [ ! -z ${HF_TOKEN} ]; then
 fi
 
 show_image_options
+
+if [[ $FRAMEWORK == DIFFUSERS ]]; then
+    if [ -z "$RUN_PREFIX" ]; then
+	set -x
+    fi
+    $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --build-models --models-dir diffuser-models/stable_diffusion/1 --tag tritonserver:r24.01-diffusers
+
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/models/stable_diffusion/1/model.py diffuser-models/stable_diffusion/1/
+fi
+
 
 if [ -z "$RUN_PREFIX" ]; then
     set -x
@@ -225,12 +240,12 @@ if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 	    set -x
 	fi
 
-	$RUN_PREFIX mkdir -p $SOURCE_DIR/diffuser-models
-	$RUN_PREFIX cp -rf $SOURCE_DIR/../Conceptual_Guide/Part_6-building_complex_pipelines/model_repository/. $SOURCE_DIR/scripts/stable_diffusion/models
-	$RUN_PREFIX rm -rf $SOURCE_DIR/scripts/stable_diffusion/models/stable_diffusion
-	$RUN_PREFIX mv $SOURCE_DIR/scripts/stable_diffusion/models/pipeline $SOURCE_DIR/scripts/stable_diffusion/models/stable_diffusion
-	$RUN_PREFIX $SOURCE_DIR/scripts/stable_diffusion/build_stable_diffusion.sh
-	$RUN_PREFIX cp -rf $SOURCE_DIR/scripts/stable_diffusion/models/. $SOURCE_DIR/diffuser-models/.
+#	$RUN_PREFIX mkdir -p $SOURCE_DIR/diffuser-models
+#	$RUN_PREFIX cp -rf $SOURCE_DIR/../Conceptual_Guide/Part_6-building_complex_pipelines/model_repository/. $SOURCE_DIR/scripts/stable_diffusion/models
+#	$RUN_PREFIX rm -rf $SOURCE_DIR/scripts/stable_diffusion/models/stable_diffusion
+#	$RUN_PREFIX mv $SOURCE_DIR/scripts/stable_diffusion/models/pipeline $SOURCE_DIR/scripts/stable_diffusion/models/stable_diffusion
+#	$RUN_PREFIX $SOURCE_DIR/scripts/stable_diffusion/build_stable_diffusion.sh
+#	$RUN_PREFIX cp -rf $SOURCE_DIR/scripts/stable_diffusion/models/. $SOURCE_DIR/diffuser-models/.
 
 	{ set +x; } 2>/dev/null
     fi

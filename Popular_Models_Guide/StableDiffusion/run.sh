@@ -29,15 +29,14 @@ TAG=
 RUN_PREFIX=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSERS"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
-DEFAULT_FRAMEWORK=IDENTITY
+declare -A FRAMEWORKS=(["DIFFUSERS"]=1)
+DEFAULT_FRAMEWORK=DIFFUSERS
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 
 # Base Images
 IMAGE=
 IMAGE_TAG_DIFFUSERS=diffusers
-IMAGE_TAG_TRT_LLM=trt-llm
 
 get_options() {
     while :; do
@@ -100,16 +99,11 @@ get_options() {
     fi
 
     if [ -z "$IMAGE" ]; then
-        IMAGE="triton-python-api:r24.01"
-
-	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
-	    IMAGE+="-trt-llm"
-	fi
+        IMAGE="tritonserver:r24.01"
 
 	if [[ $FRAMEWORK == "DIFFUSERS" ]]; then
 	    IMAGE+="-diffusers"
 	fi
-
     fi
 
 }
@@ -135,7 +129,7 @@ if [ -z "$RUN_PREFIX" ]; then
     set -x
 fi
 
-$RUN_PREFIX docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eGITHUB_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${SOURCE_DIR}:/workspace -v${SOURCE_DIR}/.cache/huggingface:/root/.cache/huggingface -w /workspace --name triton-python-api  $IMAGE
+$RUN_PREFIX docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eGITHUB_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v/tmp:/tmp -v ${SOURCE_DIR}:/workspace -v${SOURCE_DIR}/.cache/huggingface:/root/.cache/huggingface -w /workspace  $IMAGE
 
 { set +x; } 2>/dev/null
 
