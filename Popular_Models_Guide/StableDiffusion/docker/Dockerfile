@@ -35,3 +35,4 @@ RUN git clone https://github.com/NVIDIA/TensorRT.git -b release/9.2 --single-bra
 
 RUN pip3 install -r /tmp/TensorRT/demo/Diffusion/requirements.txt
 
+RUN pip3 install tritonclient[all]

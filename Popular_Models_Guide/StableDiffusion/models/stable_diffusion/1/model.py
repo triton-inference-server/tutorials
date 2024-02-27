@@ -118,6 +118,7 @@ class TritonPythonModel:
             if not negative_prompt_tensor:
                 negative_prompts.extend([""] * len(prompt_tensor))
             else:
+                negative_prompt_tensor = negative_prompt_tensor.as_numpy()
                 for negative_prompt in negative_prompt_tensor:
                     negative_prompts.append(negative_prompt[0].decode())
             prompts_per_request.append(len(prompt_tensor))

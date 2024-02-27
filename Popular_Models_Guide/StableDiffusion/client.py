@@ -46,7 +46,7 @@ def main():
     output_img = httpclient.InferRequestedOutput("generated_image")
 
     query_response = client.infer(
-        model_name="pipeline", inputs=[input_text], outputs=[output_img]
+        model_name="stable_diffusion", inputs=[input_text], outputs=[output_img]
     )
 
     image = query_response.as_numpy("generated_image")
