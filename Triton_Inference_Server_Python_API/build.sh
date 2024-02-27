@@ -210,9 +210,12 @@ if [[ $FRAMEWORK == DIFFUSION ]]; then
     $RUN_PREFIX mkdir -p backend/diffusion
     $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --framework diffusion --tag tritonserver:r24.01-diffusion
     $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/backend/diffusion/model.py backend/diffusion/model.py
-    $RUN_PREFIX mkdir -p diffusion-models/stable_diffusion/1
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion/config.pbtxt  diffusion-models/stable_diffusion/config.pbtxt
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion/1/.gitkeep  diffusion-models/stable_diffusion/1/.gitkeep
+    $RUN_PREFIX mkdir -p diffusion-models/stable_diffusion_1_5/1
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/config.pbtxt  diffusion-models/stable_diffusion_1_5/config.pbtxt
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/1/.gitkeep  diffusion-models/stable_diffusion_1_5/1/.gitkeep
+    $RUN_PREFIX mkdir -p diffusion-models/stable_diffusion_xl/1
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_xl/config.pbtxt  diffusion-models/stable_diffusion_xl/config.pbtxt
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_xl/1/.gitkeep  diffusion-models/stable_diffusion_xl/1/.gitkeep
 fi
 
 
