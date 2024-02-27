@@ -29,14 +29,14 @@ TAG=
 RUN_PREFIX=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSERS"]=1)
-DEFAULT_FRAMEWORK=DIFFUSERS
+declare -A FRAMEWORKS=(["DIFFUSION"]=1)
+DEFAULT_FRAMEWORK=DIFFUSION
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 
 # Base Images
 IMAGE=
-IMAGE_TAG_DIFFUSERS=diffusers
+IMAGE_TAG_DIFFUSERS=diffusion
 
 get_options() {
     while :; do
@@ -101,8 +101,8 @@ get_options() {
     if [ -z "$IMAGE" ]; then
         IMAGE="tritonserver:r24.01"
 
-	if [[ $FRAMEWORK == "DIFFUSERS" ]]; then
-	    IMAGE+="-diffusers"
+	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
+	    IMAGE+="-diffusion"
 	fi
     fi
 

@@ -30,7 +30,7 @@ RUN_PREFIX=
 BUILD_MODELS=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSERS"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
+declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
 DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
@@ -40,7 +40,7 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 # Base Images
 BASE_IMAGE=nvcr.io/nvidia/tritonserver
 BASE_IMAGE_TAG_IDENTITY=24.01-py3
-BASE_IMAGE_TAG_DIFFUSERS=24.01-py3
+BASE_IMAGE_TAG_DIFFUSION=24.01-py3
 BASE_IMAGE_TAG_TRT_LLM=24.01-trtllm-python-py3
 
 get_options() {
@@ -144,8 +144,8 @@ get_options() {
 	    TAG+="-trt-llm"
 	fi
 
-	if [[ $FRAMEWORK == "DIFFUSERS" ]]; then
-	    TAG+="-diffusers"
+	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
+	    TAG+="-diffusion"
 	fi
 
     fi
@@ -184,9 +184,9 @@ error() {
 
 get_options "$@"
 
-if [[ $FRAMEWORK == DIFFUSERS ]]; then
+if [[ $FRAMEWORK == DIFFUSION ]]; then
     BASE_IMAGE="tritonserver"
-    BASE_IMAGE_TAG="r24.01-diffusers"
+    BASE_IMAGE_TAG="r24.01-diffusion"
 fi
 
 # BUILD RUN TIME IMAGE
@@ -203,13 +203,16 @@ fi
 
 show_image_options
 
-if [[ $FRAMEWORK == DIFFUSERS ]]; then
+if [[ $FRAMEWORK == DIFFUSION ]]; then
     if [ -z "$RUN_PREFIX" ]; then
 	set -x
     fi
-    $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --build-models --models-dir diffuser-models/stable_diffusion/1 --tag tritonserver:r24.01-diffusers
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/models/stable_diffusion/1/model.py diffuser-models/stable_diffusion/1/
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/models/stable_diffusion/config.pbtxt  diffuser-models/stable_diffusion/
+    $RUN_PREFIX mkdir -p backend/diffusion
+    $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --framework diffusion --tag tritonserver:r24.01-diffusion
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/backend/diffusion/model.py backend/diffusion/model.py
+    $RUN_PREFIX mkdir -p diffusion-models/stable_diffusion/1
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion/config.pbtxt  diffusion-models/stable_diffusion/config.pbtxt
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion/1/.gitkeep  diffusion-models/stable_diffusion/1/.gitkeep
 fi
 
 
@@ -235,7 +238,7 @@ fi;
 
 if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 
-    if [[ $FRAMEWORK == DIFFUSERS ]]; then
+    if [[ $FRAMEWORK == DIFFUSION ]]; then
 	if [ -z "$RUN_PREFIX" ]; then
 	    set -x
 	fi

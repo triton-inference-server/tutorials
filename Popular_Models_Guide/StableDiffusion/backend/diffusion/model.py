@@ -47,55 +47,94 @@ from Diffusion.utilities import (
 )
 from tqdm.auto import tqdm
 
-onnx_opset = 18
-opt_batch_size = 4
-opt_image_height = 512
-opt_image_width = 512
-seed = 10
-
 
 class TritonPythonModel:
+    _KNOWN_VERSIONS = {"1.5": PIPELINE_TYPE.TXT2IMG, "xl-1.0": PIPELINE_TYPE.XL_BASE}
+
+    def _set_defaults(self):
+        self._batch_size = 1
+        self._onnx_opset = 18
+        self._image_height = 512
+        self._image_width = 512
+        self._seed = 10
+        self._version = "1.5"
+        self._scheduler = None
+
+    def _set_from_parameter(self, parameter, parameters, class_):
+        value = parameters.get(parameter, None)
+        if value is not None:
+            value = value["string_value"]
+            if value:
+                setattr(self, "_" + parameter, class_(value))
+
+    def _set_from_config(self, model_config):
+        model_config = json.loads(model_config)
+        self._batch_size = int(model_config.get("max_batch_size", 1))
+        if self._batch_size < 1:
+            self._batch_size = 1
+
+        config_parameters = model_config.get("parameters", {})
+
+        if config_parameters:
+            parameter_type_map = {
+                "onnx_opset": int,
+                "image_height": int,
+                "image_width": int,
+                "steps": int,
+                "seed": int,
+                "scheduler": str,
+                "guidance_scale": float,
+                "version": str,
+                "force_engine_build": bool,
+            }
+
+            for parameter, parameter_type in parameter_type_map.items():
+                self._set_from_parameter(parameter, config_parameters, parameter_type)
+
     def initialize(self, args):
-        self.output_dtype = pb_utils.triton_string_to_numpy(
-            pb_utils.get_output_config_by_name(
-                json.loads(args["model_config"]), "generated_image"
-            )["data_type"]
-        )
-        self.pipeline = StableDiffusionPipeline(
-            pipeline_type=PIPELINE_TYPE.TXT2IMG,
-            max_batch_size=opt_batch_size,
+        self._set_defaults()
+        self._set_from_config(args["model_config"])
+
+        if self._version not in TritonPythonModel._KNOWN_VERSIONS:
+            raise Exception(
+                f"Invalid Stable Diffusion Version: {self._version}, choices: {list(TritonPythonModel._KNOWN_VERSIONS.keys())}"
+            )
+
+        self._pipeline = StableDiffusionPipeline(
+            pipeline_type=TritonPythonModel._KNOWN_VERSIONS[self._version],
+            max_batch_size=self._batch_size,
             use_cuda_graph=True,
+            version=self._version,
         )
 
         model_directory = os.path.join(args["model_repository"], args["model_version"])
         engine_dir = os.path.join(
-            model_directory, f"engine-batch-size-{opt_batch_size}"
+            model_directory, f"{self._version}-engine-batch-size-{self._batch_size}"
         )
-        framework_model_dir = os.path.join(model_directory, "pytorch_model")
-        onnx_dir = os.path.join(model_directory, "onnx")
-        self.pipeline.loadEngines(
+        framework_model_dir = os.path.join(
+            model_directory, f"{self._version}-pytorch_model"
+        )
+        onnx_dir = os.path.join(model_directory, f"{self._version}-onnx")
+        self._pipeline.loadEngines(
             engine_dir,
             framework_model_dir,
             onnx_dir,
-            onnx_opset=onnx_opset,
-            opt_batch_size=opt_batch_size,
-            opt_image_height=opt_image_height,
-            opt_image_width=opt_image_width,
+            onnx_opset=self._onnx_opset,
+            opt_batch_size=self._batch_size,
+            opt_image_height=self._image_height,
+            opt_image_width=self._image_width,
             static_batch=True,
         )
         _, shared_device_memory = cudart.cudaMalloc(
-            self.pipeline.calculateMaxDeviceMemory()
+            self._pipeline.calculateMaxDeviceMemory()
         )
-        self.pipeline.activateEngines(shared_device_memory)
-        self.pipeline.loadResources(
-            opt_image_height, opt_image_width, opt_batch_size, seed=seed
+        self._pipeline.activateEngines(shared_device_memory)
+        self._pipeline.loadResources(
+            self._image_height, self._image_width, self._batch_size, seed=self._seed
         )
-        self.image_height = opt_image_height
-        self.image_width = opt_image_width
-        self.batch_size = opt_batch_size
 
     def finalize(self):
-        self.pipeline.teardown()
+        self._pipeline.teardown()
 
     def execute(self, requests):
         responses = []
@@ -103,7 +142,6 @@ class TritonPythonModel:
         negative_prompts = []
         prompts_per_request = []
         image_results = []
-        self.pipeline.seed = 5
         for request in requests:
             prompt_tensor = pb_utils.get_input_tensor_by_name(
                 request, "prompt"
@@ -125,18 +163,18 @@ class TritonPythonModel:
             prompts_per_request.append(len(prompt_tensor))
         num_requests = len(requests)
         num_prompts = len(prompts)
-        remainder = self.batch_size - (num_prompts % self.batch_size)
-        if remainder < self.batch_size:
+        remainder = self._batch_size - (num_prompts % self._batch_size)
+        if remainder < self._batch_size:
             prompts.extend([""] * remainder)
             negative_prompts.extend([""] * remainder)
         num_prompts = len(prompts)
 
-        for batch in range(0, num_prompts, self.batch_size):
-            (images, walltime_ms) = self.pipeline.infer(
-                prompts[batch : batch + self.batch_size],
-                negative_prompts[batch : batch + self.batch_size],
-                self.image_height,
-                self.image_width,
+        for batch in range(0, num_prompts, self._batch_size):
+            (images, walltime_ms) = self._pipeline.infer(
+                prompts[batch : batch + self._batch_size],
+                negative_prompts[batch : batch + self._batch_size],
+                self._image_height,
+                self._image_width,
                 save_image=False,
             )
             images = (
@@ -161,7 +199,7 @@ class TritonPythonModel:
                 output_tensors=[
                     pb_utils.Tensor(
                         "generated_image",
-                        np.array(generated_images, dtype=self.output_dtype),
+                        np.array(generated_images, dtype=np.uint8),
                     )
                 ]
             )

@@ -30,8 +30,8 @@ RUN_PREFIX=
 BUILD_MODELS=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSERS"]=1)
-DEFAULT_FRAMEWORK=DIFFUSERS
+declare -A FRAMEWORKS=(["DIFFUSION"]=1)
+DEFAULT_FRAMEWORK=DIFFUSION
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
@@ -39,7 +39,7 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
 # Base Images
 BASE_IMAGE=nvcr.io/nvidia/tritonserver
-BASE_IMAGE_TAG_DIFFUSERS=24.01-py3
+BASE_IMAGE_TAG_DIFFUSION=24.01-py3
 
 get_options() {
     while :; do
@@ -138,8 +138,8 @@ get_options() {
     if [ -z "$TAG" ]; then
         TAG="tritonserver:r24.01"
 
-	if [[ $FRAMEWORK == "DIFFUSERS" ]]; then
-	    TAG+="-diffusers"
+	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
+	    TAG+="-diffusion"
 	fi
 
     fi
@@ -201,7 +201,7 @@ $RUN_PREFIX docker build -f $DOCKERFILE $BUILD_OPTIONS $BUILD_ARGS -t $TAG $SOUR
 { set +x; } 2>/dev/null
 
 
-if [[ $FRAMEWORK == DIFFUSERS ]]; then
+if [[ $FRAMEWORK == DIFFUSION ]]; then
     if [ -z "$RUN_PREFIX" ]; then
 	set -x
     fi
