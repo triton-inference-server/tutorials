@@ -36,3 +36,11 @@ RUN git clone https://github.com/NVIDIA/TensorRT.git -b release/9.2 --single-bra
 RUN pip3 install -r /tmp/TensorRT/demo/Diffusion/requirements.txt
 
 RUN pip3 install tritonclient[all]
+
+RUN mkdir -p /opt/tritonserver/backends/diffusion
+
+RUN cp -rf /tmp/TensorRT/demo/Diffusion /opt/tritonserver/backends/diffusion/
+
+COPY ./backend/diffusion/model.py /opt/tritionserver/backends/diffusion/model.py
+
+COPY ./diffusion-models /workspace/diffusion-models

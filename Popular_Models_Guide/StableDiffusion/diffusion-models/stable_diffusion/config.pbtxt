@@ -24,8 +24,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-backend: "python"
-max_batch_size: 8
+backend: "diffusion"
+max_batch_size: 4
 
 input [
   {
@@ -43,7 +43,7 @@ input [
 output [
   {
     name: "generated_image"
-    data_type: TYPE_FP32
+    data_type: TYPE_UINT8
     dims: [ -1, -1, -1]
   }
 ]
@@ -62,30 +62,47 @@ parameters[
   }
 },
 {
-  key: "opt_batch_size"
-  value: {
-    string_value: "4"
-  }
-},
-{
-  key: "opt_image_height"
+  key: "image_height"
   value: {
     string_value: "512"
   }
 },
 {
-  key: "opt_image_width"
+  key: "image_width"
   value: {
     string_value: "512"
+  }
+},
+{
+  key: "steps"
+  value: {
+    string_value: "30"
+  }
+},
+{
+  key: "scheduler"
+  value: {
+    string_value: "PNDM"
+  }
+},
+{
+  key: "guidance_scale"
+  value: {
+    string_value: "7.5"
+  }
+},
+{
+  key: "seed"
+  value: {
+    string_value: ""
   }
 }
 
 ]
 
-# Parameters
-# seed
-
 # Configuration
+# seed
+# denoising steps
 # version
 # scheduler
 # steps

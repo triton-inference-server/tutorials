@@ -56,14 +56,6 @@ get_options() {
                 error 'ERROR: "--framework" requires an argument.'
             fi
             ;;
-	--models-dir)
-            if [ "$2" ]; then
-                MODELS_DIR=$2
-                shift
-            else
-                error 'ERROR: "--models-dir" requires an argument.'
-            fi
-            ;;
 	--build-models)
 	    BUILD_MODELS=TRUE
             ;;
@@ -208,21 +200,15 @@ $RUN_PREFIX docker build -f $DOCKERFILE $BUILD_OPTIONS $BUILD_ARGS -t $TAG $SOUR
 
 { set +x; } 2>/dev/null
 
-if [ -z "$MODELS_DIR" ]; then
-    MODELS_DIR="models/stable_diffusion/1"
-fi
 
-if [[ $BUILD_MODELS == TRUE ]]; then
-
-    if [[ $FRAMEWORK == DIFFUSERS ]]; then
-	if [ -z "$RUN_PREFIX" ]; then
-	    set -x
-	fi
-	$RUN_PREFIX mkdir -p $PWD/$MODELS_DIR
-	$RUN_PREFIX docker run --rm -it -v $PWD:/workspace $TAG /bin/bash -c "cp -rf /tmp/TensorRT/demo/Diffusion /workspace/$MODELS_DIR"
+if [[ $FRAMEWORK == DIFFUSERS ]]; then
+    if [ -z "$RUN_PREFIX" ]; then
+	set -x
+    fi
+	$RUN_PREFIX mkdir -p $PWD/backend/diffusion
+	$RUN_PREFIX docker run --rm -it -v $PWD:/workspace $TAG /bin/bash -c "cp -rf /tmp/TensorRT/demo/Diffusion /workspace/backend/diffusion"
 
 	{ set +x; } 2>/dev/null
-    fi
 fi
 
 

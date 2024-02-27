@@ -103,6 +103,7 @@ class TritonPythonModel:
         negative_prompts = []
         prompts_per_request = []
         image_results = []
+        self.pipeline.seed = 5
         for request in requests:
             prompt_tensor = pb_utils.get_input_tensor_by_name(
                 request, "prompt"
