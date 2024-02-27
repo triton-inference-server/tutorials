@@ -208,8 +208,8 @@ if [[ $FRAMEWORK == DIFFUSERS ]]; then
 	set -x
     fi
     $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --build-models --models-dir diffuser-models/stable_diffusion/1 --tag tritonserver:r24.01-diffusers
-
     $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/models/stable_diffusion/1/model.py diffuser-models/stable_diffusion/1/
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/models/stable_diffusion/config.pbtxt  diffuser-models/stable_diffusion/
 fi
 
 
