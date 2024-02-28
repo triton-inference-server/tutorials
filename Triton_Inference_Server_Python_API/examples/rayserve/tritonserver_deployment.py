@@ -29,6 +29,7 @@ from pprint import pprint
 
 import numpy
 import requests
+import torch
 import tritonserver
 from fastapi import FastAPI
 from PIL import Image
@@ -51,6 +52,31 @@ def _print_heading(message):
 
 @serve.deployment(ray_actor_options={"num_gpus": 1})
 @serve.ingress(app)
+class BaseDeployment:
+    def __init__(self):
+        self._image_size = 512
+        self._model_id = "runwayml/stable-diffusion-v1-5"
+        from diffusers import StableDiffusionPipeline
+
+        self._pipeline = StableDiffusionPipeline.from_pretrained(
+            self._model_id, revision="fp16", torch_dtype=torch.float16
+        )
+        self._pipeline = self._pipeline.to("cuda")
+
+    @app.get("/generate")
+    def generate(self, prompt: str, filename: str = "generated_image.jpg") -> None:
+        with torch.autocast("cuda"):
+            image_ = self._pipeline(
+                prompt,
+                height=self._image_size,
+                width=self._image_size,
+                num_inference_steps=50,
+            ).images[0]
+            image_.save(filename)
+
+
+@serve.deployment(ray_actor_options={"num_gpus": 1})
+@serve.ingress(app)
 class TritonDeployment:
     def __init__(self):
         self._triton_server = tritonserver
@@ -60,7 +86,7 @@ class TritonDeployment:
         else:
             model_repository = [
                 "/workspace/identity-models",
-                "/workspace/diffuser-models",
+                "/workspace/diffusion-models",
             ]
 
         self._triton_server = tritonserver.Server(
@@ -75,6 +101,23 @@ class TritonDeployment:
         pprint(self._triton_server.metadata())
         _print_heading("Models")
         pprint(self._triton_server.models())
+        self._stable_diffusion = None
+        self._test_model = None
+
+        if not self._triton_server.model("stable_diffusion_1_5").ready():
+            try:
+                self._stable_diffusion = self._triton_server.load(
+                    "stable_diffusion_1_5"
+                )
+
+                if not self._stable_diffusion.ready():
+                    raise Exception("Model not ready")
+            except Exception as error:
+                print("Error can't load stable diffusion model!")
+                print(
+                    f"Please ensure dependencies are met and you have set the environment variable HF_TOKEN {error}"
+                )
+                return
 
     @app.get("/identity")
     def test(self, string_input: str) -> str:
@@ -91,21 +134,6 @@ class TritonDeployment:
 
     @app.get("/generate")
     def generate(self, prompt: str, filename: str = "generated_image.jpg") -> None:
-        if not self._triton_server.model("stable_diffusion").ready():
-            try:
-                self._triton_server.load("text_encoder")
-                self._triton_server.load("vae")
-
-                self._stable_diffusion = self._triton_server.load("stable_diffusion")
-                if not self._stable_diffusion.ready():
-                    raise Exception("Model not ready")
-            except Exception as error:
-                print("Error can't load stable diffusion model!")
-                print(
-                    f"Please ensure dependencies are met and you have set the environment variable HF_TOKEN {error}"
-                )
-                return
-
         for response in self._stable_diffusion.infer(inputs={"prompt": [[prompt]]}):
             generated_image = (
                 numpy.from_dlpack(response.outputs["generated_image"])
@@ -117,8 +145,12 @@ class TritonDeployment:
             image_.save(filename)
 
 
-def triton_app(_args):
+def tritonserver_deployment(_args):
     return TritonDeployment.bind()
+
+
+def base_deployment(_args):
+    return BaseDeployment.bind()
 
 
 if __name__ == "__main__":
