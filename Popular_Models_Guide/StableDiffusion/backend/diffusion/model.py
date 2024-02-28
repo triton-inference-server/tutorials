@@ -28,6 +28,8 @@ import argparse
 import json
 import os
 import sys
+import shutil
+import time
 
 from cuda import cudart
 
@@ -59,6 +61,8 @@ class TritonPythonModel:
         self._seed = 10
         self._version = "1.5"
         self._scheduler = None
+        self._steps = 30
+        self._force_engine_build = False
 
     def _set_from_parameter(self, parameter, parameters, class_):
         value = parameters.get(parameter, None)
@@ -100,11 +104,14 @@ class TritonPythonModel:
                 f"Invalid Stable Diffusion Version: {self._version}, choices: {list(TritonPythonModel._KNOWN_VERSIONS.keys())}"
             )
 
+        self._model_instance_device_id = int(args["model_instance_device_id"])
+
         self._pipeline = StableDiffusionPipeline(
             pipeline_type=TritonPythonModel._KNOWN_VERSIONS[self._version],
             max_batch_size=self._batch_size,
             use_cuda_graph=True,
             version=self._version,
+            denoising_steps=self._steps
         )
 
         model_directory = os.path.join(args["model_repository"], args["model_version"])
@@ -115,6 +122,18 @@ class TritonPythonModel:
             model_directory, f"{self._version}-pytorch_model"
         )
         onnx_dir = os.path.join(model_directory, f"{self._version}-onnx")
+
+        build_complete_lock = os.path.join(engine_dir,"build_complete.lock")
+
+        if self._force_engine_build:
+            shutil.rmtree(engine_dir,ignore_errors=True)
+            shutil.rmtree(framework_model_dir,ignore_errors=True)
+            shutil.rmtree(onnx_dir,ignore_errors=True)
+
+        if self._model_instance_device_id != 0:
+            while not os.path.exists(build_complete_lock):
+                time.sleep(30)
+            
         self._pipeline.loadEngines(
             engine_dir,
             framework_model_dir,
@@ -132,6 +151,11 @@ class TritonPythonModel:
         self._pipeline.loadResources(
             self._image_height, self._image_width, self._batch_size, seed=self._seed
         )
+        
+        if self._model_instance_device_id == 0:
+            if not os.path.exists(build_complete_lock):
+                with open(build_complete_lock,"w") as f:
+                    f.write("")
 
     def finalize(self):
         self._pipeline.teardown()

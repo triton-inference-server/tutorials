@@ -49,8 +49,9 @@ output [
 ]
 
 instance_group [
-  {
+  { count: 1
     kind: KIND_GPU
+#    gpus: [0]
   }
 ]
 
@@ -101,6 +102,12 @@ parameters[
   key: "version"
   value: {
     string_value: "xl-1.0"
+  }
+},
+{
+  key: "force_engine_build"
+  value: {
+    string_value: "True"
   }
 }
 
