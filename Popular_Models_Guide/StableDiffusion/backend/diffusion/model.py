@@ -123,16 +123,13 @@ class TritonPythonModel:
         )
         onnx_dir = os.path.join(model_directory, f"{self._version}-onnx")
 
-        build_complete_lock = os.path.join(engine_dir,"build_complete.lock")
-
         if self._force_engine_build:
             shutil.rmtree(engine_dir,ignore_errors=True)
             shutil.rmtree(framework_model_dir,ignore_errors=True)
             shutil.rmtree(onnx_dir,ignore_errors=True)
 
         if self._model_instance_device_id != 0:
-            while not os.path.exists(build_complete_lock):
-                time.sleep(30)
+            raise Exception("Only device id 0 is currently supported")
             
         self._pipeline.loadEngines(
             engine_dir,
@@ -152,10 +149,6 @@ class TritonPythonModel:
             self._image_height, self._image_width, self._batch_size, seed=self._seed
         )
         
-        if self._model_instance_device_id == 0:
-            if not os.path.exists(build_complete_lock):
-                with open(build_complete_lock,"w") as f:
-                    f.write("")
 
     def finalize(self):
         self._pipeline.teardown()
