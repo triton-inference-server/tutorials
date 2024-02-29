@@ -34,7 +34,7 @@ the following configuration parameters to customize the model being served.
 
 ## Full Configuration Examples
 
-   * [Stable Diffusion v 1.5](../diffusion-models/stable_diffusion_1_5/config.pbtxt)
+   * [Stable Diffusion v1.5](../diffusion-models/stable_diffusion_1_5/config.pbtxt)
    * [Stable Diffusion XL](../diffusion-models/stable_diffusion_xl/config.pbtxt)
 
 ## Batch Size and Dynamic Batching
