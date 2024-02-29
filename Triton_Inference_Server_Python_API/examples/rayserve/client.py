@@ -22,10 +22,11 @@ def client(endpoint, request_count, prompt, save_image, index):
             filename_input = "%20".join(f"&filename={filename}".split(" "))
         else:
             filename_input = ""
-        input = "%20".join(prompt.split(" "))
+        prompt_input = "%20".join(prompt.split(" "))
         request_start = time.time()
-        resp = requests.get(
-            f"http://127.0.0.1:8000/{endpoint}?prompt={input}{filename_input}"
+        requests.get(
+            f"http://127.0.0.1:8000/{endpoint}?prompt={prompt_input}{filename_input}",
+            timeout=60,
         )
         latencies.append(time.time() - request_start)
     print(
