@@ -118,7 +118,7 @@ directory as `workspace`.
 
 > [!Note]
 > We use `EXPLICIT` model control mode for demonstration purposes to control which stable diffusion version is loaded.
-> For production deployments please refer to [Secure Deploment Considerations](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/deploy.md) for more information on the risks associated with `EXPLICIT` mode.
+> For production deployments please refer to [Secure Deployment Considerations](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/deploy.md) for more information on the risks associated with `EXPLICIT` mode.
 
 
 ```bash
