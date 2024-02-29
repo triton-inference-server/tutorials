@@ -24,21 +24,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import argparse
 import json
 import os
 import shutil
 import sys
-import time
 
+import numpy as np
+import torch
 from cuda import cudart
 
 file_location = os.path.dirname(os.path.realpath(__file__))
 
 sys.path.insert(0, os.path.join(file_location, "Diffusion"))
 
-import numpy as np
-import torch
 import triton_python_backend_utils as pb_utils
 from Diffusion.stable_diffusion_pipeline import StableDiffusionPipeline
 from Diffusion.utilities import (
@@ -47,7 +45,6 @@ from Diffusion.utilities import (
     add_arguments,
     process_pipeline_args,
 )
-from tqdm.auto import tqdm
 
 
 class TritonPythonModel:
