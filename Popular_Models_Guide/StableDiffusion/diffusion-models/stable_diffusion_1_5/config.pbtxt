@@ -102,8 +102,13 @@ parameters[
   value: {
     string_value: "1.5"
   }
+},
+{
+  key: "force_engine_build"
+  value: {
+    string_value: ""
+  }
 }
-
 ]
 
 # Configuration

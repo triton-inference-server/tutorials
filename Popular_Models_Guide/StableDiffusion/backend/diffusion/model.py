@@ -27,8 +27,8 @@
 import argparse
 import json
 import os
-import sys
 import shutil
+import sys
 import time
 
 from cuda import cudart
@@ -58,7 +58,7 @@ class TritonPythonModel:
         self._onnx_opset = 18
         self._image_height = 512
         self._image_width = 512
-        self._seed = 10
+        self._seed = None
         self._version = "1.5"
         self._scheduler = None
         self._steps = 30
@@ -111,7 +111,7 @@ class TritonPythonModel:
             max_batch_size=self._batch_size,
             use_cuda_graph=True,
             version=self._version,
-            denoising_steps=self._steps
+            denoising_steps=self._steps,
         )
 
         model_directory = os.path.join(args["model_repository"], args["model_version"])
@@ -124,13 +124,13 @@ class TritonPythonModel:
         onnx_dir = os.path.join(model_directory, f"{self._version}-onnx")
 
         if self._force_engine_build:
-            shutil.rmtree(engine_dir,ignore_errors=True)
-            shutil.rmtree(framework_model_dir,ignore_errors=True)
-            shutil.rmtree(onnx_dir,ignore_errors=True)
+            shutil.rmtree(engine_dir, ignore_errors=True)
+            shutil.rmtree(framework_model_dir, ignore_errors=True)
+            shutil.rmtree(onnx_dir, ignore_errors=True)
 
         if self._model_instance_device_id != 0:
             raise Exception("Only device id 0 is currently supported")
-            
+
         self._pipeline.loadEngines(
             engine_dir,
             framework_model_dir,
@@ -148,7 +148,6 @@ class TritonPythonModel:
         self._pipeline.loadResources(
             self._image_height, self._image_width, self._batch_size, seed=self._seed
         )
-        
 
     def finalize(self):
         self._pipeline.teardown()

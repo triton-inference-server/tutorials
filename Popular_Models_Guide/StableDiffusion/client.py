@@ -24,21 +24,26 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import argparse
+import subprocess
 import time
+from multiprocessing import Process
 
 import numpy as np
 import tritonclient.http as httpclient
 from PIL import Image
+from tqdm import tqdm
 from tritonclient.utils import *
 
 
-def main():
+def client(model, request_count, prompt, batch_size, save_image, index):
     client = httpclient.InferenceServerClient(url="localhost:8000")
-    
-    for i in range(10):
-    
-        prompt = "Pikachu with a hat, 4k, 3d render"
-        text_obj = np.array([prompt], dtype="object").reshape((-1, 1))
+    latencies = []
+    start = time.time()
+    for i in tqdm(range(request_count), position=index):
+        prompts = [prompt] * batch_size
+
+        text_obj = np.array(prompts, dtype="object").reshape((-1, 1))
 
         input_text = httpclient.InferInput(
             "prompt", text_obj.shape, np_to_triton_dtype(text_obj.dtype)
@@ -46,20 +51,63 @@ def main():
         input_text.set_data_from_numpy(text_obj)
 
         output_img = httpclient.InferRequestedOutput("generated_image")
-
+        request_start = time.time()
         query_response = client.infer(
-            model_name="stable_diffusion_xl", inputs=[input_text], outputs=[output_img]
+            model_name=model, inputs=[input_text], outputs=[output_img]
         )
-
+        latencies.append(time.time() - request_start)
         image = query_response.as_numpy("generated_image")
-        im = Image.fromarray(np.squeeze(image.astype(np.uint8)))
-    im.save("generated_image2.jpg")
+        if save_image:
+            im = Image.fromarray(np.squeeze(image.astype(np.uint8)))
+            im.save(f"client_{index}_generated_image_{i}.jpg")
+    print(
+        f"Client: {index} Throughput: {request_count/(time.time()-start)} Avg. Latency: {np.mean(latencies)}"
+    )
 
 
 if __name__ == "__main__":
-    start = time.time()
-    main()
-    end = time.time()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--clients", type=int, default=1)
+    parser.add_argument("--requests", type=int, default=1)
+    parser.add_argument("--static-batch-size", type=int, default=1)
+    parser.add_argument(
+        "--prompt",
+        type=str,
+        default="skeleton sitting by the side of a river looking soulful, concert poster, 4k, artistic",
+    )
+    parser.add_argument("--save-image", action="store_true")
+    parser.add_argument("--launch-nvidia-smi", action="store_true")
+    parser.add_argument("--model", type=str, default="stable_diffusion_xl")
+    args = parser.parse_args()
+    if args.launch_nvidia_smi:
+        nvidia_smi_proc = subprocess.Popen(
+            ["nvidia-smi", "dmon", "-f", "nvidia_smi_output.txt"]
+        )
+        time.sleep(5)
+    procs = []
+    start_time = time.time()
+    for i in range(args.clients):
+        procs.append(
+            Process(
+                target=client,
+                args=(
+                    args.model,
+                    args.requests,
+                    args.prompt,
+                    args.static_batch_size,
+                    args.save_image,
+                    i,
+                ),
+            )
+        )
+        procs[-1].start()
 
-    print("Time taken:", end - start)
-    print("Througput:", 10/(end - start))
+    for proc in procs:
+        proc.join()
+    end_time = time.time()
+    if args.launch_nvidia_smi:
+        time.sleep(5)
+        nvidia_smi_proc.kill()
+    print(
+        f"Throughput: {(args.requests*args.clients)/(end_time-start_time)} Total Time: {end_time-start_time}"
+    )

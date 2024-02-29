@@ -213,12 +213,18 @@ if [[ $FRAMEWORK == DIFFUSION ]]; then
     $RUN_PREFIX mkdir -p $PWD/backend/diffusion
     $RUN_PREFIX docker run --rm -it -v $PWD:/workspace $TAG /bin/bash -c "cp -rf /tmp/TensorRT/demo/Diffusion /workspace/backend/diffusion"
 
+    { set +x; } 2>/dev/null
+
     for model in "${BUILD_MODELS[@]}"
     do
-	echo "$model"
+	if [ -z "$RUN_PREFIX" ]; then
+	    set -x
+	fi
+
+	$RUN_PREFIX docker run --rm -it -v $PWD:/workspace $TAG /bin/bash -c "/workspace/scripts/build_models.sh --model $model"
+
+	{ set +x; } 2>/dev/null
     done
-    
-    { set +x; } 2>/dev/null
 fi
 
 
