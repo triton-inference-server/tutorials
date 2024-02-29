@@ -27,6 +27,11 @@
 backend: "diffusion"
 max_batch_size: 1
 
+dynamic_batching {
+ max_queue_delay_microseconds: 100000
+}
+
+
 input [
   {
     name: "prompt"
@@ -76,7 +81,7 @@ parameters[
 {
   key: "steps"
   value: {
-    string_value: "30"
+    string_value: "50"
   }
 },
 {

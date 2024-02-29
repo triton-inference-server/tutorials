@@ -148,6 +148,7 @@ class TritonPythonModel:
         self._pipeline.loadResources(
             self._image_height, self._image_width, self._batch_size, seed=self._seed
         )
+        self._logger = pb_utils.Logger
 
     def finalize(self):
         self._pipeline.teardown()
@@ -180,11 +181,12 @@ class TritonPythonModel:
         num_requests = len(requests)
         num_prompts = len(prompts)
         remainder = self._batch_size - (num_prompts % self._batch_size)
+        self._logger.log_info(f"Client Requests in Batch:{num_requests}")
+        self._logger.log_info(f"Prompts in Batch:{num_prompts}")
         if remainder < self._batch_size:
             prompts.extend([""] * remainder)
             negative_prompts.extend([""] * remainder)
         num_prompts = len(prompts)
-
         for batch in range(0, num_prompts, self._batch_size):
             (images, walltime_ms) = self._pipeline.infer(
                 prompts[batch : batch + self._batch_size],
