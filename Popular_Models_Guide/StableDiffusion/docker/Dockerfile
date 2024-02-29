@@ -41,6 +41,6 @@ RUN mkdir -p /opt/tritonserver/backends/diffusion
 
 RUN cp -rf /tmp/TensorRT/demo/Diffusion /opt/tritonserver/backends/diffusion/
 
-COPY ./backend/diffusion/model.py /opt/tritionserver/backends/diffusion/model.py
+COPY ./backend/diffusion/model.py /opt/tritonserver/backends/diffusion/model.py
 
 COPY ./diffusion-models /workspace/diffusion-models
