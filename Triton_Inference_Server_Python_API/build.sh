@@ -216,6 +216,9 @@ if [[ $FRAMEWORK == DIFFUSION ]]; then
     $RUN_PREFIX mkdir -p diffusion-models/stable_diffusion_xl/1
     $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_xl/config.pbtxt  diffusion-models/stable_diffusion_xl/config.pbtxt
     $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_xl/1/.gitkeep  diffusion-models/stable_diffusion_xl/1/.gitkeep
+    $RUN_PREFIX mkdir -p scripts/stable_diffusion
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/scripts/build_models* scripts/stable_diffusion/
+
 fi
 
 
@@ -246,12 +249,7 @@ if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 	    set -x
 	fi
 
-#	$RUN_PREFIX mkdir -p $SOURCE_DIR/diffuser-models
-#	$RUN_PREFIX cp -rf $SOURCE_DIR/../Conceptual_Guide/Part_6-building_complex_pipelines/model_repository/. $SOURCE_DIR/scripts/stable_diffusion/models
-#	$RUN_PREFIX rm -rf $SOURCE_DIR/scripts/stable_diffusion/models/stable_diffusion
-#	$RUN_PREFIX mv $SOURCE_DIR/scripts/stable_diffusion/models/pipeline $SOURCE_DIR/scripts/stable_diffusion/models/stable_diffusion
-#	$RUN_PREFIX $SOURCE_DIR/scripts/stable_diffusion/build_stable_diffusion.sh
-#	$RUN_PREFIX cp -rf $SOURCE_DIR/scripts/stable_diffusion/models/. $SOURCE_DIR/diffuser-models/.
+	$RUN_PREFIX docker run --rm -it -v $PWD:/workspace $TAG /bin/bash -c "/workspace/scripts/stable_diffusion/build_models.sh --model stable_diffusion_1_5"
 
 	{ set +x; } 2>/dev/null
     fi

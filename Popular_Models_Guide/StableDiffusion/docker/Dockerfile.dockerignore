@@ -24,11 +24,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-**/diffuser-models/*
 **/identity-models/*
 **/scripts/stable_diffusion/models/*/*/*.onnx
 **/scripts/stable_diffusion/models/*/*/*.plan
 **/*.onnx
 **/*.plan
 **/*.cache/*
-**/*onnx
+**/*onnx*
+**/*engine*
+**/*pytorch_model*
+**/*.pth*

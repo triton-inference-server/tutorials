@@ -26,6 +26,7 @@
 
 import os
 from pprint import pprint
+from typing import Optional
 
 import numpy
 import requests
@@ -64,7 +65,7 @@ class BaseDeployment:
         self._pipeline = self._pipeline.to("cuda")
 
     @app.get("/generate")
-    def generate(self, prompt: str, filename: str = "generated_image.jpg") -> None:
+    def generate(self, prompt: str, filename: Optional[str] = None) -> None:
         with torch.autocast("cuda"):
             image_ = self._pipeline(
                 prompt,
@@ -72,7 +73,8 @@ class BaseDeployment:
                 width=self._image_size,
                 num_inference_steps=50,
             ).images[0]
-            image_.save(filename)
+            if filename:
+                image_.save(filename)
 
 
 @serve.deployment(ray_actor_options={"num_gpus": 1})
@@ -99,8 +101,6 @@ class TritonDeployment:
         _print_heading("Triton Server Started")
         _print_heading("Metadata")
         pprint(self._triton_server.metadata())
-        _print_heading("Models")
-        pprint(self._triton_server.models())
         self._stable_diffusion = None
         self._test_model = None
 
@@ -118,6 +118,8 @@ class TritonDeployment:
                     f"Please ensure dependencies are met and you have set the environment variable HF_TOKEN {error}"
                 )
                 return
+        _print_heading("Models")
+        pprint(self._triton_server.models())
 
     @app.get("/identity")
     def test(self, string_input: str) -> str:
@@ -133,7 +135,7 @@ class TritonDeployment:
         return "".join(output)
 
     @app.get("/generate")
-    def generate(self, prompt: str, filename: str = "generated_image.jpg") -> None:
+    def generate(self, prompt: str, filename: Optional[str] = None) -> None:
         for response in self._stable_diffusion.infer(inputs={"prompt": [[prompt]]}):
             generated_image = (
                 numpy.from_dlpack(response.outputs["generated_image"])
@@ -142,7 +144,8 @@ class TritonDeployment:
             )
 
             image_ = Image.fromarray(generated_image)
-            image_.save(filename)
+            if filename:
+                image_.save(filename)
 
 
 def tritonserver_deployment(_args):
