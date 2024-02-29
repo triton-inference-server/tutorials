@@ -33,7 +33,7 @@ Triton by leveraging the [TensorRT demo](https://github.com/NVIDIA/TensorRT/tree
 pipeline and utilities.
 
 Using the TensorRT demo as a base this example contains a reusable
-[python based backend](https://github.com/triton-inference-server/backend/blob/main/docs/python_based_backends.md)
+[python based backend](https://github.com/triton-inference-server/backend/blob/main/docs/python_based_backends.md), [`/backend/diffusion/model.py`](backend/diffusion/model.py),
 suitable for deploying multiple versions and configurations of
 Diffusion models.
 
