@@ -66,18 +66,44 @@ def client(model, request_count, prompt, batch_size, save_image, index):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--clients", type=int, default=1)
-    parser.add_argument("--requests", type=int, default=1)
-    parser.add_argument("--static-batch-size", type=int, default=1)
+    parser = argparse.ArgumentParser(
+        description="Example client demonstrating sending prompts to generative AI models",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--clients",
+        type=int,
+        default=1,
+        help="Number of concurrent clients. Each client sends --requests number of requests.",
+    )
+    parser.add_argument(
+        "--requests", type=int, default=1, help="Number of requests to send."
+    )
+    parser.add_argument(
+        "--static-batch-size",
+        type=int,
+        default=1,
+        help="Number of prompts to send in a single request",
+    )
     parser.add_argument(
         "--prompt",
         type=str,
         default="skeleton sitting by the side of a river looking soulful, concert poster, 4k, artistic",
+        help="Prompt. All requests and batches will use the same prompt",
     )
-    parser.add_argument("--save-image", action="store_true")
-    parser.add_argument("--launch-nvidia-smi", action="store_true")
-    parser.add_argument("--model", type=str, default="stable_diffusion_xl")
+    parser.add_argument(
+        "--save-image",
+        action="store_true",
+        help="If provided, generated images will be saved as jpeg files",
+    )
+    parser.add_argument(
+        "--launch-nvidia-smi",
+        action="store_true",
+        help="Launch nvidia smi in daemon mode and log data to nvidia_smi_output.txt",
+    )
+    parser.add_argument(
+        "--model", type=str, default="stable_diffusion_xl", help="model name"
+    )
     args = parser.parse_args()
     if args.launch_nvidia_smi:
         nvidia_smi_proc = subprocess.Popen(
