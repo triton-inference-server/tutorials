@@ -39,12 +39,7 @@ sys.path.insert(0, os.path.join(file_location, "Diffusion"))
 
 import triton_python_backend_utils as pb_utils
 from Diffusion.stable_diffusion_pipeline import StableDiffusionPipeline
-from Diffusion.utilities import (
-    PIPELINE_TYPE,
-    TRT_LOGGER,
-    add_arguments,
-    process_pipeline_args,
-)
+from Diffusion.utilities import PIPELINE_TYPE
 
 
 class TritonPythonModel:
