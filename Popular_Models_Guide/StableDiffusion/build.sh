@@ -27,7 +27,7 @@
 
 TAG=
 RUN_PREFIX=
-BUILD_MODELS=
+BUILD_MODELS=()
 
 # Frameworks
 declare -A FRAMEWORKS=(["DIFFUSION"]=1)
@@ -57,7 +57,12 @@ get_options() {
             fi
             ;;
 	--build-models)
-	    BUILD_MODELS=TRUE
+	    if [ "$2" ]; then
+                BUILD_MODELS+=("$2")
+                shift
+            else
+		BUILD_MODELS+=("all")
+            fi
             ;;
         --base)
             if [ "$2" ]; then
@@ -205,10 +210,15 @@ if [[ $FRAMEWORK == DIFFUSION ]]; then
     if [ -z "$RUN_PREFIX" ]; then
 	set -x
     fi
-	$RUN_PREFIX mkdir -p $PWD/backend/diffusion
-	$RUN_PREFIX docker run --rm -it -v $PWD:/workspace $TAG /bin/bash -c "cp -rf /tmp/TensorRT/demo/Diffusion /workspace/backend/diffusion"
+    $RUN_PREFIX mkdir -p $PWD/backend/diffusion
+    $RUN_PREFIX docker run --rm -it -v $PWD:/workspace $TAG /bin/bash -c "cp -rf /tmp/TensorRT/demo/Diffusion /workspace/backend/diffusion"
 
-	{ set +x; } 2>/dev/null
+    for model in "${BUILD_MODELS[@]}"
+    do
+	echo "$model"
+    done
+    
+    { set +x; } 2>/dev/null
 fi
 
 
