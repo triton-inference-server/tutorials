@@ -1,5 +1,5 @@
 #!/bin/bash -e
-# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -110,7 +110,7 @@ get_options() {
 
 show_help() {
     echo "usage: run.sh"
-    echo "  [--imag image]"
+    echo "  [--image image]"
     echo "  [--framework framework one of ${!FRAMEWORKS[@]}]"
     echo "  [--dry-run print docker commands without running]"
     exit 0

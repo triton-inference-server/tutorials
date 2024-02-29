@@ -43,7 +43,7 @@ You can select the batch size and dynamic batching queue delay. With
 batch size 1 dynamic batching is disabled.
 
 > [!Note]
-> Changing the batch size requires rebuilding the Tensor RT Engines
+> Changing the batch size requires rebuilding the TensorRT Engines
 
 
 ```bash

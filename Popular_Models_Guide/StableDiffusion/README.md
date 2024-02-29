@@ -49,7 +49,7 @@ more information on the TensorRT implementation please see the [TensorRT demo](h
 
 ## Requirements
 
-The following instructions require a linux system with Docker
+The following instructions require a Linux system with Docker
 installed. For CUDA support, make sure your CUDA driver meets the
 requirements in "NVIDIA Driver" section of [Deep Learning Framework
 support matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html).
@@ -63,7 +63,7 @@ A set of convenience scripts are provided to create a docker image
 based on the `nvcr.io/nvidia/tritonserver:24.01-py3` image with the
 dependencies for the TensorRT Stable Diffusion demo installed.
 
-### Trition Inference Server + TensorRT OSS
+### Triton Inference Server + TensorRT OSS
 
 #### Clone Repository
 ```bash
@@ -117,8 +117,8 @@ directory as `workspace`.
 ### Start a Server Instance
 
 > [!Note]
-> We use `EXPLICIT` model control mode for demonstrtion purposes to control which stable diffusion version is loaded.
-> For production deployments please refer to [Secure Deploment Considerations](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/deploy.md) for more information on the risks associated with `EXPLICIT` mode.
+> We use `EXPLICIT` model control mode for demonstration purposes to control which stable diffusion version is loaded.
+> For production deployments please refer to [Secure Deployment Considerations](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/deploy.md) for more information on the risks associated with `EXPLICIT` mode.
 
 
 ```bash
@@ -169,8 +169,8 @@ directory as `workspace`.
 ### Start a Server Instance
 
 > [!Note]
-> We use `EXPLICIT` model control mode for demonstrtion purposes to control which stable diffusion version is loaded.
-> For production deployments please refer to [Secure Deploment Considerations](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/deploy.md) for more information on the risks associated with `EXPLICIT` mode.
+> We use `EXPLICIT` model control mode for demonstration purposes to control which stable diffusion version is loaded.
+> For production deployments please refer to [Secure Deployment Considerations](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/deploy.md) for more information on the risks associated with `EXPLICIT` mode.
 
 
 ```bash
