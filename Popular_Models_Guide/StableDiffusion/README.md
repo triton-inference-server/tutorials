@@ -63,7 +63,7 @@ A set of convenience scripts are provided to create a docker image
 based on the `nvcr.io/nvidia/tritonserver:24.01-py3` image with the
 dependencies for the TensorRT Stable Diffusion demo installed.
 
-### Trition Inference Server + TensorRT OSS
+### Triton Inference Server + TensorRT OSS
 
 #### Clone Repository
 ```bash
