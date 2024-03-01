@@ -78,7 +78,7 @@ cd tutorials/Popular_Models_Guide/StableDiffusion
 
 #### Included Models
 
-The `default` build includes model configuration files for
+The `default` build includes model configuration files located in the `/diffusion-models` folder
 [`stable_diffusion_1_5`](diffusion-models/stable_diffustion_1_5) and
 [`stable_diffusion_xl`](diffusion-models/stable_diffustion_xl) but the
 actual model artifacts and engine files are not included. They are
