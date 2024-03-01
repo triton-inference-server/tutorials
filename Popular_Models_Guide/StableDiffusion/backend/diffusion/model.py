@@ -202,9 +202,10 @@ class TritonPythonModel:
         result_index = 0
         for num_prompts_in_request in prompts_per_request:
             generated_images = []
-            for image_result in image_results[result_index:num_prompts_in_request]:
+            for image_result in image_results[
+                result_index : result_index + num_prompts_in_request
+            ]:
                 generated_images.append(image_result)
-
             inference_response = pb_utils.InferenceResponse(
                 output_tensors=[
                     pb_utils.Tensor(
@@ -214,5 +215,6 @@ class TritonPythonModel:
                 ]
             )
             responses.append(inference_response)
+            result_index += num_prompts_in_request
 
         return responses
