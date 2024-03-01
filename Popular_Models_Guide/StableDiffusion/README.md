@@ -45,7 +45,7 @@ more information on the TensorRT implementation please see the [TensorRT demo](h
 > [!Note]
 > This example is given as sample code and should be reviewed before use in production settings.
 
-| [Requirements](#requirements) | [Building Server Image](#building-the-triton-inference-server-image) | [Stable Diffusion v1.5](#building-and-running-stable-diffusion-v-15) | [Stable Diffusion XL](#building-and-running-stable-diffusion-xl) | [Sending an Inference Request](#sending-an-inference-request) | [Model Configuration](docs/model_configuration.md) | [Sample Client](#sample-client) |
+| [Requirements](#requirements) | [Building Server Image](#building-the-triton-inference-server-image) | [Stable Diffusion v1.5](#building-and-running-stable-diffusion-v-15) | [Stable Diffusion XL](#building-and-running-stable-diffusion-xl) | [Sending an Inference Request](#sending-an-inference-request) | [Model Configuration](docs/model_configuration.md) | [Sample Client](#sample-client) | [Known Issues and Limitations](#known-issues-and-limitations)
 
 ## Requirements
 
@@ -295,6 +295,6 @@ python3 client.py --model stable_diffusion_xl --requests 10 --clients 10
    > This error is also seen in standalone applications outside of the Triton Inference Server
    > and believe this is due to an interaction between imported python modules.
 
-2. The diffusion backend  doesn't support a secondary refiner model.
+2. The diffusion backend doesn't support using a refiner model.
 
 
