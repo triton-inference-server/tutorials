@@ -304,8 +304,8 @@ python3 client.py --model stable_diffusion_xl --requests 10 --clients 10
    [demo_txt2img_xl.py][demo_code]
 
 
-demo_code: https://github.com/NVIDIA/TensorRT/blob/release/9.2/demo/Diffusion/demo_txt2img_xl.py
+[demo_code]: https://github.com/NVIDIA/TensorRT/blob/release/9.2/demo/Diffusion/demo_txt2img_xl.py
 
 
-demo_reference: https://github.com/NVIDIA/TensorRT/tree/release/9.2/demo/Diffusion#text-to-image-using-sdxl-stable-diffusion-xl
+[demo_reference]: https://github.com/NVIDIA/TensorRT/tree/release/9.2/demo/Diffusion#text-to-image-using-sdxl-stable-diffusion-xl
 
