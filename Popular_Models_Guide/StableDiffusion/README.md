@@ -285,15 +285,19 @@ python3 client.py --model stable_diffusion_xl --requests 10 --clients 10
 
 ## Known Issues and Limitations
 
-1. When shutting down the server an invalid memory operation occurs:
+1. When shutting down the server, an invalid memory operation occurs:
+
+   > [!Note]
+   > This error is also seen in standalone applications outside of the Triton Inference Server
+   > and we believe this is due to an interaction between imported python modules. Further
+   > we haven't seen any issues related to this error and believe it can be safely
+   > ignored.
+
 
    ```
    free(): invalid pointer
    ```
 
-   > [!Note]
-   > This error is also seen in standalone applications outside of the Triton Inference Server
-   > and we believe this is due to an interaction between imported python modules.
 
 2. The diffusion backend doesn't support using a refiner model.
 
