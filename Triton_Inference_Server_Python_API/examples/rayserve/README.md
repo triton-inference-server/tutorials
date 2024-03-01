@@ -41,7 +41,7 @@ deployment based on FastAPI.
 ## Installation
 
 The stable diffusion pipeline is based on the
-[Popular_Models_Guide/StableDiffusion](../../../../Popular_Models_Guide/StableDiffusion)
+[Popular_Models_Guide/StableDiffusion](../../../Popular_Models_Guide/StableDiffusion)
 tutorial.
 
 ### Clone Repository
