@@ -51,7 +51,7 @@ more information on the TensorRT implementation please see the [TensorRT demo](h
 
 The following instructions require a Linux system with Docker
 installed. For CUDA support, make sure your CUDA driver meets the
-requirements in "NVIDIA Driver" section of [Deep Learning Framework
+requirements in the "NVIDIA Driver" section of [Deep Learning Framework
 support matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html).
 
 ## Building the Triton Inference Server Image
