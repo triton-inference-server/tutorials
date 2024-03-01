@@ -293,7 +293,7 @@ python3 client.py --model stable_diffusion_xl --requests 10 --clients 10
 
    > [!Note]
    > This error is also seen in standalone applications outside of the Triton Inference Server
-   > and believe this is due to an interaction between imported python modules.
+   > and we believe this is due to an interaction between imported python modules.
 
 2. The diffusion backend doesn't support using a refiner model.
 
