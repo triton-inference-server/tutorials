@@ -282,3 +282,19 @@ requests one after the other in parallel with the other nine clients.
 ```bash
 python3 client.py --model stable_diffusion_xl --requests 10 --clients 10
 ```
+
+## Known Issues and Limitations
+
+1. When shutting down the server an invalid memory operation occurs:
+
+   ```
+   free(): invalid pointer
+   ```
+
+   > [!Note]
+   > This error is also seen in standalone applications outside of the Triton Inference Server
+   > and believe this is due to an interaction between imported python modules.
+
+2. The diffusion backend  doesn't support a secondary refiner model.
+
+
