@@ -61,7 +61,7 @@ based on the `nvcr.io/nvidia/tritonserver:24.01-py3` image with the
 Python API installed plus additional dependencies required for the
 examples.
 
-### Trition Inference Server 24.01 + Python API
+### Triton Inference Server 24.01 + Python API
 
 #### Clone Repository
 ```bash
