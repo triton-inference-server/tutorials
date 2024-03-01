@@ -115,12 +115,3 @@ parameters[
   }
 }
 ]
-
-# Configuration
-# seed
-# denoising steps
-# version
-# scheduler
-# steps
-# image height
-# image width
