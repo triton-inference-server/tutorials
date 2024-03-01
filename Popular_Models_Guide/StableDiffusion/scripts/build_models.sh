@@ -27,7 +27,7 @@
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 
-# install tritonserve in process api
+# install tritonserver in process api
 find /opt/tritonserver/python -maxdepth 1 -type f -name \
      "tritonserver-*.whl" | xargs -I {} pip3 install --upgrade {}[all]
 
