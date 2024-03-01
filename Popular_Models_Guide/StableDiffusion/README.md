@@ -57,21 +57,21 @@ support matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/i
 ## Building the Triton Inference Server Image
 
 The example is designed based on the
-`nvcr.io/nvidia/tritonserver:24.01-py3` docker image and [TensorRT OSS v9.2.0](https://github.com/NVIDIA/TensorRT/releases/tag/v9.2.0).
+`nvcr.io/nvidia/tritonserver:YY.MM-py3` docker image and [TensorRT OSS v9.2.0](https://github.com/NVIDIA/TensorRT/releases/tag/v9.2.0).
 
 A set of convenience scripts are provided to create a docker image
-based on the `nvcr.io/nvidia/tritonserver:24.01-py3` image with the
+based on the `nvcr.io/nvidia/tritonserver:YY.MM-py3` image with the
 dependencies for the TensorRT Stable Diffusion demo installed.
 
 ### Triton Inference Server + TensorRT OSS
 
 #### Clone Repository
 ```bash
-git clone https://github.com/triton-inference-server/tutorials.git -b r24.02 --single-branch
+git clone https://github.com/triton-inference-server/tutorials.git --single-branch
 cd tutorials/Popular_Models_Guide/StableDiffusion
 ```
 
-#### Build `tritonserver:r24.01-diffusion` Image
+#### Build `tritonserver:rYY.MM-diffusion` Image
 ```bash
 ./build.sh
 ```
@@ -88,7 +88,7 @@ built into a volume mounted directory as a separate step.
 
 ## Building and Running Stable Diffusion v 1.5
 
-### Start `tritonserver:r24.01-diffusion` Container
+### Start `tritonserver:rYY.MM-diffusion` Container
 
 The following command starts a container and volume mounts the current
 directory as `workspace`.
@@ -144,7 +144,7 @@ I0229 20:15:52.125050 749 server.cc:676]
 
 ## Building and Running Stable Diffusion XL
 
-### Start `tritonserver:r24.01-diffusion` Container
+### Start `tritonserver:rYY.MM-diffusion` Container
 
 The following command starts a container and volume mounts the current
 directory as `workspace`.
@@ -201,7 +201,7 @@ I0229 20:22:22.912465 1440 server.cc:676]
 We've provided a sample [client](client.py) application to make
 sending and receiving requests simpler.
 
-### Start `tritonserver:r24.01-diffusion` Container
+### Start `tritonserver:rYY.MM-diffusion` Container
 
 In a separate terminal from the server start a new container.
 
