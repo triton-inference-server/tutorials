@@ -123,7 +123,7 @@ directory as `workspace`.
 > deployments please refer to [Secure Deployment Considerations][secure_guide]
 > for more information on the risks associated with `EXPLICIT` mode.
 
-[secure_guide]: (https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/deploy.md)
+[secure_guide]: https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/deploy.md
 
 ```bash
 tritonserver --model-repository diffusion-models --model-control-mode explicit --load-model stable_diffusion_1_5
