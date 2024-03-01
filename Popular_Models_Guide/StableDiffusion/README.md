@@ -45,7 +45,7 @@ more information on the TensorRT implementation please see the [TensorRT demo](h
 > [!Note]
 > This example is given as sample code and should be reviewed before use in production settings.
 
-| [Requirements](#requirements) | [Building Server Image](#building-the-triton-inference-server-image) | [Stable Diffusion v1.5](#building-and-running-stable-diffusion-v-15) | [Stable Diffusion XL](#building-and-running-stable-diffusion-xl) | [Sending an Inference Request](#sending-an-inference-request) | [Model Configuration](docs/model_configuration.md) | [Client Application](docs/client_application.md) |
+| [Requirements](#requirements) | [Building Server Image](#building-the-triton-inference-server-image) | [Stable Diffusion v1.5](#building-and-running-stable-diffusion-v-15) | [Stable Diffusion XL](#building-and-running-stable-diffusion-xl) | [Sending an Inference Request](#sending-an-inference-request) | [Model Configuration](docs/model_configuration.md) | [Sample Client](#sample-client) |
 
 ## Requirements
 
@@ -257,3 +257,26 @@ If `--save-image` is given then output images will be saved as jpegs.
 ![sample_generated_image](./docs/client_0_generated_image_0_xl.jpg)
 
 
+## Sample Client
+
+The sample [client](client.py) application enables users to quickly
+test the diffusion models under different concurrency scenarios. For a
+full list and description of the client application's options use:
+
+```
+python3 client.py --help
+```
+
+### Sending Concurrent Requests
+
+To increase load and concurrency users can use the `clients` and
+`requests` options to control the number of client processes and the
+number of requests sent by each client.
+
+#### Example: Ten Clients Sending Ten Requests Each
+
+The following command enables ten clients each sending ten requests.
+
+```bash
+python3 client.py --model stable_diffusion_xl --requests 10 --clients 10
+```
