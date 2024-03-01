@@ -275,7 +275,9 @@ number of requests sent by each client.
 
 #### Example: Ten Clients Sending Ten Requests Each
 
-The following command enables ten clients each sending ten requests.
+The following command enables ten clients each sending ten
+requests. Each client is an independent process that sends its
+requests one after the other in parallel with the other nine clients.
 
 ```bash
 python3 client.py --model stable_diffusion_xl --requests 10 --clients 10
