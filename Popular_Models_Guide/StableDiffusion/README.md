@@ -45,7 +45,7 @@ more information on the TensorRT implementation please see the [TensorRT demo](h
 > [!Note]
 > This example is given as sample code and should be reviewed before use in production settings.
 
-| [Requirements](#requirements) | [Building Server Image](#building-the-triton-inference-server-image) | [Stable Diffusion v1.5](#building-and-running-stable-diffusion-v-15) | [Stable Diffusion XL](#building-and-running-stable-diffusion-xl) | [Sending an Inference Request](#sending-an-inference-request) | [Model Configuration](docs/model_configuration.md) | [Sample Client](#sample-client) | [Known Issues and Limitations](#known-issues-and-limitations)
+| [Requirements](#requirements) | [Building Server Image](#building-the-triton-inference-server-image) | [Stable Diffusion v1.5](#building-and-running-stable-diffusion-v-15) | [Stable Diffusion XL](#building-and-running-stable-diffusion-xl) | [Sending an Inference Request](#sending-an-inference-request) | [Model Configuration](docs/model_configuration.md) | [Sample Client](#sample-client) | [Known Issues and Limitations](#known-issues-and-limitations) |
 
 ## Requirements
 
