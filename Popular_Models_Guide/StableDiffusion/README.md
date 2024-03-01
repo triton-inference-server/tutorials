@@ -67,7 +67,7 @@ dependencies for the TensorRT Stable Diffusion demo installed.
 
 #### Clone Repository
 ```bash
-git clone https://github.com/triton-inference-server/tutorials.git -b nnshah1-stable-diffusion --single-branch
+git clone https://github.com/triton-inference-server/tutorials.git -b r24.02 --single-branch
 cd tutorials/Popular_Models_Guide/StableDiffusion
 ```
 
