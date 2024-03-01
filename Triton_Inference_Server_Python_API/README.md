@@ -159,7 +159,7 @@ for response in responses:
 ## Stable Diffusion
 
 This example is based on the
-[Popular_Models_Guide/StableDiffusion](Popular_Models_Guide/StableDiffusion)
+[Popular_Models_Guide/StableDiffusion](../Popular_Models_Guide/StableDiffusion)
 tutorial.
 
 
@@ -186,7 +186,7 @@ dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  ten
 The `diffusion` build includes a `stable_diffustion` pipeline that
 takes a text prompt and returns a generated image. For more details on
 the models and pipeline please see the
-[Popular_Models_Guide/StableDiffusion](Popular_Models_Guide/StableDiffusion)
+[Popular_Models_Guide/StableDiffusion](../Popular_Models_Guide/StableDiffusion)
 tutorial.
 
 ### Start Container
