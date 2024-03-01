@@ -120,10 +120,10 @@ directory as `workspace`.
 > [!Note]
 > We use `EXPLICIT` model control mode for demonstration purposes to
 > control which stable diffusion version is loaded.  For production
-> deployments please refer to [Secure Deployment Considerations][secure guide]
+> deployments please refer to [Secure Deployment Considerations][secure_guide]
 > for more information on the risks associated with `EXPLICIT` mode.
 
-[secure guide]:(https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/deploy.md)
+[secure_guide]: (https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/deploy.md)
 
 ```bash
 tritonserver --model-repository diffusion-models --model-control-mode explicit --load-model stable_diffusion_1_5
