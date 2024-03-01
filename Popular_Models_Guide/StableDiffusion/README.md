@@ -71,7 +71,7 @@ git clone https://github.com/triton-inference-server/tutorials.git --single-bran
 cd tutorials/Popular_Models_Guide/StableDiffusion
 ```
 
-#### Build `tritonserver:rYY.MM-diffusion` Image
+#### Build Tritonserver Diffusion Docker Image
 ```bash
 ./build.sh
 ```
@@ -88,7 +88,7 @@ built into a volume mounted directory as a separate step.
 
 ## Building and Running Stable Diffusion v 1.5
 
-### Start `tritonserver:rYY.MM-diffusion` Container
+### Start Tritonserver Diffusion Container
 
 The following command starts a container and volume mounts the current
 directory as `workspace`.
@@ -201,7 +201,7 @@ I0229 20:22:22.912465 1440 server.cc:676]
 We've provided a sample [client](client.py) application to make
 sending and receiving requests simpler.
 
-### Start `tritonserver:rYY.MM-diffusion` Container
+### Start Tritonserver Diffusion Container
 
 In a separate terminal from the server start a new container.
 
