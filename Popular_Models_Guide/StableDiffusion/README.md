@@ -57,10 +57,10 @@ support matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/i
 ## Building the Triton Inference Server Image
 
 The example is designed based on the
-`nvcr.io/nvidia/tritonserver:YY.MM-py3` docker image and [TensorRT OSS v9.2.0](https://github.com/NVIDIA/TensorRT/releases/tag/v9.2.0).
+`nvcr.io/nvidia/tritonserver:24.01-py3` docker image and [TensorRT OSS v9.2.0](https://github.com/NVIDIA/TensorRT/releases/tag/v9.2.0).
 
 A set of convenience scripts are provided to create a docker image
-based on the `nvcr.io/nvidia/tritonserver:YY.MM-py3` image with the
+based on the `nvcr.io/nvidia/tritonserver:24.01-py3` image with the
 dependencies for the TensorRT Stable Diffusion demo installed.
 
 ### Triton Inference Server + TensorRT OSS
@@ -144,7 +144,7 @@ I0229 20:15:52.125050 749 server.cc:676]
 
 ## Building and Running Stable Diffusion XL
 
-### Start `tritonserver:rYY.MM-diffusion` Container
+### Start Tritonserver Diffusion Container
 
 The following command starts a container and volume mounts the current
 directory as `workspace`.
