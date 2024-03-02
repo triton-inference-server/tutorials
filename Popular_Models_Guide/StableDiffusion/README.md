@@ -300,7 +300,7 @@ python3 client.py --model stable_diffusion_xl --requests 10 --clients 10
 
 
 2. The diffusion backend doesn't yet support using an optional refiner
-   model unlike the [demo][demo_reference] its based on. See also
+   model unlike the [demo][demo_reference] it's based on. See also
    [demo_txt2img_xl.py][demo_code]
 
 
