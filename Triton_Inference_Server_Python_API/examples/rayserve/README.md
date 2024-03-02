@@ -50,7 +50,7 @@ git clone https://github.com/triton-inference-server/tutorials.git
 cd tutorials/Triton_Inference_Server_Python_API
 ```
 
-### Build `triton-python-api:rYY.MM-diffusion` Image and Stable Diffusion Models
+### Build Tritonserver Image and Stable Diffusion Models
 
 Please note the following command will take many minutes depending on
 your hardware configuration and network connection.
