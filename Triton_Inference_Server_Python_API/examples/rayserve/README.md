@@ -40,16 +40,9 @@ deployment based on FastAPI.
 
 ## Installation
 
-Please note in order to run the stable diffusion pipeline included in
-the deployment you will need a hugging face token and need to set the
-environment variable `HF_TOKEN` before running the container or set
-the token by using the `huggingface-cli login` command after running
-the container.
-
 The stable diffusion pipeline is based on the
-[building_complex_pipelines](/Conceptual_Guide/Part_6-building_complex_pipelines)
+[Popular_Models_Guide/StableDiffusion](../../../Popular_Models_Guide/StableDiffusion)
 tutorial.
-
 
 ### Clone Repository
 ```bash
@@ -57,13 +50,13 @@ git clone https://github.com/triton-inference-server/tutorials.git
 cd tutorials/Triton_Inference_Server_Python_API
 ```
 
-### Build `triton-python-api:r23.12-diffusers` Image and Stable Diffusion Models
+### Build `triton-python-api:rYY.MM-diffusion` Image and Stable Diffusion Models
 
 Please note the following command will take many minutes depending on
 your hardware configuration and network connection.
 
 ```bash
-./build.sh --framework diffusers --build-models
+./build.sh --framework diffusion --build-models
 ```
 
 ## Run Ray Serve Deployment
@@ -74,14 +67,14 @@ The following command starts a container and volume mounts the current
 directory as `workspace`.
 
 ```bash
-./run.sh --framework diffusers
+./run.sh --framework diffusion
 
 ```
 
 ### Run Deployment
 ```bash
 cd examples/rayserve
-serve run tritonserver_deployment:triton_app
+serve run tritonserver_deployment:tritonserver_deployment
 ```
 
 ## Send Requests to Deployment

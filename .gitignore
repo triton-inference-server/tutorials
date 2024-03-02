@@ -1,8 +1,12 @@
 # Pretrained Models
-*.onnx
+**/*.onnx
+**/onnx/*.opt
+**/*.bin
+**/*.plan
+**/pytorch_model
 
 # Python Stuff
-__pycache__
+**/__pycache__
 
 # Downloaded Assets
-downloads
+**/downloads

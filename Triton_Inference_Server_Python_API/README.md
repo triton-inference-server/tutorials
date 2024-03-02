@@ -36,9 +36,6 @@ providing a higher level abstraction. At its core the API relies on a
 1:1 python binding of the C API and provides all the flexibility and
 power of the C API with a simpler to use interface.
 
-This tutorial repository includes a preview of the API based on the
-23.12 release of Triton.
-
 > [!Note]
 > As the API is in BETA please expect some changes as we
 > test out different features and get feedback.
@@ -57,14 +54,14 @@ https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
 ## Installation
 
 The tutorial and Python API package are designed to be installed and
-run within the `nvcr.io/nvidia/tritonserver:23.12-py3` docker image.
+run within the `nvcr.io/nvidia/tritonserver:24.01-py3` docker image.
 
 A set of convenience scripts are provided to create a docker image
-based on the `nvcr.io/nvidia/tritonserver:23.12-py3` image with the
+based on the `nvcr.io/nvidia/tritonserver:24.01-py3` image with the
 Python API installed plus additional dependencies required for the
 examples.
 
-### Trition Inference Server 23.12 + Python API
+### Triton Inference Server 24.01 + Python API
 
 #### Clone Repository
 ```bash
@@ -72,7 +69,7 @@ git clone https://github.com/triton-inference-server/tutorials.git
 cd tutorials/Triton_Inference_Server_Python_API
 ```
 
-#### Build `triton-python-api:r23.12` Image
+#### Build `triton-python-api:r24.01` Image
 ```bash
 ./build.sh
 ```
@@ -80,7 +77,7 @@ cd tutorials/Triton_Inference_Server_Python_API
 #### Supported Backends
 
 The built image includes all the backends shipped by default in the
-tritonserver `nvcr.io/nvidia/tritonserver:23.12-py3` container.
+tritonserver `nvcr.io/nvidia/tritonserver:24.01-py3` container.
 
 ```
 dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  tensorflow  tensorrt
@@ -98,7 +95,7 @@ different data types. The `identity` model copies provided inputs of
 
 ## Hello World
 
-### Start `triton-python-api:r23.12` Container
+### Start `triton-python-api:r24.01` Container
 
 The following command starts a container and volume mounts the current
 directory as `workspace`.
@@ -161,29 +158,24 @@ for response in responses:
 
 ## Stable Diffusion
 
-Please note in order to run the stable diffusion example you will need
-a hugging face token and need to set the environment variable
-`HF_TOKEN` before running the container or set the token by using the
-`huggingface-cli login` command after running the container.
-
 This example is based on the
-[building_complex_pipelines](/Conceptual_Guide/Part_6-building_complex_pipelines)
+[Popular_Models_Guide/StableDiffusion](../Popular_Models_Guide/StableDiffusion)
 tutorial.
 
 
-#### Build `triton-python-api:r23.12-diffusers` Image and Stable Diffusion Models
+#### Build `triton-python-api:r24.01-diffusion` Image and Stable Diffusion Models
 
 Please note the following command will take many minutes depending on
 your hardware configuration and network connection.
 
 ```bash
-   ./build.sh --framework diffusers --build-models
+   ./build.sh --framework diffusion --build-models
 ```
 
 #### Supported Backends
 
 The built image includes all the backends shipped by default in the
-tritonserver `nvcr.io/nvidia/tritonserver:23.12-py3` container.
+tritonserver `nvcr.io/nvidia/tritonserver:24.01-py3` container.
 
 ```
 dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  tensorflow  tensorrt
@@ -191,10 +183,10 @@ dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  ten
 
 #### Included Models
 
-The `diffusers` build includes a `stable_diffustion` pipeline that
+The `diffusion` build includes a `stable_diffustion` pipeline that
 takes a text prompt and returns a generated image. For more details on
 the models and pipeline please see the
-[building_complex_pipelines](/Conceptual_Guide/Part_6-building_complex_pipelines)
+[Popular_Models_Guide/StableDiffusion](../Popular_Models_Guide/StableDiffusion)
 tutorial.
 
 ### Start Container
@@ -203,7 +195,7 @@ The following command starts a container and volume mounts the current
 directory as `workspace`.
 
 ```bash
-./run.sh --framework diffusers
+./run.sh --framework diffusion
 ```
 
 ### Enter Python Shell
@@ -219,7 +211,7 @@ import tritonserver
 import numpy
 from PIL import Image
 
-server = tritonserver.Server(model_repository="/workspace/diffuser-models")
+server = tritonserver.Server(model_repository="/workspace/diffusion-models")
 server.start()
 ```
 

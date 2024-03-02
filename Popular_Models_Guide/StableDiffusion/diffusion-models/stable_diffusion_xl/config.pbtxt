@@ -1,4 +1,4 @@
-# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -24,38 +24,95 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ARG BASE_IMAGE=nvcr.io/nvidia/tritonserver
-ARG BASE_IMAGE_TAG=24.01-py3
+backend: "diffusion"
+max_batch_size: 2
 
-FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as triton-python-api
+dynamic_batching {
+ max_queue_delay_microseconds: 100000
+}
 
-RUN apt-get update; apt-get install -y gdb
+input [
+  {
+    name: "prompt"
+    data_type: TYPE_STRING
+    dims: [1]
+  },
+  {
+    name: "negative_prompt"
+    data_type: TYPE_STRING
+    dims: [1]
+    optional: true
+  }
+]
+output [
+  {
+    name: "generated_image"
+    data_type: TYPE_UINT8
+    dims: [ -1, -1, -1]
+  }
+]
 
-COPY ./deps/requirements.txt /tmp/requirements.txt
+instance_group [
+  { count: 1
+    kind: KIND_GPU
+    gpus: [0]
+  }
+]
 
-RUN pip install --timeout=2000 -r /tmp/requirements.txt
+parameters[
+{
+  key: "onnx_opset"
+  value: {
+    string_value: "18"
+  }
+},
+{
+  key: "image_height"
+  value: {
+    string_value: "1024"
+  }
+},
+{
+  key: "image_width"
+  value: {
+    string_value: "1024"
+  }
+},
+{
+  key: "steps"
+  value: {
+    string_value: "30"
+  }
+},
+{
+  key: "scheduler"
+  value: {
+    string_value: ""
+  }
+},
+{
+  key: "guidance_scale"
+  value: {
+    string_value: "5.0"
+  }
+},
+{
+  key: "seed"
+  value: {
+    string_value: ""
+  }
+},
+{
+  key: "version"
+  value: {
+    string_value: "xl-1.0"
+  }
+},
+{
+  key: "force_engine_build"
+  value: {
+    string_value: ""
+  }
+}
 
-# Finish pyright install
-
-RUN pyright --help
-
-COPY ./deps/tritonserver-2.41.0.dev0-py3-none-any.whl /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl
-
-RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
-    "tritonserver-*.whl" | xargs -I {} pip3 install --force-reinstall --upgrade {}[all]
-
-RUN pip3 show tritonserver 1>/dev/null || \
-    if [ $? != 0 ]; then \
-       pip3 install /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl[all] ;\
-    fi
-
-RUN ln -sf /bin/bash /bin/sh
-
-COPY . /workspace
-
-ARG RUN_TESTS=FALSE
-
-RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then cd /tmp && git clone -b r23.12-python-api https://github.com/triton-inference-server/core.git && cp -rf /tmp/core/python/test /workspace/deps/ ; fi
-
-RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then pytest /workspace/deps ; fi
-
+]

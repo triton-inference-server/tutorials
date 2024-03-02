@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -24,49 +24,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import torch
-from diffusers import AutoencoderKL
-from transformers import CLIPTextModel, CLIPTokenizer
+ARG BASE_IMAGE=nvcr.io/nvidia/tritonserver
+ARG BASE_IMAGE_TAG=24.01-py3
 
-prompt = "Draw a dog"
-vae = AutoencoderKL.from_pretrained(
-    "CompVis/stable-diffusion-v1-4", subfolder="vae", use_auth_token=True
-)
+FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as tritonserver-stable-diffusion
 
-tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
-text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
+RUN pip install --pre --upgrade --extra-index-url https://pypi.nvidia.com tensorrt
 
-vae.forward = vae.decode
-torch.onnx.export(
-    vae,
-    (torch.randn(1, 4, 64, 64), False),
-    "vae.onnx",
-    input_names=["latent_sample", "return_dict"],
-    output_names=["sample"],
-    dynamic_axes={
-        "latent_sample": {0: "batch", 1: "channels", 2: "height", 3: "width"},
-    },
-    do_constant_folding=True,
-    opset_version=14,
-)
+RUN git clone https://github.com/NVIDIA/TensorRT.git -b release/9.2 --single-branch /tmp/TensorRT
 
-text_input = tokenizer(
-    prompt,
-    padding="max_length",
-    max_length=tokenizer.model_max_length,
-    truncation=True,
-    return_tensors="pt",
-)
+RUN pip3 install -r /tmp/TensorRT/demo/Diffusion/requirements.txt
 
-torch.onnx.export(
-    text_encoder,
-    (text_input.input_ids.to(torch.int32)),
-    "encoder.onnx",
-    input_names=["input_ids"],
-    output_names=["last_hidden_state", "pooler_output"],
-    dynamic_axes={
-        "input_ids": {0: "batch", 1: "sequence"},
-    },
-    opset_version=14,
-    do_constant_folding=True,
-)
+RUN pip3 install tritonclient[all]
+
+RUN mkdir -p /opt/tritonserver/backends/diffusion
+
+RUN cp -rf /tmp/TensorRT/demo/Diffusion /opt/tritonserver/backends/diffusion/
+
+COPY ./backend/diffusion/model.py /opt/tritonserver/backends/diffusion/model.py
+
+COPY ./diffusion-models /workspace/diffusion-models
