@@ -1,5 +1,5 @@
 #!/bin/bash -e
-# Copyright 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -29,15 +29,14 @@ TAG=
 RUN_PREFIX=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
-DEFAULT_FRAMEWORK=IDENTITY
+declare -A FRAMEWORKS=(["DIFFUSION"]=1)
+DEFAULT_FRAMEWORK=DIFFUSION
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 
 # Base Images
 IMAGE=
 IMAGE_TAG_DIFFUSERS=diffusion
-IMAGE_TAG_TRT_LLM=trt-llm
 
 get_options() {
     while :; do
@@ -100,16 +99,11 @@ get_options() {
     fi
 
     if [ -z "$IMAGE" ]; then
-        IMAGE="triton-python-api:r24.01"
-
-	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
-	    IMAGE+="-trt-llm"
-	fi
+        IMAGE="tritonserver:r24.01"
 
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
 	    IMAGE+="-diffusion"
 	fi
-
     fi
 
 }
@@ -135,9 +129,7 @@ if [ -z "$RUN_PREFIX" ]; then
     set -x
 fi
 
-$RUN_PREFIX mkdir -p backend/diffusion
-
-$RUN_PREFIX docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eGITHUB_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${SOURCE_DIR}:/workspace -v${SOURCE_DIR}/.cache/huggingface:/root/.cache/huggingface -w /workspace -v${SOURCE_DIR}/../Popular_Models_Guide/StableDiffusion/backend/diffusion:/opt/tritonserver/backends/diffusion $IMAGE
+$RUN_PREFIX docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eGITHUB_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v/tmp:/tmp -v ${SOURCE_DIR}:/workspace -v${SOURCE_DIR}/.cache/huggingface:/root/.cache/huggingface -v${SOURCE_DIR}/backend/diffusion:/opt/tritonserver/backends/diffusion -w /workspace  $IMAGE
 
 { set +x; } 2>/dev/null
 

@@ -1,3 +1,4 @@
+#!/bin/bash -e
 # Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-diffusers==0.9.0
-ftfy
-scipy
-transformers
-transformers[onnxruntime]
+SOURCE_DIR=$(dirname "$(readlink -f "$0")")
+
+# install tritonserver in process api
+find /opt/tritonserver/python -maxdepth 1 -type f -name \
+     "tritonserver-*.whl" | xargs -I {} pip3 install --upgrade {}[all]
+
+
+# Run python script
+
+python3 $SOURCE_DIR/build_models.py "$@"

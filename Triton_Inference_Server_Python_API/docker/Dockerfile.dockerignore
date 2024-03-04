@@ -1,0 +1,13 @@
+**/*.onnx
+**/*.plan
+**/diffuser-models/*
+**/identity-models/*
+**/scripts/stable_diffusion/models/*/*/*.onnx
+**/scripts/stable_diffusion/models/*/*/*.plan
+**/*.onnx
+**/*.plan
+**/.cache/*
+**/*onnx*
+**/*engine*
+**/*pytorch_model*
+**/*.pth*
