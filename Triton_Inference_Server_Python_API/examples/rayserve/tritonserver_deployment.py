@@ -31,6 +31,7 @@ from typing import Optional
 import numpy
 import requests
 import torch
+import torch_tensorrt
 import tritonserver
 from fastapi import FastAPI
 from PIL import Image
@@ -54,7 +55,9 @@ def _print_heading(message):
 @serve.deployment(ray_actor_options={"num_gpus": 1})
 @serve.ingress(app)
 class BaseDeployment:
-    def __init__(self):
+    def __init__(self, use_torch_compile=True):
+        import torch_tensorrt
+
         self._image_size = 512
         self._model_id = "runwayml/stable-diffusion-v1-5"
         from diffusers import StableDiffusionPipeline
@@ -63,6 +66,19 @@ class BaseDeployment:
             self._model_id, revision="fp16", torch_dtype=torch.float16
         )
         self._pipeline = self._pipeline.to("cuda")
+        if use_torch_compile:
+            backend = "torch_tensorrt"
+            print("compiling")
+            print(torch._dynamo.list_backends())
+            self._pipeline.unet = torch.compile(
+                self._pipeline.unet,
+                backend=backend,
+                options={
+                    "truncate_long_and_double": True,
+                    "precision": torch.float16,
+                },
+                dynamic=False,
+            )
 
     @app.get("/generate")
     def generate(self, prompt: str, filename: Optional[str] = None) -> None:
@@ -153,7 +169,10 @@ def tritonserver_deployment(_args):
 
 
 def base_deployment(_args):
-    return BaseDeployment.bind()
+    if "use_torch_compile" in _args:
+        return BaseDeployment.bind(use_torch_compile=True)
+    else:
+        return BaseDeployment.bind(use_torch_compile=False)
 
 
 if __name__ == "__main__":
