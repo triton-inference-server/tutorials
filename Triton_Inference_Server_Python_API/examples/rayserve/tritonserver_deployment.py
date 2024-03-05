@@ -79,6 +79,7 @@ class BaseDeployment:
                 },
                 dynamic=False,
             )
+            self.generate("temp")
 
     @app.get("/generate")
     def generate(self, prompt: str, filename: Optional[str] = None) -> None:
