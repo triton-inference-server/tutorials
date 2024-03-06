@@ -31,7 +31,6 @@ from typing import Optional
 import numpy
 import requests
 import torch
-import torch_tensorrt
 import tritonserver
 from fastapi import FastAPI
 from PIL import Image
@@ -56,8 +55,6 @@ def _print_heading(message):
 @serve.ingress(app)
 class BaseDeployment:
     def __init__(self, use_torch_compile=True):
-        import torch_tensorrt
-
         self._image_size = 512
         self._model_id = "runwayml/stable-diffusion-v1-5"
         from diffusers import StableDiffusionPipeline
@@ -67,6 +64,8 @@ class BaseDeployment:
         )
         self._pipeline = self._pipeline.to("cuda")
         if use_torch_compile:
+            import torch_tensorrt
+
             backend = "torch_tensorrt"
             print("compiling")
             print(torch._dynamo.list_backends())
