@@ -356,7 +356,7 @@ print(output_data)
 ```
 
 Now, run the full inference pipeline by executing the following command
-```
+```bash
 python client.py
 ```
 You should see the parsed text printed out to your console.
