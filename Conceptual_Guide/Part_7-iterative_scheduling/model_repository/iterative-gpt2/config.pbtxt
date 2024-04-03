@@ -24,28 +24,43 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import tritonclient.grpc as grpcclient
-from functools import partial
-import numpy as np
+backend: "python"
+sequence_batching {
+    iterative_sequence: true
+    control_input: [{
+      name: "correlation_id"
+      control [
+        {
+          kind: CONTROL_SEQUENCE_CORRID
+          data_type: TYPE_UINT64
+        }
+      ]
+    },
+    {
+      name: "start"
+      control [
+        {
+          kind: CONTROL_SEQUENCE_START
+          fp32_false_true: [ 0, 1 ]
+        }
+      ]
+    },
+   {
+      name: "end"
+      control [
+        {
+          kind: CONTROL_SEQUENCE_END
+          fp32_false_true: [ 0, 1 ]
+        }
+      ]}
+    ]
+    oldest {}
+    max_sequence_idle_microseconds: 400000000
+}
 
-
-def response_callback(user_data, result, error):
-    if result:
-        print(result.as_numpy("output"))
-    else:
-        print(error)
-
-
-if __name__ == "__main__":
-    client = grpcclient.InferenceServerClient(url="localhost:8001")
-    model_name = "gpt2"
-
-    inputs = []
-    outputs = []
-    user_data = None
-    inputs.append(grpcclient.InferInput("input", [1], "BYTES"))
-    inputs[0].set_data_from_numpy(np.array(["Artificial intelligence is"], dtype=np.object_))
-
-    outputs.append(grpcclient.InferRequestedOutput("output"))
-    client.start_stream(callback=partial(response_callback, user_data))
-    client.async_stream_infer(model_name=model_name, inputs=inputs, outputs=outputs, sequence_id=1, sequence_start=True)
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+  }
+]

@@ -24,39 +24,44 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-backend: "python"
-max_batch_size: 0
-model_transaction_policy {
-    decoupled: true
-}
-sequence_batching {
-    iterative_sequence: true
-    control_input: [{
-      name: "correlation_id"
-      control [
-        {
-          kind: CONTROL_SEQUENCE_CORRID
-          data_type: TYPE_UINT64
-        }
-      ]
-    },
-    {
-      name: "start"
-      control [
-        {
-          kind: CONTROL_SEQUENCE_START
-          fp32_false_true: [ 0, 1 ]
-        }
-      ]
-    },
-   {
-      name: "end"
-      control [
-        {
-          kind: CONTROL_SEQUENCE_END
-          fp32_false_true: [ 0, 1 ]
-        }
-      ]}
-    ]
-    max_sequence_idle_microseconds: 100000000
-}
+from prompt_toolkit import Application
+from prompt_toolkit.buffer import Buffer
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.layout.containers import VSplit, Window
+from prompt_toolkit.layout.controls import BufferControl
+from prompt_toolkit.layout.layout import Layout
+
+
+class Display:
+    def __init__(self) -> None:
+        self._lhs = Buffer()
+        self._rhs = Buffer()
+        self._root_container = VSplit(
+            [
+                Window(content=BufferControl(buffer=self._lhs)),
+                Window(width=1, char="|"),
+                Window(content=BufferControl(buffer=self._rhs)),
+            ]
+        )
+
+        kb = KeyBindings()
+
+        @kb.add("c-c")
+        def exit(event):
+            event.app.exit()
+
+        self._layout = Layout(self._root_container)
+        self._app = Application(layout=self._layout, full_screen=True, key_bindings=kb)
+
+    def add_text_lhs(self, text):
+        self._lhs.text += text
+
+    def add_text_rhs(self, text):
+        self._rhs.text += text
+
+    def clear(self):
+        self._lhs.text = ""
+        self._rhs.text = ""
+
+    def run(self):
+        self._app.run()

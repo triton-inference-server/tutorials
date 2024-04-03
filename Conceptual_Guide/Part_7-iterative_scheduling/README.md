@@ -29,13 +29,104 @@
 # Deploying a GPT-2 Model using Python Backend and Iterative Scheduling
 
 In this tutorial, we will deploy a GPT-2 model using the Python backend and
-iterative scheduling.
+demonstrate the
+[iterative scheduling](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html#iterative-sequences)
+feature.
 
 ## Prerequisites
 
 Before getting started with this tutorial, make sure you're familiar
 with the following concepts:
 
-* [Python Backend](https://github.com/triton-inference-server/python_backend)
 * [Triton-Server Quick Start](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/getting_started/quickstart.html)
+* [Python Backend](https://github.com/triton-inference-server/python_backend)
 
+## Iterative Scheduling
+
+Iterative scheduling is a technique that allows the Triton Inference Server to
+schedule the same request multiple times with the same input. This is useful for
+models that have an auto-regressive loop. Iterative scheduling enables Triton
+Server to implement inflight batching for your models and gives you the ability
+to combine new sequences as they are arriving with inflight sequences.
+
+## Tutorial Overview
+
+In this tutorial we deploy two models:
+
+* simple-gpt2: This model receives a batch of requests and proceeds to the next
+batch only when it is done generating tokens for the current batch.
+
+* iterative-gpt2: This model uses iterative scheduling to process
+new sequences in a batch even when it is still generating tokens for the
+previous sequences
+
+### Demo
+
+[![asciicast](https://asciinema.org/a/WeDlFwRuOip6q7EgQMZmWKRE7.svg)](https://asciinema.org/a/WeDlFwRuOip6q7EgQMZmWKRE7)
+
+
+### Step 1: Prepare the Server Environment
+
+* First, run the Triton Inference Server Container:
+
+```
+# Replace yy.mm with year and month of release. Please use 24.04 release upward.
+docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:yy.mm-py3 bash
+```
+
+* Next, install all the dependencies required by the models running in the
+python backend and login with your [huggingface token](https://huggingface.co/settings/tokens)
+(Account on [HuggingFace](https://huggingface.co/) is required).
+
+```
+pip install transformers[torch]
+```
+
+Then, start the server:
+
+```
+tritonserver --model-repository=/models
+```
+
+### Step 2: Install the client side dependencies
+
+In another terminal install the client dependencies:
+
+```
+pip3 install tritonclient[grpc]
+pip3 install prompt_toolkit
+```
+
+### Step 3: Run the client
+
+The simple-gpt2 model doesn't use iterative scheduling and will proceed to the
+next batch only when it is done generating tokens for the current batch.
+
+Run the following command to start the client:
+
+```
+python3 client/client.py --model simple-gpt2
+```
+
+As you can see, the tokens for one request are processed first before proceeding
+to the next request.
+
+Run `Ctrl+C` to stop the client.
+
+
+The iterative scheduler is able to incorporate new requests as they are arriving
+in the server.
+
+Run the following command to start the client:
+```
+python3 client/client.py --model iterative-gpt2
+```
+
+As you can see, the tokens for both prompts are getting generated simultaneously.
+
+
+## Next Steps
+
+We plan to integrate KV-Cache with these models for better performance. Currently,
+the main goal of tutorial is to demonstrate how to use iterative scheduling with
+Python backend.
