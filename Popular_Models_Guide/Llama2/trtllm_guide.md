@@ -33,7 +33,7 @@ and Triton's TensorRTLLM Backend [here](https://github.com/triton-inference-serv
 *NOTE:* If some parts of this tutorial doesn't work, it is possible that there
 are some version mismatches between the `tutorials` and `tensorrt_backend` repository.
 Refer to [llama.md](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md)
-for more detailed modifications if necessary.
+for more detailed modifications if necessary. And if you are familier with python, you can also try using [High-level API](https://github.com/NVIDIA/TensorRT-LLM/blob/main/examples/high-level-api/README.md) for LLM workflow.
 
 
 ## Pre-build instructions
@@ -126,20 +126,22 @@ To run our Llama2-7B model, you will need to:
  cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/.
  ```
 
-2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps. See details in [documentation](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md):
+2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps. The following script do a minimized configuration to run tritonserver, but if you want optimal performance or custom parameters, read details in [documentation](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md) and [perf_best_practices](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/perf_best_practices.md):
 
     ```bash
     # preprocessing
     TOKENIZER_DIR=/Llama-2-7b-hf/
+    TOKENIZER_TYPE=auto
+    DECOUPLED_MODE=false
     ENGINE_DIR=/engines/1-gpu/
-    FILL_TEMPLATE_SCRIPT=/tensorrtllm_backend/tools/fill_template.py
     MODEL_FOLDER=/opt/tritonserver/inflight_batcher_llm
     MAX_BATCH_SIZE=64
-    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/preprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:llama,triton_max_batch_size:${MAX_BATCH_SIZE},preprocessing_instance_count:1
-    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/postprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:llama,triton_max_batch_size:${MAX_BATCH_SIZE},postprocessing_instance_count:1
-    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm_bls/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:False,bls_instance_count:1,accumulate_tokens:False
+    FILL_TEMPLATE_SCRIPT=/tensorrtllm_backend/tools/fill_template.py
+    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/preprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE}
+    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/postprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE}
+    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm_bls/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE}
     python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/ensemble/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE}
-    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:False,max_beam_width:1,engine_dir:${ENGINE_DIR},max_tokens_in_paged_kv_cache:2560,max_attention_window_size:2560,kv_cache_free_gpu_mem_fraction:0.5,exclude_input_in_output:True,enable_kv_cache_reuse:False,batching_strategy:inflight_fused_batching,max_queue_delay_microseconds:600
+    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},engine_dir:${ENGINE_DIR}
     ```
 
 3.  Launch Tritonserver
