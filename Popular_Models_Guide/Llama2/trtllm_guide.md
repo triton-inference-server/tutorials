@@ -143,6 +143,7 @@ To run our Llama2-7B model, you will need to:
     python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/ensemble/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE}
     python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},engine_dir:${ENGINE_DIR}
     ```
+    Also, ensure that the `gpt_model_type` parameter is set to `inflight_fused_batching`.
 
 3.  Launch Tritonserver
 
