@@ -71,7 +71,7 @@ previous sequences
 
 ```
 # Replace yy.mm with year and month of release. Please use 24.04 release upward.
-docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:yy.mm-py3 bash
+docker run --gpus=all --name iterative-scheduling -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:yy.mm-py3 bash
 ```
 
 * Next, install all the dependencies required by the models running in the
@@ -81,6 +81,11 @@ python backend and login with your [huggingface token](https://huggingface.co/se
 ```
 pip install transformers[torch]
 ```
+
+> [!NOTE]
+> Optional: If you want to avoid installing the dependencies each time you run the
+> container, you can run `docker commit iterative-scheduling iterative-scheduling-image` to save the container
+> and use that for subsequent runs.
 
 Then, start the server:
 
@@ -94,7 +99,7 @@ In another terminal install the client dependencies:
 
 ```
 pip3 install tritonclient[grpc]
-pip3 install prompt_toolkit
+pip3 install tqdm
 ```
 
 ### Step 3: Run the client
@@ -123,7 +128,6 @@ python3 client/client.py --model iterative-gpt2
 ```
 
 As you can see, the tokens for both prompts are getting generated simultaneously.
-
 
 ## Next Steps
 

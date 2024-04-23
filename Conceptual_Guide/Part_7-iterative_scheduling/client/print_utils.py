@@ -24,44 +24,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from prompt_toolkit import Application
-from prompt_toolkit.buffer import Buffer
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.containers import VSplit, Window
-from prompt_toolkit.layout.controls import BufferControl
-from prompt_toolkit.layout.layout import Layout
+from tqdm import tqdm
 
 
 class Display:
-    def __init__(self) -> None:
-        self._lhs = Buffer()
-        self._rhs = Buffer()
-        self._root_container = VSplit(
-            [
-                Window(content=BufferControl(buffer=self._lhs)),
-                Window(width=1, char="|"),
-                Window(content=BufferControl(buffer=self._rhs)),
-            ]
-        )
+    def __init__(self, max_tokens) -> None:
+        self._top = tqdm(position=0, total=max_tokens, miniters=1)
+        self._bottom = tqdm(position=1, total=max_tokens, miniters=1)
+        self._max_tokens = max_tokens
 
-        kb = KeyBindings()
+    def update_top(self, text):
+        self._top.update(1)
+        self._top.refresh()
 
-        @kb.add("c-c")
-        def exit(event):
-            event.app.exit()
-
-        self._layout = Layout(self._root_container)
-        self._app = Application(layout=self._layout, full_screen=True, key_bindings=kb)
-
-    def add_text_lhs(self, text):
-        self._lhs.text += text
-
-    def add_text_rhs(self, text):
-        self._rhs.text += text
+    def update_bottom(self, text):
+        self._bottom.update(1)
+        self._bottom.refresh()
 
     def clear(self):
-        self._lhs.text = ""
-        self._rhs.text = ""
-
-    def run(self):
-        self._app.run()
+        self._top.reset()
+        self._bottom.reset()

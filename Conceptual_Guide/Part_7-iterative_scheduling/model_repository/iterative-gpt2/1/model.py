@@ -23,10 +23,20 @@
 # OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import json
+
 import numpy as np
 import torch
 import triton_python_backend_utils as pb_utils
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
+
+
+class State:
+    def __init__(self):
+        self.prompt_tokens_len = 0
+        self.tokens = []
+        self.max_tokens = 0
+        self.ignore_eos = False
 
 
 class TritonPythonModel:
@@ -40,8 +50,6 @@ class TritonPythonModel:
         self.tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
         self.model = GPT2LMHeadModel.from_pretrained("gpt2").to(self.device)
         self.tokenizer.pad_token = self.tokenizer.eos_token
-
-        self.max_tokens = 64
 
     @staticmethod
     def auto_complete_config(config):
@@ -95,10 +103,20 @@ class TritonPythonModel:
                 pb_utils.get_input_tensor_by_name(request, "start").as_numpy().item()
             )
             if start:
-                self.state[correlation_id] = self.tokenizer(
+                state = State()
+                state.tokens = self.tokenizer(
                     input_tensor, return_tensors="pt", padding=True
                 )["input_ids"][0].to(self.device)
-            input_ids.append(self.state[correlation_id])
+                state.prompt_tokens_len = len(state.tokens)
+
+                # Store the parameters
+                parameters = json.loads(request.parameters())
+                state.ignore_eos = parameters["ignore_eos"]
+                state.max_tokens = parameters["max_tokens"]
+
+                self.state[correlation_id] = state
+
+            input_ids.append(self.state[correlation_id].tokens)
 
         # Find the max sequence length
         max_len = max([len(x) for x in input_ids])
@@ -152,13 +170,20 @@ class TritonPythonModel:
             # Convert scalar to a one dimensional tensor
             generated_token = outputs[i][-1].reshape(1)
 
-            self.state[correlation_id] = torch.cat(
-                [self.state[correlation_id], generated_token]
+            ignore_eos = self.state[correlation_id].ignore_eos
+
+            # Maximum generated token length
+            max_tokens = (
+                self.state[correlation_id].max_tokens
+                + self.state[correlation_id].prompt_tokens_len
+            )
+
+            self.state[correlation_id].tokens = torch.cat(
+                [self.state[correlation_id].tokens, generated_token]
             )
             if (
-                generated_token.item() == self.tokenizer.eos_token_id
-                or len(self.state[correlation_id]) >= self.max_tokens
-            ):
+                generated_token.item() == self.tokenizer.eos_token_id and not ignore_eos
+            ) or len(self.state[correlation_id].tokens) >= max_tokens:
                 flags = pb_utils.TRITONSERVER_RESPONSE_COMPLETE_FINAL
                 request.set_release_flags(pb_utils.TRITONSERVER_REQUEST_RELEASE_ALL)
                 del self.state[correlation_id]

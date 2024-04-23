@@ -23,10 +23,20 @@
 # OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import json
+
 import numpy as np
 import torch
 import triton_python_backend_utils as pb_utils
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
+
+
+class State:
+    def __init__(self):
+        self.prompt_tokens_len = 0
+        self.tokens = []
+        self.max_tokens = 0
+        self.ignore_eos = False
 
 
 class TritonPythonModel:
@@ -40,8 +50,6 @@ class TritonPythonModel:
         self.tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
         self.model = GPT2LMHeadModel.from_pretrained("gpt2").to(self.device)
         self.tokenizer.pad_token = self.tokenizer.eos_token
-
-        self.max_tokens = 64
 
     @staticmethod
     def auto_complete_config(config):
@@ -66,44 +74,39 @@ class TritonPythonModel:
 
         return config
 
-    def init_state(self, requests):
-        for i, request in enumerate(requests):
+    def init_state(self, states, requests):
+        """
+        Initializes the state for each request.
+
+        Args:
+            states (list): A list to store the state for each request.
+            requests (list): A list of requests.
+
+        Returns:
+            None
+        """
+        for request in requests:
             input_tensor = str(
                 pb_utils.get_input_tensor_by_name(request, "text_input")
                 .as_numpy()
                 .item(),
                 encoding="utf-8",
             )
-            if i not in self.state:
-                self.state[i] = self.tokenizer(
-                    input_tensor, return_tensors="pt", padding=True
-                )["input_ids"][0].to(self.device)
+            state = State()
 
-    def create_batch(self, requests):
-        """
-        Gathers input tensors from the requests and returns processed input tensors.
+            parameters = json.loads(request.parameters())
+            state.ignore_eos = parameters["ignore_eos"]
+            state.max_tokens = parameters["max_tokens"]
+            state.tokens = self.tokenizer(
+                input_tensor, return_tensors="pt", padding=True
+            )["input_ids"][0].to(self.device)
+            state.prompt_tokens_len = len(state.tokens)
 
-        Args:
-            requests (list): A list of requests containing input tensors.
+            states.append(state)
 
-        Returns:
-            input_ids (torch.Tensor): A tensor containing the processed input IDs.
-            attention_mask (torch.Tensor): A tensor containing the attention mask.
-            mapping (list): A list of indices that map the input tensors to the requests.
-        """
-
-        input_ids = []
-        mapping = []
-        for index, state in self.state.items():
-            if state != []:
-                mapping.append(index)
-                input_ids.append(state)
-
-        if not mapping:
-            return None, None, mapping
-
+    def create_batch(self, states):
         # Find the max sequence length
-        max_len = max([len(x) for x in input_ids])
+        max_len = max([len(x.tokens) for x in states])
 
         # Pad the input tensors.
         input_ids_torch = torch.cat(
@@ -111,57 +114,62 @@ class TritonPythonModel:
                 torch.cat(
                     [
                         torch.tensor(
-                            [self.tokenizer.eos_token_id] * (max_len - len(x)),
+                            [self.tokenizer.eos_token_id] * (max_len - len(x.tokens)),
                             device=self.device,
                         )
                     ]
-                    + [x]
+                    + [x.tokens]
                 ).unsqueeze(0)
-                for x in input_ids
+                for x in states
             ]
         )
         attention_mask = torch.cat(
             [
                 torch.cat(
                     [
-                        torch.tensor([0] * (max_len - x.numel())),
-                        torch.tensor([1] * x.numel()),
+                        torch.tensor([0] * (max_len - x.tokens.numel())),
+                        torch.tensor([1] * x.tokens.numel()),
                     ]
                 ).unsqueeze(0)
-                for x in input_ids
+                for x in states
             ]
         )
-        return input_ids_torch.long(), attention_mask.long().to(self.device), mapping
+        return input_ids_torch.long(), attention_mask.long().to(self.device)
 
-    def send_responses(self, requests, outputs, mapping):
+    def send_responses(self, states, requests, outputs):
         """
-        Scatter method for processing requests and sending responses.
+        Sends responses to the requests based on the model outputs.
 
         Args:
-            requests (list): List of Triton InferenceRequest objects.
-            outputs (list): List of output tensors generated by the model.
-            mapping (list): List of indices that map the input tensors to the requests.
+            states (list): A list of states for each request.
+            requests (list): A list of requests.
+            outputs (torch.Tensor): A tensor containing the model outputs.
 
         Returns:
-            None
-        """
-        for i in mapping:
-            index = mapping[i]
-            request = requests[index]
+            list: A list of requests that have not been completed.
+            list: A list of states for each request that have not been completed.
 
+        """
+        updated_request_list = []
+        updated_states = []
+
+        for i, request in enumerate(requests):
             response_sender = request.get_response_sender()
             # Convert scalar to a one dimensional tensor
-            generated_token = outputs[index][-1].reshape(1)
+            generated_token = outputs[i][-1].reshape(1)
 
-            self.state[index] = torch.cat([self.state[index], generated_token])
+            max_tokens = states[i].max_tokens + states[i].prompt_tokens_len
+            states[i].tokens = torch.cat([states[i].tokens, generated_token])
+
             if (
                 generated_token.item() == self.tokenizer.eos_token_id
-                or len(self.state[index]) >= self.max_tokens
-            ):
+                and not states[i].ignore_eos
+            ) or len(states[i].tokens) >= max_tokens:
                 flags = pb_utils.TRITONSERVER_RESPONSE_COMPLETE_FINAL
-                self.state[index] = []
             else:
                 flags = 0
+                updated_states.append(states[i])
+                updated_request_list.append(request)
 
             output_decoded = self.tokenizer.decode(generated_token.cpu().item())
             response = pb_utils.InferenceResponse(
@@ -172,18 +180,15 @@ class TritonPythonModel:
                 ]
             )
             response_sender.send(response, flags=flags)
+        return updated_request_list, updated_states
 
     def execute(self, requests):
         pb_utils.Logger.log_verbose(f"Processing {len(requests)} request(s).")
 
-        self.init_state(requests)
-        mapping = [i for i in range(len(requests))]
-        while mapping:
-            input_ids, attention_mask, mapping = self.create_batch(requests)
-
-            # Break if there are no other inflight requests.
-            if not mapping:
-                break
+        states = []
+        self.init_state(states, requests)
+        while requests:
+            input_ids, attention_mask = self.create_batch(states)
 
             outputs = self.model.generate(
                 input_ids,
@@ -191,7 +196,4 @@ class TritonPythonModel:
                 pad_token_id=self.tokenizer.eos_token_id,
                 attention_mask=attention_mask,
             )
-            self.send_responses(requests, outputs, mapping)
-
-        # Clean up the state
-        self.state = {}
+            requests, states = self.send_responses(states, requests, outputs)

@@ -38,8 +38,7 @@ def client1_callback(display, event, result, error):
     if error:
         raise error
 
-    token = result.as_numpy("text_output").item().decode("utf-8")
-    display.add_text_lhs("\n" + token)
+    display.update_top()
     if result.get_response().parameters.get("triton_final_response").bool_param:
         event.set()
 
@@ -48,13 +47,13 @@ def client2_callback(display, event, result, error):
     if error:
         raise error
 
-    token = result.as_numpy("text_output").item().decode("utf-8")
-    display.add_text_rhs("\n" + token)
+    display.update_bottom()
     if result.get_response().parameters.get("triton_final_response").bool_param:
         event.set()
 
 
-def run_inferences(url, model_name, display):
+def run_inferences(url, model_name, display, max_tokens):
+    global results2, results1
     # Create clients
     client1 = grpcclient.InferenceServerClient(url)
     client2 = grpcclient.InferenceServerClient(url)
@@ -81,17 +80,23 @@ def run_inferences(url, model_name, display):
 
         # Setup the display initially with the prompts
         display.clear()
-        display.add_text_lhs(prompt1)
-        display.add_text_rhs(prompt2)
+        parameters = {"ignore_eos": True, "max_tokens": max_tokens}
 
         client1.async_stream_infer(
-            model_name=model_name, inputs=inputs0, enable_empty_final_response=True
+            model_name=model_name,
+            inputs=inputs0,
+            enable_empty_final_response=True,
+            parameters=parameters,
         )
 
-        # Add a small delay so that the two requests are not sent at the same time
+        # Add a small delay so that the two requests are not sent at the same
+        # time
         time.sleep(0.05)
         client2.async_stream_infer(
-            model_name=model_name, inputs=inputs1, enable_empty_final_response=True
+            model_name=model_name,
+            inputs=inputs1,
+            enable_empty_final_response=True,
+            parameters=parameters,
         )
 
         event1.wait()
@@ -103,12 +108,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", type=str, default="localhost:8001")
     parser.add_argument("--model", type=str, default="simple-gpt2")
+    parser.add_argument("--max-tokens", type=int, default=128)
     args = parser.parse_args()
-    display = Display()
+    display = Display(args.max_tokens)
 
-    thread = threading.Thread(
-        target=run_inferences, args=(args.url, args.model, display)
-    )
-    thread.start()
-    display.run()
-    thread.join()
+    run_inferences(args.url, args.model, display, args.max_tokens)
