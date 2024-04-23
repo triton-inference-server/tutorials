@@ -33,11 +33,11 @@ class Display:
         self._bottom = tqdm(position=1, total=max_tokens, miniters=1)
         self._max_tokens = max_tokens
 
-    def update_top(self, text):
+    def update_top(self):
         self._top.update(1)
         self._top.refresh()
 
-    def update_bottom(self, text):
+    def update_bottom(self):
         self._bottom.update(1)
         self._bottom.refresh()
 
