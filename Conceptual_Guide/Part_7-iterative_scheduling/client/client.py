@@ -53,7 +53,6 @@ def client2_callback(display, event, result, error):
 
 
 def run_inferences(url, model_name, display, max_tokens):
-    global results2, results1
     # Create clients
     client1 = grpcclient.InferenceServerClient(url)
     client2 = grpcclient.InferenceServerClient(url)

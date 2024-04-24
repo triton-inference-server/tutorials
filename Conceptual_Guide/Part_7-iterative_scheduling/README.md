@@ -62,8 +62,7 @@ previous sequences
 
 ### Demo
 
-[![asciicast](https://asciinema.org/a/WeDlFwRuOip6q7EgQMZmWKRE7.svg)](https://asciinema.org/a/WeDlFwRuOip6q7EgQMZmWKRE7)
-
+[![asciicast](https://asciinema.org/a/TUZtHwZsYrJzHuZF7XCOj1Avx.svg)](https://asciinema.org/a/TUZtHwZsYrJzHuZF7XCOj1Avx)
 
 ### Step 1: Prepare the Server Environment
 
