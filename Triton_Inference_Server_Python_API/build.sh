@@ -30,7 +30,7 @@ RUN_PREFIX=
 BUILD_MODELS=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
+declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3 ["VLLM"]=4)
 DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
@@ -39,9 +39,11 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
 # Base Images
 BASE_IMAGE=nvcr.io/nvidia/tritonserver
-BASE_IMAGE_TAG_IDENTITY=24.01-py3
-BASE_IMAGE_TAG_DIFFUSION=24.01-py3
-BASE_IMAGE_TAG_TRT_LLM=24.01-trtllm-python-py3
+BASE_IMAGE_TAG_IDENTITY=24.03-py3
+BASE_IMAGE_TAG_DIFFUSION=24.03-py3
+BASE_IMAGE_TAG_TRT_LLM=24.03-trtllm-python-py3
+BASE_IMAGE_TAG_VLLM=24.03-vllm-python-py3
+
 
 get_options() {
     while :; do
@@ -147,6 +149,11 @@ get_options() {
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
 	    TAG+="-diffusion"
 	fi
+
+	if [[ $FRAMEWORK == "VLLM" ]]; then
+	    TAG+="-vllm"
+	fi
+
 
     fi
 

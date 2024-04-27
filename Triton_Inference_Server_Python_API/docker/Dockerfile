@@ -49,6 +49,18 @@ RUN pip3 show tritonserver 1>/dev/null || \
        pip3 install /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl[all] ;\
     fi
 
+ARG GIT_REF="0.0.6"
+RUN pip install git+https://github.com/triton-inference-server/triton_cli.git@${GIT_REF}
+
+RUN pip install "git+https://github.com/triton-inference-server/client.git@r24.04#subdirectory=src/c++/perf_analyzer/genai-perf"
+
+# Install TRT LLM building dependencies
+RUN pip install \
+  "psutil" \
+  "pynvml>=11.5.0" \
+  "torch==2.1.2" \
+  "tensorrt_llm==0.8.0" --extra-index-url https://pypi.nvidia.com/
+
 RUN ln -sf /bin/bash /bin/sh
 
 COPY . /workspace

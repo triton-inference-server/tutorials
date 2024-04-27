@@ -29,7 +29,7 @@ TAG=
 RUN_PREFIX=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
+declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3 ["VLLM"]=4)
 DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
@@ -38,6 +38,7 @@ SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 IMAGE=
 IMAGE_TAG_DIFFUSERS=diffusion
 IMAGE_TAG_TRT_LLM=trt-llm
+IMAGE_TAG_VLLM=vllm
 
 get_options() {
     while :; do
@@ -108,6 +109,10 @@ get_options() {
 
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
 	    IMAGE+="-diffusion"
+	fi
+
+	if [[ $FRAMEWORK == "VLLM" ]]; then
+	    IMAGE+="-vllm"
 	fi
 
     fi
