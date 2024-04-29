@@ -24,41 +24,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ARG BASE_IMAGE=nvcr.io/nvidia/tritonserver
-ARG BASE_IMAGE_TAG=24.03-py3
-ARG FRAMEWORK=DIFFUSERS
-
-FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as triton-python-api
-
-RUN apt-get update; apt-get install -y gdb
-
-COPY ./deps/requirements.txt /tmp/requirements.txt
-
-COPY ./deps/requirements_trt_llm.txt /tmp/requirements_trt_llm.txt
-
-RUN pip install --timeout=2000 -r /tmp/requirements.txt
-
-# Finish pyright install
-
-RUN pyright --help
-
-RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
-    "tritonserver-*.whl" | xargs -I {} pip3 install --force-reinstall --upgrade {}[all]
-
-ARG GIT_REF="0.0.6"
-RUN pip install git+https://github.com/triton-inference-server/triton_cli.git@${GIT_REF}
-
-RUN pip install "git+https://github.com/triton-inference-server/client.git@r24.04#subdirectory=src/c++/perf_analyzer/genai-perf"
-
-RUN if [[ "$FRAMEWORK" == "TRT_LLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_trt_llm.txt ; fi
-
-RUN ln -sf /bin/bash /bin/sh
-
-COPY . /workspace
-
-ARG RUN_TESTS=FALSE
-
-RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then cd /tmp && git clone -b r23.12-python-api https://github.com/triton-inference-server/core.git && cp -rf /tmp/core/python/test /workspace/deps/ ; fi
-
-RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then pytest /workspace/deps ; fi
-
+--extra-index-url https://pypi.nvidia.com/
+psutil
+pynvml>=11.5.0
+tensorrt_llm==0.8.0
+torch==2.1.2
