@@ -50,6 +50,8 @@ RUN pip install git+https://github.com/triton-inference-server/triton_cli.git@${
 
 RUN pip install "git+https://github.com/triton-inference-server/client.git@r24.04#subdirectory=src/c++/perf_analyzer/genai-perf"
 
+RUN pip install bpython
+
 RUN if [[ "$FRAMEWORK" == "TRT_LLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_trt_llm.txt ; fi
 
 RUN ln -sf /bin/bash /bin/sh
