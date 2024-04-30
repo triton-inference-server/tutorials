@@ -48,7 +48,7 @@ RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
 ARG GIT_REF="0.0.6"
 RUN pip install git+https://github.com/triton-inference-server/triton_cli.git@${GIT_REF}
 
-RUN pip install "git+https://github.com/triton-inference-server/client.git@r24.04#subdirectory=src/c++/perf_analyzer/genai-perf"
+RUN pip install "git+https://github.com/triton-inference-server/client.git@r24.03#subdirectory=src/c++/perf_analyzer/genai-perf"
 
 RUN pip install bpython
 
