@@ -57,6 +57,10 @@ RUN pip install "git+https://github.com/triton-inference-server/client.git@${GEN
 
 RUN pip install bpython
 
+RUN pip install ipython
+
+RUN pip install ptpython
+
 ARG FRAMEWORK=DIFFUSION
 
 RUN if [[ "$FRAMEWORK" == "TRT_LLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_trt_llm.txt ; fi
