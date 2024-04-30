@@ -34,7 +34,7 @@ DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 
-# Base Images
+# Images
 IMAGE=
 IMAGE_TAG_DIFFUSERS=diffusion
 IMAGE_TAG_TRT_LLM=trt-llm
@@ -57,7 +57,7 @@ get_options() {
             ;;
         --image)
             if [ "$2" ]; then
-                BASE_IMAGE=$2
+                IMAGE=$2
                 shift
             else
                 error 'ERROR: "--base" requires an argument.'

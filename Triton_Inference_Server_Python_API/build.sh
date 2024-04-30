@@ -63,7 +63,7 @@ get_options() {
 	--build-models)
 	    BUILD_MODELS=TRUE
             ;;
-        --base)
+        --base-image)
             if [ "$2" ]; then
                 BASE_IMAGE=$2
                 shift

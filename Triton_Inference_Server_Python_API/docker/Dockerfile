@@ -26,7 +26,9 @@
 
 ARG BASE_IMAGE=nvcr.io/nvidia/tritonserver
 ARG BASE_IMAGE_TAG=24.03-py3
-ARG FRAMEWORK=DIFFUSERS
+ARG FRAMEWORK=DIFFUSION
+ARG GENAI_PERF_TAG=r24.03
+ARG TRITON_CLI_TAG="0.0.6"
 
 FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as triton-python-api
 
@@ -45,12 +47,17 @@ RUN pyright --help
 RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
     "tritonserver-*.whl" | xargs -I {} pip3 install --force-reinstall --upgrade {}[all]
 
-ARG GIT_REF="0.0.6"
-RUN pip install git+https://github.com/triton-inference-server/triton_cli.git@${GIT_REF}
+ARG TRITON_CLI_TAG="0.0.6"
 
-RUN pip install "git+https://github.com/triton-inference-server/client.git@r24.03#subdirectory=src/c++/perf_analyzer/genai-perf"
+RUN pip install git+https://github.com/triton-inference-server/triton_cli.git@${TRITON_CLI_TAG}
+
+ARG GENAI_PERF_TAG=r24.03
+
+RUN pip install "git+https://github.com/triton-inference-server/client.git@${GENAI_PERF_TAG}#subdirectory=src/c++/perf_analyzer/genai-perf"
 
 RUN pip install bpython
+
+ARG FRAMEWORK=DIFFUSION
 
 RUN if [[ "$FRAMEWORK" == "TRT_LLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_trt_llm.txt ; fi
 
