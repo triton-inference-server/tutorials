@@ -74,8 +74,7 @@ docker run --gpus=all --name iterative-scheduling -it --shm-size=256m --rm -p800
 ```
 
 * Next, install all the dependencies required by the models running in the
-python backend and login with your [huggingface token](https://huggingface.co/settings/tokens)
-(Account on [HuggingFace](https://huggingface.co/) is required).
+Python Backend.
 
 ```
 pip install transformers[torch]
