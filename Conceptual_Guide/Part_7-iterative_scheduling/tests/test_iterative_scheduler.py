@@ -35,6 +35,7 @@ class IterativeSchedulerTest(unittest.TestCase):
         self._server = Server(
             model_repository="../model_repository",
             log_info=True,
+            log_error=True,
             strict_model_config=False,
         )
         self._server.start(wait_until_ready=True)
