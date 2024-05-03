@@ -33,7 +33,7 @@ and Triton's TensorRTLLM Backend [here](https://github.com/triton-inference-serv
 *NOTE:* If some parts of this tutorial doesn't work, it is possible that there
 are some version mismatches between the `tutorials` and `tensorrt_backend` repository.
 Refer to [llama.md](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md)
-for more detailed modifications if necessary.
+for more detailed modifications if necessary. And if you are familier with python, you can also try using [High-level API](https://github.com/NVIDIA/TensorRT-LLM/blob/main/examples/high-level-api/README.md) for LLM workflow.
 
 
 ## Pre-build instructions
@@ -126,19 +126,24 @@ To run our Llama2-7B model, you will need to:
  cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/.
  ```
 
-2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps. See details in [documentation](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/README.md#create-the-model-repository):
+2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps. The following script do a minimized configuration to run tritonserver, but if you want optimal performance or custom parameters, read details in [documentation](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md) and [perf_best_practices](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/perf_best_practices.md):
 
     ```bash
     # preprocessing
-    sed -i 's#${tokenizer_dir}#/Llama-2-7b-hf/#' /opt/tritonserver/inflight_batcher_llm/preprocessing/config.pbtxt
-    sed -i 's#${tokenizer_type}#auto#' /opt/tritonserver/inflight_batcher_llm/preprocessing/config.pbtxt
-    sed -i 's#${tokenizer_dir}#/Llama-2-7b-hf/#' /opt/tritonserver/inflight_batcher_llm/postprocessing/config.pbtxt
-    sed -i 's#${tokenizer_type}#auto#' /opt/tritonserver/inflight_batcher_llm/postprocessing/config.pbtxt
-
-    sed -i 's#${decoupled_mode}#false#' /opt/tritonserver/inflight_batcher_llm/tensorrt_llm/config.pbtxt
-    sed -i 's#${engine_dir}#/engines/1-gpu/#' /opt/tritonserver/inflight_batcher_llm/tensorrt_llm/config.pbtxt
+    TOKENIZER_DIR=/Llama-2-7b-hf/
+    TOKENIZER_TYPE=auto
+    DECOUPLED_MODE=false
+    ENGINE_DIR=/engines/1-gpu/
+    MODEL_FOLDER=/opt/tritonserver/inflight_batcher_llm
+    MAX_BATCH_SIZE=64
+    FILL_TEMPLATE_SCRIPT=/tensorrtllm_backend/tools/fill_template.py
+    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/preprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE}
+    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/postprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE}
+    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm_bls/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE}
+    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/ensemble/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE}
+    python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},engine_dir:${ENGINE_DIR}
     ```
-    Also, ensure that the `gpt_model_type` parameter is set to `inflight_fused_batching`
+    Also, ensure that the `gpt_model_type` parameter is set to `inflight_fused_batching`.
 
 3.  Launch Tritonserver
 
