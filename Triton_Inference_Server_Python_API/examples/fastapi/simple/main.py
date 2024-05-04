@@ -7,13 +7,19 @@ from __future__ import annotations
 import copy
 import time
 import uuid
+from typing import TypedDict
 
 import tritonserver
 from fastapi import FastAPI
+from vllm.transformers_utils.tokenizer import get_tokenizer
 
 triton_server = tritonserver.Server(
     model_repository="/workspace/llm-models", log_verbose=6, strict_model_config=False
-).start()
+).start(wait_until_ready=True)
+
+model = triton_server.model("llama-3-8b-instruct")
+
+model.tokenizer = get_tokenizer(tokenizer_name="meta-llama/Meta-Llama-3-8B-Instruct")
 
 from models import (
     ChatCompletionResponseMessage,
@@ -49,6 +55,11 @@ app = FastAPI(
 )
 
 
+class ConversationMessage(TypedDict):
+    role: str
+    content: str
+
+
 @app.post(
     "/chat/completions", response_model=CreateChatCompletionResponse, tags=["Chat"]
 )
@@ -58,6 +69,43 @@ def create_chat_completion(
     """
     Creates a model response for the given chat conversation.
     """
+
+    conversation = [
+        ConversationMessage(
+            role=str(message.dict()["role"]), content=str(message.dict()["content"])
+        )
+        for message in body.messages
+    ]
+
+    prompt = model.tokenizer.apply_chat_template(
+        conversation=conversation, tokenize=False, add_generation_prompt=False
+    )
+
+    exclude_input_in_output = True
+
+    parameters = copy.deepcopy(body.dict())
+    if "prompt" in parameters:
+        del parameters["prompt"]
+    if "stream" in parameters:
+        del parameters["stream"]
+    if "echo" in parameters:
+        del parameters["echo"]
+    if "model" in parameters:
+        del parameters["model"]
+    if "messages" in parameters:
+        del parameters["messages"]
+
+    response = list(
+        model.infer(
+            inputs={
+                "text_input": [prompt],
+                "stream": [False],
+                "exclude_input_in_output": [exclude_input_in_output],
+            },
+            parameters=parameters,
+        )
+    )[0]
+
     return CreateChatCompletionResponse(
         id="foo",
         choices=[
@@ -65,7 +113,9 @@ def create_chat_completion(
                 finish_reason=FinishReason1.stop,
                 index=0,
                 message=ChatCompletionResponseMessage(
-                    content="hello", role=Role5.assistant, function_call=None
+                    content=response.outputs["text_output"].to_string_array()[0],
+                    role=Role5.assistant,
+                    function_call=None,
                 ),
                 logprobs=Logprobs2(content=[]),
             )
@@ -87,7 +137,6 @@ def create_completion(body: CreateCompletionRequest) -> CreateCompletionResponse
     if body.echo:
         exclude_input_in_output = False
 
-    model = triton_server.model("llama-3-8b-instruct")
     parameters = copy.deepcopy(body.dict())
     del parameters["prompt"]
     del parameters["stream"]
