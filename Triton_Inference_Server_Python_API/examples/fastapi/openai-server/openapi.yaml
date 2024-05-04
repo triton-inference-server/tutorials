@@ -1,0 +1,3148 @@
+openapi: 3.0.0
+info:
+  contact:
+    name: OpenAI Support
+    url: https://help.openai.com/
+  description: The OpenAI REST API. Please see https://platform.openai.com/docs/api-reference
+    for more details.
+  license:
+    name: MIT
+    url: https://github.com/openai/openai-openapi/blob/master/LICENSE
+  termsOfService: https://openai.com/policies/terms-of-use
+  title: OpenAI API
+  version: 2.0.0
+servers:
+- url: https://api.openai.com/v1
+security:
+- ApiKeyAuth: []
+tags:
+- description: "Given a list of messages comprising a conversation, the model will\
+    \ return a response."
+  name: Chat
+- description: "Given a prompt, the model will return one or more predicted completions,\
+    \ and can also return the probabilities of alternative tokens at each position."
+  name: Completions
+paths:
+  /chat/completions:
+    post:
+      operationId: createChatCompletion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChatCompletionRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateChatCompletionResponse'
+          description: OK
+      summary: Creates a model response for the given chat conversation.
+      tags:
+      - Chat
+      x-oaiMeta:
+        name: Create chat completion
+        group: chat
+        returns: |
+          Returns a [chat completion](/docs/api-reference/chat/object) object, or a streamed sequence of [chat completion chunk](/docs/api-reference/chat/streaming) objects if the request is streamed.
+        path: create
+        examples:
+        - title: Default
+          request:
+            curl: |
+              curl https://api.openai.com/v1/chat/completions \
+                -H "Content-Type: application/json" \
+                -H "Authorization: Bearer $OPENAI_API_KEY" \
+                -d '{
+                  "model": "VAR_model_id",
+                  "messages": [
+                    {
+                      "role": "system",
+                      "content": "You are a helpful assistant."
+                    },
+                    {
+                      "role": "user",
+                      "content": "Hello!"
+                    }
+                  ]
+                }'
+            python: |
+              from openai import OpenAI
+              client = OpenAI()
+
+              completion = client.chat.completions.create(
+                model="VAR_model_id",
+                messages=[
+                  {"role": "system", "content": "You are a helpful assistant."},
+                  {"role": "user", "content": "Hello!"}
+                ]
+              )
+
+              print(completion.choices[0].message)
+            node.js: |-
+              import OpenAI from "openai";
+
+              const openai = new OpenAI();
+
+              async function main() {
+                const completion = await openai.chat.completions.create({
+                  messages: [{ role: "system", content: "You are a helpful assistant." }],
+                  model: "VAR_model_id",
+                });
+
+                console.log(completion.choices[0]);
+              }
+
+              main();
+          response: |
+            {
+              "id": "chatcmpl-123",
+              "object": "chat.completion",
+              "created": 1677652288,
+              "model": "gpt-3.5-turbo-0125",
+              "system_fingerprint": "fp_44709d6fcb",
+              "choices": [{
+                "index": 0,
+                "message": {
+                  "role": "assistant",
+                  "content": "\n\nHello there, how may I assist you today?",
+                },
+                "logprobs": null,
+                "finish_reason": "stop"
+              }],
+              "usage": {
+                "prompt_tokens": 9,
+                "completion_tokens": 12,
+                "total_tokens": 21
+              }
+            }
+        - title: Image input
+          request:
+            curl: |
+              curl https://api.openai.com/v1/chat/completions \
+                -H "Content-Type: application/json" \
+                -H "Authorization: Bearer $OPENAI_API_KEY" \
+                -d '{
+                  "model": "gpt-4-turbo",
+                  "messages": [
+                    {
+                      "role": "user",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "What'\''s in this image?"
+                        },
+                        {
+                          "type": "image_url",
+                          "image_url": {
+                            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "max_tokens": 300
+                }'
+            python: |
+              from openai import OpenAI
+
+              client = OpenAI()
+
+              response = client.chat.completions.create(
+                  model="gpt-4-turbo",
+                  messages=[
+                      {
+                          "role": "user",
+                          "content": [
+                              {"type": "text", "text": "What's in this image?"},
+                              {
+                                  "type": "image_url",
+                                  "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+                              },
+                          ],
+                      }
+                  ],
+                  max_tokens=300,
+              )
+
+              print(response.choices[0])
+            node.js: |-
+              import OpenAI from "openai";
+
+              const openai = new OpenAI();
+
+              async function main() {
+                const response = await openai.chat.completions.create({
+                  model: "gpt-4-turbo",
+                  messages: [
+                    {
+                      role: "user",
+                      content: [
+                        { type: "text", text: "What's in this image?" },
+                        {
+                          type: "image_url",
+                          image_url:
+                            "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+                        },
+                      ],
+                    },
+                  ],
+                });
+                console.log(response.choices[0]);
+              }
+              main();
+          response: |
+            {
+              "id": "chatcmpl-123",
+              "object": "chat.completion",
+              "created": 1677652288,
+              "model": "gpt-3.5-turbo-0125",
+              "system_fingerprint": "fp_44709d6fcb",
+              "choices": [{
+                "index": 0,
+                "message": {
+                  "role": "assistant",
+                  "content": "\n\nThis image shows a wooden boardwalk extending through a lush green marshland.",
+                },
+                "logprobs": null,
+                "finish_reason": "stop"
+              }],
+              "usage": {
+                "prompt_tokens": 9,
+                "completion_tokens": 12,
+                "total_tokens": 21
+              }
+            }
+        - title: Streaming
+          request:
+            curl: |
+              curl https://api.openai.com/v1/chat/completions \
+                -H "Content-Type: application/json" \
+                -H "Authorization: Bearer $OPENAI_API_KEY" \
+                -d '{
+                  "model": "VAR_model_id",
+                  "messages": [
+                    {
+                      "role": "system",
+                      "content": "You are a helpful assistant."
+                    },
+                    {
+                      "role": "user",
+                      "content": "Hello!"
+                    }
+                  ],
+                  "stream": true
+                }'
+            python: |
+              from openai import OpenAI
+              client = OpenAI()
+
+              completion = client.chat.completions.create(
+                model="VAR_model_id",
+                messages=[
+                  {"role": "system", "content": "You are a helpful assistant."},
+                  {"role": "user", "content": "Hello!"}
+                ],
+                stream=True
+              )
+
+              for chunk in completion:
+                print(chunk.choices[0].delta)
+            node.js: |-
+              import OpenAI from "openai";
+
+              const openai = new OpenAI();
+
+              async function main() {
+                const completion = await openai.chat.completions.create({
+                  model: "VAR_model_id",
+                  messages: [
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": "Hello!"}
+                  ],
+                  stream: true,
+                });
+
+                for await (const chunk of completion) {
+                  console.log(chunk.choices[0].delta.content);
+                }
+              }
+
+              main();
+          response: |
+            {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1694268190,"model":"gpt-3.5-turbo-0125", "system_fingerprint": "fp_44709d6fcb", "choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}]}
+
+            {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1694268190,"model":"gpt-3.5-turbo-0125", "system_fingerprint": "fp_44709d6fcb", "choices":[{"index":0,"delta":{"content":"Hello"},"logprobs":null,"finish_reason":null}]}
+
+            ....
+
+            {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1694268190,"model":"gpt-3.5-turbo-0125", "system_fingerprint": "fp_44709d6fcb", "choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}]}
+        - title: Functions
+          request:
+            curl: |
+              curl https://api.openai.com/v1/chat/completions \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $OPENAI_API_KEY" \
+              -d '{
+                "model": "gpt-4-turbo",
+                "messages": [
+                  {
+                    "role": "user",
+                    "content": "What'\''s the weather like in Boston today?"
+                  }
+                ],
+                "tools": [
+                  {
+                    "type": "function",
+                    "function": {
+                      "name": "get_current_weather",
+                      "description": "Get the current weather in a given location",
+                      "parameters": {
+                        "type": "object",
+                        "properties": {
+                          "location": {
+                            "type": "string",
+                            "description": "The city and state, e.g. San Francisco, CA"
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": ["celsius", "fahrenheit"]
+                          }
+                        },
+                        "required": ["location"]
+                      }
+                    }
+                  }
+                ],
+                "tool_choice": "auto"
+              }'
+            python: |
+              from openai import OpenAI
+              client = OpenAI()
+
+              tools = [
+                {
+                  "type": "function",
+                  "function": {
+                    "name": "get_current_weather",
+                    "description": "Get the current weather in a given location",
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "location": {
+                          "type": "string",
+                          "description": "The city and state, e.g. San Francisco, CA",
+                        },
+                        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                      },
+                      "required": ["location"],
+                    },
+                  }
+                }
+              ]
+              messages = [{"role": "user", "content": "What's the weather like in Boston today?"}]
+              completion = client.chat.completions.create(
+                model="VAR_model_id",
+                messages=messages,
+                tools=tools,
+                tool_choice="auto"
+              )
+
+              print(completion)
+            node.js: |-
+              import OpenAI from "openai";
+
+              const openai = new OpenAI();
+
+              async function main() {
+                const messages = [{"role": "user", "content": "What's the weather like in Boston today?"}];
+                const tools = [
+                    {
+                      "type": "function",
+                      "function": {
+                        "name": "get_current_weather",
+                        "description": "Get the current weather in a given location",
+                        "parameters": {
+                          "type": "object",
+                          "properties": {
+                            "location": {
+                              "type": "string",
+                              "description": "The city and state, e.g. San Francisco, CA",
+                            },
+                            "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                          },
+                          "required": ["location"],
+                        },
+                      }
+                    }
+                ];
+
+                const response = await openai.chat.completions.create({
+                  model: "gpt-4-turbo",
+                  messages: messages,
+                  tools: tools,
+                  tool_choice: "auto",
+                });
+
+                console.log(response);
+              }
+
+              main();
+          response: |
+            {
+              "id": "chatcmpl-abc123",
+              "object": "chat.completion",
+              "created": 1699896916,
+              "model": "gpt-3.5-turbo-0125",
+              "choices": [
+                {
+                  "index": 0,
+                  "message": {
+                    "role": "assistant",
+                    "content": null,
+                    "tool_calls": [
+                      {
+                        "id": "call_abc123",
+                        "type": "function",
+                        "function": {
+                          "name": "get_current_weather",
+                          "arguments": "{\n\"location\": \"Boston, MA\"\n}"
+                        }
+                      }
+                    ]
+                  },
+                  "logprobs": null,
+                  "finish_reason": "tool_calls"
+                }
+              ],
+              "usage": {
+                "prompt_tokens": 82,
+                "completion_tokens": 17,
+                "total_tokens": 99
+              }
+            }
+        - title: Logprobs
+          request:
+            curl: |
+              curl https://api.openai.com/v1/chat/completions \
+                -H "Content-Type: application/json" \
+                -H "Authorization: Bearer $OPENAI_API_KEY" \
+                -d '{
+                  "model": "VAR_model_id",
+                  "messages": [
+                    {
+                      "role": "user",
+                      "content": "Hello!"
+                    }
+                  ],
+                  "logprobs": true,
+                  "top_logprobs": 2
+                }'
+            python: |
+              from openai import OpenAI
+              client = OpenAI()
+
+              completion = client.chat.completions.create(
+                model="VAR_model_id",
+                messages=[
+                  {"role": "user", "content": "Hello!"}
+                ],
+                logprobs=True,
+                top_logprobs=2
+              )
+
+              print(completion.choices[0].message)
+              print(completion.choices[0].logprobs)
+            node.js: |-
+              import OpenAI from "openai";
+
+              const openai = new OpenAI();
+
+              async function main() {
+                const completion = await openai.chat.completions.create({
+                  messages: [{ role: "user", content: "Hello!" }],
+                  model: "VAR_model_id",
+                  logprobs: true,
+                  top_logprobs: 2,
+                });
+
+                console.log(completion.choices[0]);
+              }
+
+              main();
+          response: |
+            {
+              "id": "chatcmpl-123",
+              "object": "chat.completion",
+              "created": 1702685778,
+              "model": "gpt-3.5-turbo-0125",
+              "choices": [
+                {
+                  "index": 0,
+                  "message": {
+                    "role": "assistant",
+                    "content": "Hello! How can I assist you today?"
+                  },
+                  "logprobs": {
+                    "content": [
+                      {
+                        "token": "Hello",
+                        "logprob": -0.31725305,
+                        "bytes": [72, 101, 108, 108, 111],
+                        "top_logprobs": [
+                          {
+                            "token": "Hello",
+                            "logprob": -0.31725305,
+                            "bytes": [72, 101, 108, 108, 111]
+                          },
+                          {
+                            "token": "Hi",
+                            "logprob": -1.3190403,
+                            "bytes": [72, 105]
+                          }
+                        ]
+                      },
+                      {
+                        "token": "!",
+                        "logprob": -0.02380986,
+                        "bytes": [
+                          33
+                        ],
+                        "top_logprobs": [
+                          {
+                            "token": "!",
+                            "logprob": -0.02380986,
+                            "bytes": [33]
+                          },
+                          {
+                            "token": " there",
+                            "logprob": -3.787621,
+                            "bytes": [32, 116, 104, 101, 114, 101]
+                          }
+                        ]
+                      },
+                      {
+                        "token": " How",
+                        "logprob": -0.000054669687,
+                        "bytes": [32, 72, 111, 119],
+                        "top_logprobs": [
+                          {
+                            "token": " How",
+                            "logprob": -0.000054669687,
+                            "bytes": [32, 72, 111, 119]
+                          },
+                          {
+                            "token": "<|end|>",
+                            "logprob": -10.953937,
+                            "bytes": null
+                          }
+                        ]
+                      },
+                      {
+                        "token": " can",
+                        "logprob": -0.015801601,
+                        "bytes": [32, 99, 97, 110],
+                        "top_logprobs": [
+                          {
+                            "token": " can",
+                            "logprob": -0.015801601,
+                            "bytes": [32, 99, 97, 110]
+                          },
+                          {
+                            "token": " may",
+                            "logprob": -4.161023,
+                            "bytes": [32, 109, 97, 121]
+                          }
+                        ]
+                      },
+                      {
+                        "token": " I",
+                        "logprob": -3.7697225e-6,
+                        "bytes": [
+                          32,
+                          73
+                        ],
+                        "top_logprobs": [
+                          {
+                            "token": " I",
+                            "logprob": -3.7697225e-6,
+                            "bytes": [32, 73]
+                          },
+                          {
+                            "token": " assist",
+                            "logprob": -13.596657,
+                            "bytes": [32, 97, 115, 115, 105, 115, 116]
+                          }
+                        ]
+                      },
+                      {
+                        "token": " assist",
+                        "logprob": -0.04571125,
+                        "bytes": [32, 97, 115, 115, 105, 115, 116],
+                        "top_logprobs": [
+                          {
+                            "token": " assist",
+                            "logprob": -0.04571125,
+                            "bytes": [32, 97, 115, 115, 105, 115, 116]
+                          },
+                          {
+                            "token": " help",
+                            "logprob": -3.1089056,
+                            "bytes": [32, 104, 101, 108, 112]
+                          }
+                        ]
+                      },
+                      {
+                        "token": " you",
+                        "logprob": -5.4385737e-6,
+                        "bytes": [32, 121, 111, 117],
+                        "top_logprobs": [
+                          {
+                            "token": " you",
+                            "logprob": -5.4385737e-6,
+                            "bytes": [32, 121, 111, 117]
+                          },
+                          {
+                            "token": " today",
+                            "logprob": -12.807695,
+                            "bytes": [32, 116, 111, 100, 97, 121]
+                          }
+                        ]
+                      },
+                      {
+                        "token": " today",
+                        "logprob": -0.0040071653,
+                        "bytes": [32, 116, 111, 100, 97, 121],
+                        "top_logprobs": [
+                          {
+                            "token": " today",
+                            "logprob": -0.0040071653,
+                            "bytes": [32, 116, 111, 100, 97, 121]
+                          },
+                          {
+                            "token": "?",
+                            "logprob": -5.5247097,
+                            "bytes": [63]
+                          }
+                        ]
+                      },
+                      {
+                        "token": "?",
+                        "logprob": -0.0008108172,
+                        "bytes": [63],
+                        "top_logprobs": [
+                          {
+                            "token": "?",
+                            "logprob": -0.0008108172,
+                            "bytes": [63]
+                          },
+                          {
+                            "token": "?\n",
+                            "logprob": -7.184561,
+                            "bytes": [63, 10]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "finish_reason": "stop"
+                }
+              ],
+              "usage": {
+                "prompt_tokens": 9,
+                "completion_tokens": 9,
+                "total_tokens": 18
+              },
+              "system_fingerprint": null
+            }
+  /completions:
+    post:
+      operationId: createCompletion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCompletionRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateCompletionResponse'
+          description: OK
+      summary: Creates a completion for the provided prompt and parameters.
+      tags:
+      - Completions
+      x-oaiMeta:
+        name: Create completion
+        group: completions
+        returns: |
+          Returns a [completion](/docs/api-reference/completions/object) object, or a sequence of completion objects if the request is streamed.
+        legacy: true
+        examples:
+        - title: No streaming
+          request:
+            curl: |
+              curl https://api.openai.com/v1/completions \
+                -H "Content-Type: application/json" \
+                -H "Authorization: Bearer $OPENAI_API_KEY" \
+                -d '{
+                  "model": "VAR_model_id",
+                  "prompt": "Say this is a test",
+                  "max_tokens": 7,
+                  "temperature": 0
+                }'
+            python: |
+              from openai import OpenAI
+              client = OpenAI()
+
+              client.completions.create(
+                model="VAR_model_id",
+                prompt="Say this is a test",
+                max_tokens=7,
+                temperature=0
+              )
+            node.js: |-
+              import OpenAI from "openai";
+
+              const openai = new OpenAI();
+
+              async function main() {
+                const completion = await openai.completions.create({
+                  model: "VAR_model_id",
+                  prompt: "Say this is a test.",
+                  max_tokens: 7,
+                  temperature: 0,
+                });
+
+                console.log(completion);
+              }
+              main();
+          response: |
+            {
+              "id": "cmpl-uqkvlQyYK7bGYrRHQ0eXlWi7",
+              "object": "text_completion",
+              "created": 1589478378,
+              "model": "VAR_model_id",
+              "system_fingerprint": "fp_44709d6fcb",
+              "choices": [
+                {
+                  "text": "\n\nThis is indeed a test",
+                  "index": 0,
+                  "logprobs": null,
+                  "finish_reason": "length"
+                }
+              ],
+              "usage": {
+                "prompt_tokens": 5,
+                "completion_tokens": 7,
+                "total_tokens": 12
+              }
+            }
+        - title: Streaming
+          request:
+            curl: |
+              curl https://api.openai.com/v1/completions \
+                -H "Content-Type: application/json" \
+                -H "Authorization: Bearer $OPENAI_API_KEY" \
+                -d '{
+                  "model": "VAR_model_id",
+                  "prompt": "Say this is a test",
+                  "max_tokens": 7,
+                  "temperature": 0,
+                  "stream": true
+                }'
+            python: |
+              from openai import OpenAI
+              client = OpenAI()
+
+              for chunk in client.completions.create(
+                model="VAR_model_id",
+                prompt="Say this is a test",
+                max_tokens=7,
+                temperature=0,
+                stream=True
+              ):
+                print(chunk.choices[0].text)
+            node.js: |-
+              import OpenAI from "openai";
+
+              const openai = new OpenAI();
+
+              async function main() {
+                const stream = await openai.completions.create({
+                  model: "VAR_model_id",
+                  prompt: "Say this is a test.",
+                  stream: true,
+                });
+
+                for await (const chunk of stream) {
+                  console.log(chunk.choices[0].text)
+                }
+              }
+              main();
+          response: "{\n  \"id\": \"cmpl-7iA7iJjj8V2zOkCGvWF2hAkDWBQZe\",\n  \"object\"\
+            : \"text_completion\",\n  \"created\": 1690759702,\n  \"choices\": [\n\
+            \    {\n      \"text\": \"This\",\n      \"index\": 0,\n      \"logprobs\"\
+            : null,\n      \"finish_reason\": null\n    }\n  ],\n  \"model\": \"gpt-3.5-turbo-instruct\"\
+            \n  \"system_fingerprint\": \"fp_44709d6fcb\",\n}              \n"
+  /models:
+    get:
+      operationId: listModels
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListModelsResponse'
+          description: OK
+      summary: "Lists the currently available models, and provides basic information\
+        \ about each one such as the owner and availability."
+      tags:
+      - Models
+      x-oaiMeta:
+        name: List models
+        group: models
+        returns: "A list of [model](/docs/api-reference/models/object) objects."
+        examples:
+          request:
+            curl: |
+              curl https://api.openai.com/v1/models \
+                -H "Authorization: Bearer $OPENAI_API_KEY"
+            python: |
+              from openai import OpenAI
+              client = OpenAI()
+
+              client.models.list()
+            node.js: |-
+              import OpenAI from "openai";
+
+              const openai = new OpenAI();
+
+              async function main() {
+                const list = await openai.models.list();
+
+                for await (const model of list) {
+                  console.log(model);
+                }
+              }
+              main();
+          response: |
+            {
+              "object": "list",
+              "data": [
+                {
+                  "id": "model-id-0",
+                  "object": "model",
+                  "created": 1686935002,
+                  "owned_by": "organization-owner"
+                },
+                {
+                  "id": "model-id-1",
+                  "object": "model",
+                  "created": 1686935002,
+                  "owned_by": "organization-owner",
+                },
+                {
+                  "id": "model-id-2",
+                  "object": "model",
+                  "created": 1686935002,
+                  "owned_by": "openai"
+                },
+              ],
+              "object": "list"
+            }
+  /models/{model}:
+    delete:
+      operationId: deleteModel
+      parameters:
+      - description: The model to delete
+        explode: false
+        in: path
+        name: model
+        required: true
+        schema:
+          example: ft:gpt-3.5-turbo:acemeco:suffix:abc123
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteModelResponse'
+          description: OK
+      summary: Delete a fine-tuned model. You must have the Owner role in your organization
+        to delete a model.
+      tags:
+      - Models
+      x-oaiMeta:
+        name: Delete a fine-tuned model
+        group: models
+        returns: Deletion status.
+        examples:
+          request:
+            curl: |
+              curl https://api.openai.com/v1/models/ft:gpt-3.5-turbo:acemeco:suffix:abc123 \
+                -X DELETE \
+                -H "Authorization: Bearer $OPENAI_API_KEY"
+            python: |
+              from openai import OpenAI
+              client = OpenAI()
+
+              client.models.delete("ft:gpt-3.5-turbo:acemeco:suffix:abc123")
+            node.js: |-
+              import OpenAI from "openai";
+
+              const openai = new OpenAI();
+
+              async function main() {
+                const model = await openai.models.del("ft:gpt-3.5-turbo:acemeco:suffix:abc123");
+
+                console.log(model);
+              }
+              main();
+          response: |
+            {
+              "id": "ft:gpt-3.5-turbo:acemeco:suffix:abc123",
+              "object": "model",
+              "deleted": true
+            }
+    get:
+      operationId: retrieveModel
+      parameters:
+      - description: The ID of the model to use for this request
+        explode: false
+        in: path
+        name: model
+        required: true
+        schema:
+          example: gpt-3.5-turbo
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+          description: OK
+      summary: "Retrieves a model instance, providing basic information about the\
+        \ model such as the owner and permissioning."
+      tags:
+      - Models
+      x-oaiMeta:
+        name: Retrieve model
+        group: models
+        returns: "The [model](/docs/api-reference/models/object) object matching the\
+          \ specified ID."
+        examples:
+          request:
+            curl: |
+              curl https://api.openai.com/v1/models/VAR_model_id \
+                -H "Authorization: Bearer $OPENAI_API_KEY"
+            python: |
+              from openai import OpenAI
+              client = OpenAI()
+
+              client.models.retrieve("VAR_model_id")
+            node.js: |-
+              import OpenAI from "openai";
+
+              const openai = new OpenAI();
+
+              async function main() {
+                const model = await openai.models.retrieve("VAR_model_id");
+
+                console.log(model);
+              }
+
+              main();
+          response: |
+            {
+              "id": "VAR_model_id",
+              "object": "model",
+              "created": 1686935002,
+              "owned_by": "openai"
+            }
+components:
+  schemas:
+    Error:
+      properties:
+        code:
+          nullable: true
+          title: code
+          type: string
+        message:
+          nullable: false
+          title: message
+          type: string
+        param:
+          nullable: true
+          title: param
+          type: string
+        type:
+          nullable: false
+          title: type
+          type: string
+      required:
+      - code
+      - message
+      - param
+      - type
+      title: Error
+      type: object
+    ErrorResponse:
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
+      required:
+      - error
+      type: object
+    ListModelsResponse:
+      example:
+        data:
+        - created: 0
+          owned_by: owned_by
+          id: id
+          object: model
+        - created: 0
+          owned_by: owned_by
+          id: id
+          object: model
+        object: list
+      properties:
+        object:
+          enum:
+          - list
+          title: object
+          type: string
+        data:
+          items:
+            $ref: '#/components/schemas/Model'
+          title: data
+          type: array
+      required:
+      - data
+      - object
+      title: ListModelsResponse
+      type: object
+    DeleteModelResponse:
+      example:
+        deleted: true
+        id: id
+        object: object
+      properties:
+        id:
+          title: id
+          type: string
+        deleted:
+          title: deleted
+          type: boolean
+        object:
+          title: object
+          type: string
+      required:
+      - deleted
+      - id
+      - object
+      title: DeleteModelResponse
+      type: object
+    CreateCompletionRequest:
+      example:
+        logit_bias:
+          key: 1
+        seed: -2147483648
+        max_tokens: 16
+        presence_penalty: 0.25495066265333133
+        echo: false
+        suffix: test.
+        "n": 1
+        logprobs: 2
+        top_p: 1
+        frequency_penalty: 0.4109824732281613
+        best_of: 1
+        stop: |2+
+
+        stream: false
+        temperature: 1
+        model: CreateCompletionRequest_model
+        prompt: This is a test.
+        user: user-1234
+      properties:
+        model:
+          $ref: '#/components/schemas/CreateCompletionRequest_model'
+        prompt:
+          $ref: '#/components/schemas/CreateCompletionRequest_prompt'
+        best_of:
+          default: 1
+          description: |
+            Generates `best_of` completions server-side and returns the "best" (the one with the highest log probability per token). Results cannot be streamed.
+
+            When used with `n`, `best_of` controls the number of candidate completions and `n` specifies how many to return – `best_of` must be greater than `n`.
+
+            **Note:** Because this parameter generates many completions, it can quickly consume your token quota. Use carefully and ensure that you have reasonable settings for `max_tokens` and `stop`.
+          maximum: 20
+          minimum: 0
+          nullable: true
+          title: best_of
+          type: integer
+        echo:
+          default: false
+          description: |
+            Echo back the prompt in addition to the completion
+          nullable: true
+          title: echo
+          type: boolean
+        frequency_penalty:
+          default: 0
+          description: |
+            Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
+
+            [See more information about frequency and presence penalties.](/docs/guides/text-generation/parameter-details)
+          maximum: 2
+          minimum: -2
+          nullable: true
+          title: frequency_penalty
+          type: number
+        logit_bias:
+          additionalProperties:
+            type: integer
+          description: |
+            Modify the likelihood of specified tokens appearing in the completion.
+
+            Accepts a JSON object that maps tokens (specified by their token ID in the GPT tokenizer) to an associated bias value from -100 to 100. You can use this [tokenizer tool](/tokenizer?view=bpe) to convert text to token IDs. Mathematically, the bias is added to the logits generated by the model prior to sampling. The exact effect will vary per model, but values between -1 and 1 should decrease or increase likelihood of selection; values like -100 or 100 should result in a ban or exclusive selection of the relevant token.
+
+            As an example, you can pass `{"50256": -100}` to prevent the <|endoftext|> token from being generated.
+          nullable: true
+          title: logit_bias
+          type: object
+          x-oaiTypeLabel: map
+        logprobs:
+          description: |
+            Include the log probabilities on the `logprobs` most likely output tokens, as well the chosen tokens. For example, if `logprobs` is 5, the API will return a list of the 5 most likely tokens. The API will always return the `logprob` of the sampled token, so there may be up to `logprobs+1` elements in the response.
+
+            The maximum value for `logprobs` is 5.
+          maximum: 5
+          minimum: 0
+          nullable: true
+          title: logprobs
+          type: integer
+        max_tokens:
+          default: 16
+          description: |
+            The maximum number of [tokens](/tokenizer) that can be generated in the completion.
+
+            The token count of your prompt plus `max_tokens` cannot exceed the model's context length. [Example Python code](https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken) for counting tokens.
+          example: 16
+          minimum: 0
+          nullable: true
+          title: max_tokens
+          type: integer
+        "n":
+          default: 1
+          description: |
+            How many completions to generate for each prompt.
+
+            **Note:** Because this parameter generates many completions, it can quickly consume your token quota. Use carefully and ensure that you have reasonable settings for `max_tokens` and `stop`.
+          example: 1
+          maximum: 128
+          minimum: 1
+          nullable: true
+          title: "n"
+          type: integer
+        presence_penalty:
+          default: 0
+          description: |
+            Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
+
+            [See more information about frequency and presence penalties.](/docs/guides/text-generation/parameter-details)
+          maximum: 2
+          minimum: -2
+          nullable: true
+          title: presence_penalty
+          type: number
+        seed:
+          description: |
+            If specified, our system will make a best effort to sample deterministically, such that repeated requests with the same `seed` and parameters should return the same result.
+
+            Determinism is not guaranteed, and you should refer to the `system_fingerprint` response parameter to monitor changes in the backend.
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          nullable: true
+          title: seed
+          type: integer
+        stop:
+          $ref: '#/components/schemas/CreateCompletionRequest_stop'
+        stream:
+          default: false
+          description: |
+            Whether to stream back partial progress. If set, tokens will be sent as data-only [server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#Event_stream_format) as they become available, with the stream terminated by a `data: [DONE]` message. [Example Python code](https://cookbook.openai.com/examples/how_to_stream_completions).
+          nullable: true
+          title: stream
+          type: boolean
+        suffix:
+          description: |
+            The suffix that comes after a completion of inserted text.
+
+            This parameter is only supported for `gpt-3.5-turbo-instruct`.
+          example: test.
+          nullable: true
+          title: suffix
+          type: string
+        temperature:
+          default: 1
+          description: |
+            What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
+
+            We generally recommend altering this or `top_p` but not both.
+          example: 1
+          maximum: 2
+          minimum: 0
+          nullable: true
+          title: temperature
+          type: number
+        top_p:
+          default: 1
+          description: |
+            An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered.
+
+            We generally recommend altering this or `temperature` but not both.
+          example: 1
+          maximum: 1
+          minimum: 0
+          nullable: true
+          title: top_p
+          type: number
+        user:
+          description: |
+            A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. [Learn more](/docs/guides/safety-best-practices/end-user-ids).
+          example: user-1234
+          title: user
+          type: string
+      required:
+      - model
+      - prompt
+      title: CreateCompletionRequest
+      type: object
+    CreateCompletionResponse:
+      description: |
+        Represents a completion response from the API. Note: both the streamed and non-streamed response objects share the same shape (unlike the chat endpoint).
+      example:
+        created: 5
+        usage:
+          completion_tokens: 7
+          prompt_tokens: 9
+          total_tokens: 3
+        model: model
+        id: id
+        choices:
+        - finish_reason: stop
+          index: 0
+          text: text
+          logprobs:
+            top_logprobs:
+            - key: 5.962133916683182
+            - key: 5.962133916683182
+            token_logprobs:
+            - 1.4658129805029452
+            - 1.4658129805029452
+            tokens:
+            - tokens
+            - tokens
+            text_offset:
+            - 6
+            - 6
+        - finish_reason: stop
+          index: 0
+          text: text
+          logprobs:
+            top_logprobs:
+            - key: 5.962133916683182
+            - key: 5.962133916683182
+            token_logprobs:
+            - 1.4658129805029452
+            - 1.4658129805029452
+            tokens:
+            - tokens
+            - tokens
+            text_offset:
+            - 6
+            - 6
+        system_fingerprint: system_fingerprint
+        object: text_completion
+      properties:
+        id:
+          description: A unique identifier for the completion.
+          title: id
+          type: string
+        choices:
+          description: The list of completion choices the model generated for the
+            input prompt.
+          items:
+            $ref: '#/components/schemas/CreateCompletionResponse_choices_inner'
+          title: choices
+          type: array
+        created:
+          description: The Unix timestamp (in seconds) of when the completion was
+            created.
+          title: created
+          type: integer
+        model:
+          description: The model used for completion.
+          title: model
+          type: string
+        system_fingerprint:
+          description: |
+            This fingerprint represents the backend configuration that the model runs with.
+
+            Can be used in conjunction with the `seed` request parameter to understand when backend changes have been made that might impact determinism.
+          title: system_fingerprint
+          type: string
+        object:
+          description: "The object type, which is always \"text_completion\""
+          enum:
+          - text_completion
+          title: object
+          type: string
+        usage:
+          $ref: '#/components/schemas/CompletionUsage'
+      required:
+      - choices
+      - created
+      - id
+      - model
+      - object
+      title: CreateCompletionResponse
+      type: object
+      x-oaiMeta:
+        name: The completion object
+        legacy: true
+        example: |
+          {
+            "id": "cmpl-uqkvlQyYK7bGYrRHQ0eXlWi7",
+            "object": "text_completion",
+            "created": 1589478378,
+            "model": "gpt-4-turbo",
+            "choices": [
+              {
+                "text": "\n\nThis is indeed a test",
+                "index": 0,
+                "logprobs": null,
+                "finish_reason": "length"
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 5,
+              "completion_tokens": 7,
+              "total_tokens": 12
+            }
+          }
+    ChatCompletionRequestMessageContentPart:
+      oneOf:
+      - $ref: '#/components/schemas/ChatCompletionRequestMessageContentPartText'
+      - $ref: '#/components/schemas/ChatCompletionRequestMessageContentPartImage'
+      title: ChatCompletionRequestMessageContentPart
+      x-oaiExpandable: true
+    ChatCompletionRequestMessageContentPartImage:
+      properties:
+        type:
+          description: The type of the content part.
+          enum:
+          - image_url
+          title: type
+          type: string
+        image_url:
+          $ref: '#/components/schemas/ChatCompletionRequestMessageContentPartImage_image_url'
+      required:
+      - image_url
+      - type
+      title: Image content part
+      type: object
+    ChatCompletionRequestMessageContentPartText:
+      properties:
+        type:
+          description: The type of the content part.
+          enum:
+          - text
+          title: type
+          type: string
+        text:
+          description: The text content.
+          title: text
+          type: string
+      required:
+      - text
+      - type
+      title: Text content part
+      type: object
+    ChatCompletionRequestMessage:
+      oneOf:
+      - $ref: '#/components/schemas/ChatCompletionRequestSystemMessage'
+      - $ref: '#/components/schemas/ChatCompletionRequestUserMessage'
+      - $ref: '#/components/schemas/ChatCompletionRequestAssistantMessage'
+      - $ref: '#/components/schemas/ChatCompletionRequestToolMessage'
+      - $ref: '#/components/schemas/ChatCompletionRequestFunctionMessage'
+      title: ChatCompletionRequestMessage
+      x-oaiExpandable: true
+    ChatCompletionRequestSystemMessage:
+      example:
+        role: system
+        name: name
+        content: content
+      properties:
+        content:
+          description: The contents of the system message.
+          title: content
+          type: string
+        role:
+          description: "The role of the messages author, in this case `system`."
+          enum:
+          - system
+          title: role
+          type: string
+        name:
+          description: An optional name for the participant. Provides the model information
+            to differentiate between participants of the same role.
+          title: name
+          type: string
+      required:
+      - content
+      - role
+      title: System message
+      type: object
+    ChatCompletionRequestUserMessage:
+      properties:
+        content:
+          $ref: '#/components/schemas/ChatCompletionRequestUserMessage_content'
+        role:
+          description: "The role of the messages author, in this case `user`."
+          enum:
+          - user
+          title: role
+          type: string
+        name:
+          description: An optional name for the participant. Provides the model information
+            to differentiate between participants of the same role.
+          title: name
+          type: string
+      required:
+      - content
+      - role
+      title: User message
+      type: object
+    ChatCompletionRequestAssistantMessage:
+      properties:
+        content:
+          description: |
+            The contents of the assistant message. Required unless `tool_calls` or `function_call` is specified.
+          nullable: true
+          title: content
+          type: string
+        role:
+          description: "The role of the messages author, in this case `assistant`."
+          enum:
+          - assistant
+          title: role
+          type: string
+        name:
+          description: An optional name for the participant. Provides the model information
+            to differentiate between participants of the same role.
+          title: name
+          type: string
+        tool_calls:
+          description: "The tool calls generated by the model, such as function calls."
+          items:
+            $ref: '#/components/schemas/ChatCompletionMessageToolCall'
+          title: ChatCompletionMessageToolCalls
+          type: array
+        function_call:
+          $ref: '#/components/schemas/ChatCompletionRequestAssistantMessage_function_call'
+      required:
+      - role
+      title: Assistant message
+      type: object
+    ChatCompletionRequestToolMessage:
+      properties:
+        role:
+          description: "The role of the messages author, in this case `tool`."
+          enum:
+          - tool
+          title: role
+          type: string
+        content:
+          description: The contents of the tool message.
+          title: content
+          type: string
+        tool_call_id:
+          description: Tool call that this message is responding to.
+          title: tool_call_id
+          type: string
+      required:
+      - content
+      - role
+      - tool_call_id
+      title: Tool message
+      type: object
+    ChatCompletionRequestFunctionMessage:
+      deprecated: true
+      properties:
+        role:
+          description: "The role of the messages author, in this case `function`."
+          enum:
+          - function
+          title: role
+          type: string
+        content:
+          description: The contents of the function message.
+          nullable: true
+          title: content
+          type: string
+        name:
+          description: The name of the function to call.
+          title: name
+          type: string
+      required:
+      - content
+      - name
+      - role
+      title: Function message
+      type: object
+    FunctionParameters:
+      additionalProperties: true
+      description: "The parameters the functions accepts, described as a JSON Schema\
+        \ object. See the [guide](/docs/guides/text-generation/function-calling) for\
+        \ examples, and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/)\
+        \ for documentation about the format. \n\nOmitting `parameters` defines a\
+        \ function with an empty parameter list."
+      title: FunctionParameters
+      type: object
+    ChatCompletionFunctions:
+      deprecated: true
+      example:
+        name: name
+        description: description
+        parameters:
+          key: ""
+      properties:
+        description:
+          description: "A description of what the function does, used by the model\
+            \ to choose when and how to call the function."
+          title: description
+          type: string
+        name:
+          description: "The name of the function to be called. Must be a-z, A-Z, 0-9,\
+            \ or contain underscores and dashes, with a maximum length of 64."
+          title: name
+          type: string
+        parameters:
+          additionalProperties: true
+          description: "The parameters the functions accepts, described as a JSON\
+            \ Schema object. See the [guide](/docs/guides/text-generation/function-calling)\
+            \ for examples, and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/)\
+            \ for documentation about the format. \n\nOmitting `parameters` defines\
+            \ a function with an empty parameter list."
+          title: FunctionParameters
+          type: object
+      required:
+      - name
+      title: ChatCompletionFunctions
+      type: object
+    ChatCompletionFunctionCallOption:
+      description: |
+        Specifying a particular function via `{"name": "my_function"}` forces the model to call that function.
+      properties:
+        name:
+          description: The name of the function to call.
+          title: name
+          type: string
+      required:
+      - name
+      title: ChatCompletionFunctionCallOption
+      type: object
+    ChatCompletionTool:
+      example:
+        function:
+          name: name
+          description: description
+          parameters:
+            key: ""
+        type: function
+      properties:
+        type:
+          description: "The type of the tool. Currently, only `function` is supported."
+          enum:
+          - function
+          title: type
+          type: string
+        function:
+          $ref: '#/components/schemas/FunctionObject'
+      required:
+      - function
+      - type
+      title: ChatCompletionTool
+      type: object
+    FunctionObject:
+      example:
+        name: name
+        description: description
+        parameters:
+          key: ""
+      properties:
+        description:
+          description: "A description of what the function does, used by the model\
+            \ to choose when and how to call the function."
+          title: description
+          type: string
+        name:
+          description: "The name of the function to be called. Must be a-z, A-Z, 0-9,\
+            \ or contain underscores and dashes, with a maximum length of 64."
+          title: name
+          type: string
+        parameters:
+          additionalProperties: true
+          description: "The parameters the functions accepts, described as a JSON\
+            \ Schema object. See the [guide](/docs/guides/text-generation/function-calling)\
+            \ for examples, and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/)\
+            \ for documentation about the format. \n\nOmitting `parameters` defines\
+            \ a function with an empty parameter list."
+          title: FunctionParameters
+          type: object
+      required:
+      - name
+      title: FunctionObject
+      type: object
+    ChatCompletionToolChoiceOption:
+      description: |
+        Controls which (if any) tool is called by the model.
+        `none` means the model will not call any tool and instead generates a message.
+        `auto` means the model can pick between generating a message or calling one or more tools.
+        `required` means the model must call one or more tools.
+        Specifying a particular tool via `{"type": "function", "function": {"name": "my_function"}}` forces the model to call that tool.
+
+        `none` is the default when no tools are present. `auto` is the default if tools are present.
+      oneOf:
+      - description: |
+          `none` means the model will not call any tool and instead generates a message. `auto` means the model can pick between generating a message or calling one or more tools. `required` means the model must call one or more tools.
+        enum:
+        - none
+        - auto
+        - required
+        type: string
+      - $ref: '#/components/schemas/ChatCompletionNamedToolChoice'
+      title: ChatCompletionToolChoiceOption
+      x-oaiExpandable: true
+    ChatCompletionNamedToolChoice:
+      description: Specifies a tool the model should use. Use to force the model to
+        call a specific function.
+      properties:
+        type:
+          description: "The type of the tool. Currently, only `function` is supported."
+          enum:
+          - function
+          title: type
+          type: string
+        function:
+          $ref: '#/components/schemas/ChatCompletionNamedToolChoice_function'
+      required:
+      - function
+      - type
+      title: ChatCompletionNamedToolChoice
+      type: object
+    ChatCompletionMessageToolCalls:
+      description: "The tool calls generated by the model, such as function calls."
+      items:
+        $ref: '#/components/schemas/ChatCompletionMessageToolCall'
+      title: ChatCompletionMessageToolCalls
+      type: array
+    ChatCompletionMessageToolCall:
+      example:
+        function:
+          name: name
+          arguments: arguments
+        id: id
+        type: function
+      properties:
+        id:
+          description: The ID of the tool call.
+          title: id
+          type: string
+        type:
+          description: "The type of the tool. Currently, only `function` is supported."
+          enum:
+          - function
+          title: type
+          type: string
+        function:
+          $ref: '#/components/schemas/ChatCompletionMessageToolCall_function'
+      required:
+      - function
+      - id
+      - type
+      title: ChatCompletionMessageToolCall
+      type: object
+    ChatCompletionMessageToolCallChunk:
+      properties:
+        index:
+          title: index
+          type: integer
+        id:
+          description: The ID of the tool call.
+          title: id
+          type: string
+        type:
+          description: "The type of the tool. Currently, only `function` is supported."
+          enum:
+          - function
+          title: type
+          type: string
+        function:
+          $ref: '#/components/schemas/ChatCompletionMessageToolCallChunk_function'
+      required:
+      - index
+      title: ChatCompletionMessageToolCallChunk
+      type: object
+    ChatCompletionRole:
+      description: The role of the author of a message
+      enum:
+      - system
+      - user
+      - assistant
+      - tool
+      - function
+      type: string
+    ChatCompletionResponseMessage:
+      description: A chat completion message generated by the model.
+      example:
+        role: assistant
+        function_call:
+          name: name
+          arguments: arguments
+        tool_calls:
+        - function:
+            name: name
+            arguments: arguments
+          id: id
+          type: function
+        - function:
+            name: name
+            arguments: arguments
+          id: id
+          type: function
+        content: content
+      properties:
+        content:
+          description: The contents of the message.
+          nullable: true
+          title: content
+          type: string
+        tool_calls:
+          description: "The tool calls generated by the model, such as function calls."
+          items:
+            $ref: '#/components/schemas/ChatCompletionMessageToolCall'
+          title: ChatCompletionMessageToolCalls
+          type: array
+        role:
+          description: The role of the author of this message.
+          enum:
+          - assistant
+          title: role
+          type: string
+        function_call:
+          $ref: '#/components/schemas/ChatCompletionRequestAssistantMessage_function_call'
+      required:
+      - content
+      - role
+      title: ChatCompletionResponseMessage
+      type: object
+    ChatCompletionStreamResponseDelta:
+      description: A chat completion delta generated by streamed model responses.
+      properties:
+        content:
+          description: The contents of the chunk message.
+          nullable: true
+          title: content
+          type: string
+        function_call:
+          $ref: '#/components/schemas/ChatCompletionStreamResponseDelta_function_call'
+        tool_calls:
+          items:
+            $ref: '#/components/schemas/ChatCompletionMessageToolCallChunk'
+          title: tool_calls
+          type: array
+        role:
+          description: The role of the author of this message.
+          enum:
+          - system
+          - user
+          - assistant
+          - tool
+          title: role
+          type: string
+      title: ChatCompletionStreamResponseDelta
+      type: object
+    CreateChatCompletionRequest:
+      example:
+        top_logprobs: 2
+        logit_bias:
+          key: 6
+        seed: -2147483648
+        functions:
+        - name: name
+          description: description
+          parameters:
+            key: ""
+        - name: name
+          description: description
+          parameters:
+            key: ""
+        - name: name
+          description: description
+          parameters:
+            key: ""
+        - name: name
+          description: description
+          parameters:
+            key: ""
+        - name: name
+          description: description
+          parameters:
+            key: ""
+        max_tokens: 5
+        function_call: none
+        presence_penalty: 0.25495066265333133
+        tools:
+        - function:
+            name: name
+            description: description
+            parameters:
+              key: ""
+          type: function
+        - function:
+            name: name
+            description: description
+            parameters:
+              key: ""
+          type: function
+        "n": 1
+        logprobs: false
+        top_p: 1
+        frequency_penalty: -1.6796687238155954
+        response_format:
+          type: json_object
+        stop: CreateChatCompletionRequest_stop
+        stream: false
+        temperature: 1
+        messages:
+        - role: system
+          name: name
+          content: content
+        - role: system
+          name: name
+          content: content
+        tool_choice: none
+        model: gpt-4-turbo
+        user: user-1234
+      properties:
+        messages:
+          description: "A list of messages comprising the conversation so far. [Example\
+            \ Python code](https://cookbook.openai.com/examples/how_to_format_inputs_to_chatgpt_models)."
+          items:
+            $ref: '#/components/schemas/ChatCompletionRequestMessage'
+          minItems: 1
+          title: messages
+          type: array
+        model:
+          $ref: '#/components/schemas/CreateChatCompletionRequest_model'
+        frequency_penalty:
+          default: 0
+          description: |
+            Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
+
+            [See more information about frequency and presence penalties.](/docs/guides/text-generation/parameter-details)
+          maximum: 2
+          minimum: -2
+          nullable: true
+          title: frequency_penalty
+          type: number
+        logit_bias:
+          additionalProperties:
+            type: integer
+          description: |
+            Modify the likelihood of specified tokens appearing in the completion.
+
+            Accepts a JSON object that maps tokens (specified by their token ID in the tokenizer) to an associated bias value from -100 to 100. Mathematically, the bias is added to the logits generated by the model prior to sampling. The exact effect will vary per model, but values between -1 and 1 should decrease or increase likelihood of selection; values like -100 or 100 should result in a ban or exclusive selection of the relevant token.
+          nullable: true
+          title: logit_bias
+          type: object
+          x-oaiTypeLabel: map
+        logprobs:
+          default: false
+          description: "Whether to return log probabilities of the output tokens or\
+            \ not. If true, returns the log probabilities of each output token returned\
+            \ in the `content` of `message`."
+          nullable: true
+          title: logprobs
+          type: boolean
+        top_logprobs:
+          description: "An integer between 0 and 20 specifying the number of most\
+            \ likely tokens to return at each token position, each with an associated\
+            \ log probability. `logprobs` must be set to `true` if this parameter\
+            \ is used."
+          maximum: 20
+          minimum: 0
+          nullable: true
+          title: top_logprobs
+          type: integer
+        max_tokens:
+          description: |
+            The maximum number of [tokens](/tokenizer) that can be generated in the chat completion.
+
+            The total length of input tokens and generated tokens is limited by the model's context length. [Example Python code](https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken) for counting tokens.
+          nullable: true
+          title: max_tokens
+          type: integer
+        "n":
+          default: 1
+          description: How many chat completion choices to generate for each input
+            message. Note that you will be charged based on the number of generated
+            tokens across all of the choices. Keep `n` as `1` to minimize costs.
+          example: 1
+          maximum: 128
+          minimum: 1
+          nullable: true
+          title: "n"
+          type: integer
+        presence_penalty:
+          default: 0
+          description: |
+            Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
+
+            [See more information about frequency and presence penalties.](/docs/guides/text-generation/parameter-details)
+          maximum: 2
+          minimum: -2
+          nullable: true
+          title: presence_penalty
+          type: number
+        response_format:
+          $ref: '#/components/schemas/CreateChatCompletionRequest_response_format'
+        seed:
+          description: |
+            This feature is in Beta.
+            If specified, our system will make a best effort to sample deterministically, such that repeated requests with the same `seed` and parameters should return the same result.
+            Determinism is not guaranteed, and you should refer to the `system_fingerprint` response parameter to monitor changes in the backend.
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          nullable: true
+          title: seed
+          type: integer
+          x-oaiMeta:
+            beta: true
+        stop:
+          $ref: '#/components/schemas/CreateChatCompletionRequest_stop'
+        stream:
+          default: false
+          description: |
+            If set, partial message deltas will be sent, like in ChatGPT. Tokens will be sent as data-only [server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#Event_stream_format) as they become available, with the stream terminated by a `data: [DONE]` message. [Example Python code](https://cookbook.openai.com/examples/how_to_stream_completions).
+          nullable: true
+          title: stream
+          type: boolean
+        temperature:
+          default: 1
+          description: |
+            What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
+
+            We generally recommend altering this or `top_p` but not both.
+          example: 1
+          maximum: 2
+          minimum: 0
+          nullable: true
+          title: temperature
+          type: number
+        top_p:
+          default: 1
+          description: |
+            An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered.
+
+            We generally recommend altering this or `temperature` but not both.
+          example: 1
+          maximum: 1
+          minimum: 0
+          nullable: true
+          title: top_p
+          type: number
+        tools:
+          description: |
+            A list of tools the model may call. Currently, only functions are supported as a tool. Use this to provide a list of functions the model may generate JSON inputs for. A max of 128 functions are supported.
+          items:
+            $ref: '#/components/schemas/ChatCompletionTool'
+          title: tools
+          type: array
+        tool_choice:
+          $ref: '#/components/schemas/ChatCompletionToolChoiceOption'
+        user:
+          description: |
+            A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. [Learn more](/docs/guides/safety-best-practices/end-user-ids).
+          example: user-1234
+          title: user
+          type: string
+        function_call:
+          $ref: '#/components/schemas/CreateChatCompletionRequest_function_call'
+        functions:
+          deprecated: true
+          description: |
+            Deprecated in favor of `tools`.
+
+            A list of functions the model may generate JSON inputs for.
+          items:
+            $ref: '#/components/schemas/ChatCompletionFunctions'
+          maxItems: 128
+          minItems: 1
+          title: functions
+          type: array
+      required:
+      - messages
+      - model
+      title: CreateChatCompletionRequest
+      type: object
+    CreateChatCompletionResponse:
+      description: "Represents a chat completion response returned by model, based\
+        \ on the provided input."
+      example:
+        created: 2
+        usage:
+          completion_tokens: 7
+          prompt_tokens: 9
+          total_tokens: 3
+        model: model
+        id: id
+        choices:
+        - finish_reason: stop
+          index: 0
+          message:
+            role: assistant
+            function_call:
+              name: name
+              arguments: arguments
+            tool_calls:
+            - function:
+                name: name
+                arguments: arguments
+              id: id
+              type: function
+            - function:
+                name: name
+                arguments: arguments
+              id: id
+              type: function
+            content: content
+          logprobs:
+            content:
+            - top_logprobs:
+              - logprob: 5.962133916683182
+                bytes:
+                - 5
+                - 5
+                token: token
+              - logprob: 5.962133916683182
+                bytes:
+                - 5
+                - 5
+                token: token
+              logprob: 6.027456183070403
+              bytes:
+              - 1
+              - 1
+              token: token
+            - top_logprobs:
+              - logprob: 5.962133916683182
+                bytes:
+                - 5
+                - 5
+                token: token
+              - logprob: 5.962133916683182
+                bytes:
+                - 5
+                - 5
+                token: token
+              logprob: 6.027456183070403
+              bytes:
+              - 1
+              - 1
+              token: token
+        - finish_reason: stop
+          index: 0
+          message:
+            role: assistant
+            function_call:
+              name: name
+              arguments: arguments
+            tool_calls:
+            - function:
+                name: name
+                arguments: arguments
+              id: id
+              type: function
+            - function:
+                name: name
+                arguments: arguments
+              id: id
+              type: function
+            content: content
+          logprobs:
+            content:
+            - top_logprobs:
+              - logprob: 5.962133916683182
+                bytes:
+                - 5
+                - 5
+                token: token
+              - logprob: 5.962133916683182
+                bytes:
+                - 5
+                - 5
+                token: token
+              logprob: 6.027456183070403
+              bytes:
+              - 1
+              - 1
+              token: token
+            - top_logprobs:
+              - logprob: 5.962133916683182
+                bytes:
+                - 5
+                - 5
+                token: token
+              - logprob: 5.962133916683182
+                bytes:
+                - 5
+                - 5
+                token: token
+              logprob: 6.027456183070403
+              bytes:
+              - 1
+              - 1
+              token: token
+        system_fingerprint: system_fingerprint
+        object: chat.completion
+      properties:
+        id:
+          description: A unique identifier for the chat completion.
+          title: id
+          type: string
+        choices:
+          description: A list of chat completion choices. Can be more than one if
+            `n` is greater than 1.
+          items:
+            $ref: '#/components/schemas/CreateChatCompletionResponse_choices_inner'
+          title: choices
+          type: array
+        created:
+          description: The Unix timestamp (in seconds) of when the chat completion
+            was created.
+          title: created
+          type: integer
+        model:
+          description: The model used for the chat completion.
+          title: model
+          type: string
+        system_fingerprint:
+          description: |
+            This fingerprint represents the backend configuration that the model runs with.
+
+            Can be used in conjunction with the `seed` request parameter to understand when backend changes have been made that might impact determinism.
+          title: system_fingerprint
+          type: string
+        object:
+          description: "The object type, which is always `chat.completion`."
+          enum:
+          - chat.completion
+          title: object
+          type: string
+        usage:
+          $ref: '#/components/schemas/CompletionUsage'
+      required:
+      - choices
+      - created
+      - id
+      - model
+      - object
+      title: CreateChatCompletionResponse
+      type: object
+      x-oaiMeta:
+        name: The chat completion object
+        group: chat
+        example: |
+          {
+            "id": "chatcmpl-123",
+            "object": "chat.completion",
+            "created": 1677652288,
+            "model": "gpt-3.5-turbo-0125",
+            "system_fingerprint": "fp_44709d6fcb",
+            "choices": [{
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "\n\nHello there, how may I assist you today?",
+              },
+              "logprobs": null,
+              "finish_reason": "stop"
+            }],
+            "usage": {
+              "prompt_tokens": 9,
+              "completion_tokens": 12,
+              "total_tokens": 21
+            }
+          }
+    CreateChatCompletionFunctionResponse:
+      description: "Represents a chat completion response returned by model, based\
+        \ on the provided input."
+      properties:
+        id:
+          description: A unique identifier for the chat completion.
+          type: string
+        choices:
+          description: A list of chat completion choices. Can be more than one if
+            `n` is greater than 1.
+          items:
+            $ref: '#/components/schemas/CreateChatCompletionFunctionResponse_choices_inner'
+          type: array
+        created:
+          description: The Unix timestamp (in seconds) of when the chat completion
+            was created.
+          type: integer
+        model:
+          description: The model used for the chat completion.
+          type: string
+        system_fingerprint:
+          description: |
+            This fingerprint represents the backend configuration that the model runs with.
+
+            Can be used in conjunction with the `seed` request parameter to understand when backend changes have been made that might impact determinism.
+          type: string
+        object:
+          description: "The object type, which is always `chat.completion`."
+          enum:
+          - chat.completion
+          type: string
+        usage:
+          $ref: '#/components/schemas/CompletionUsage'
+      required:
+      - choices
+      - created
+      - id
+      - model
+      - object
+      type: object
+      x-oaiMeta:
+        name: The chat completion object
+        group: chat
+        example: |
+          {
+            "id": "chatcmpl-abc123",
+            "object": "chat.completion",
+            "created": 1699896916,
+            "model": "gpt-3.5-turbo-0125",
+            "choices": [
+              {
+                "index": 0,
+                "message": {
+                  "role": "assistant",
+                  "content": null,
+                  "tool_calls": [
+                    {
+                      "id": "call_abc123",
+                      "type": "function",
+                      "function": {
+                        "name": "get_current_weather",
+                        "arguments": "{\n\"location\": \"Boston, MA\"\n}"
+                      }
+                    }
+                  ]
+                },
+                "logprobs": null,
+                "finish_reason": "tool_calls"
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 82,
+              "completion_tokens": 17,
+              "total_tokens": 99
+            }
+          }
+    ChatCompletionTokenLogprob:
+      example:
+        top_logprobs:
+        - logprob: 5.962133916683182
+          bytes:
+          - 5
+          - 5
+          token: token
+        - logprob: 5.962133916683182
+          bytes:
+          - 5
+          - 5
+          token: token
+        logprob: 6.027456183070403
+        bytes:
+        - 1
+        - 1
+        token: token
+      properties:
+        token:
+          description: The token.
+          title: token
+          type: string
+        logprob:
+          description: "The log probability of this token, if it is within the top\
+            \ 20 most likely tokens. Otherwise, the value `-9999.0` is used to signify\
+            \ that the token is very unlikely."
+          title: logprob
+          type: number
+        bytes:
+          description: A list of integers representing the UTF-8 bytes representation
+            of the token. Useful in instances where characters are represented by
+            multiple tokens and their byte representations must be combined to generate
+            the correct text representation. Can be `null` if there is no bytes representation
+            for the token.
+          items:
+            type: integer
+          nullable: true
+          title: bytes
+          type: array
+        top_logprobs:
+          description: "List of the most likely tokens and their log probability,\
+            \ at this token position. In rare cases, there may be fewer than the number\
+            \ of requested `top_logprobs` returned."
+          items:
+            $ref: '#/components/schemas/ChatCompletionTokenLogprob_top_logprobs_inner'
+          title: top_logprobs
+          type: array
+      required:
+      - bytes
+      - logprob
+      - token
+      - top_logprobs
+      title: ChatCompletionTokenLogprob
+      type: object
+    CreateChatCompletionStreamResponse:
+      description: "Represents a streamed chunk of a chat completion response returned\
+        \ by model, based on the provided input."
+      properties:
+        id:
+          description: A unique identifier for the chat completion. Each chunk has
+            the same ID.
+          type: string
+        choices:
+          description: A list of chat completion choices. Can be more than one if
+            `n` is greater than 1.
+          items:
+            $ref: '#/components/schemas/CreateChatCompletionStreamResponse_choices_inner'
+          type: array
+        created:
+          description: The Unix timestamp (in seconds) of when the chat completion
+            was created. Each chunk has the same timestamp.
+          type: integer
+        model:
+          description: The model to generate the completion.
+          type: string
+        system_fingerprint:
+          description: |
+            This fingerprint represents the backend configuration that the model runs with.
+            Can be used in conjunction with the `seed` request parameter to understand when backend changes have been made that might impact determinism.
+          type: string
+        object:
+          description: "The object type, which is always `chat.completion.chunk`."
+          enum:
+          - chat.completion.chunk
+          type: string
+      required:
+      - choices
+      - created
+      - id
+      - model
+      - object
+      type: object
+      x-oaiMeta:
+        name: The chat completion chunk object
+        group: chat
+        example: |
+          {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1694268190,"model":"gpt-3.5-turbo-0125", "system_fingerprint": "fp_44709d6fcb", "choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}]}
+
+          {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1694268190,"model":"gpt-3.5-turbo-0125", "system_fingerprint": "fp_44709d6fcb", "choices":[{"index":0,"delta":{"content":"Hello"},"logprobs":null,"finish_reason":null}]}
+
+          ....
+
+          {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1694268190,"model":"gpt-3.5-turbo-0125", "system_fingerprint": "fp_44709d6fcb", "choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}]}
+    CreateChatCompletionImageResponse:
+      description: "Represents a streamed chunk of a chat completion response returned\
+        \ by model, based on the provided input."
+      type: object
+      x-oaiMeta:
+        name: The chat completion chunk object
+        group: chat
+        example: |
+          {
+            "id": "chatcmpl-123",
+            "object": "chat.completion",
+            "created": 1677652288,
+            "model": "gpt-3.5-turbo-0125",
+            "system_fingerprint": "fp_44709d6fcb",
+            "choices": [{
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "\n\nThis image shows a wooden boardwalk extending through a lush green marshland.",
+              },
+              "logprobs": null,
+              "finish_reason": "stop"
+            }],
+            "usage": {
+              "prompt_tokens": 9,
+              "completion_tokens": 12,
+              "total_tokens": 21
+            }
+          }
+    Model:
+      description: Describes an OpenAI model offering that can be used with the API.
+      example:
+        created: 0
+        owned_by: owned_by
+        id: id
+        object: model
+      properties:
+        id:
+          description: "The model identifier, which can be referenced in the API endpoints."
+          title: id
+          type: string
+        created:
+          description: The Unix timestamp (in seconds) when the model was created.
+          title: created
+          type: integer
+        object:
+          description: "The object type, which is always \"model\"."
+          enum:
+          - model
+          title: object
+          type: string
+        owned_by:
+          description: The organization that owns the model.
+          title: owned_by
+          type: string
+      required:
+      - created
+      - id
+      - object
+      - owned_by
+      title: Model
+      x-oaiMeta:
+        name: The model object
+        example: |
+          {
+            "id": "VAR_model_id",
+            "object": "model",
+            "created": 1686935002,
+            "owned_by": "openai"
+          }
+    CompletionUsage:
+      description: Usage statistics for the completion request.
+      example:
+        completion_tokens: 7
+        prompt_tokens: 9
+        total_tokens: 3
+      properties:
+        completion_tokens:
+          description: Number of tokens in the generated completion.
+          title: completion_tokens
+          type: integer
+        prompt_tokens:
+          description: Number of tokens in the prompt.
+          title: prompt_tokens
+          type: integer
+        total_tokens:
+          description: Total number of tokens used in the request (prompt + completion).
+          title: total_tokens
+          type: integer
+      required:
+      - completion_tokens
+      - prompt_tokens
+      - total_tokens
+      title: CompletionUsage
+      type: object
+    ErrorEvent:
+      description: "Occurs when an [error](/docs/guides/error-codes/api-errors) occurs.\
+        \ This can happen due to an internal server error or a timeout."
+      properties:
+        event:
+          enum:
+          - error
+          type: string
+        data:
+          $ref: '#/components/schemas/Error'
+      required:
+      - data
+      - event
+      type: object
+      x-oaiMeta:
+        dataDescription: "`data` is an [error](/docs/guides/error-codes/api-errors)"
+    DoneEvent:
+      description: Occurs when a stream ends.
+      properties:
+        event:
+          enum:
+          - done
+          type: string
+        data:
+          enum:
+          - "[DONE]"
+          type: string
+      required:
+      - data
+      - event
+      type: object
+      x-oaiMeta:
+        dataDescription: "`data` is `[DONE]`"
+    CreateCompletionRequest_model:
+      anyOf:
+      - type: string
+      - enum:
+        - gpt-3.5-turbo-instruct
+        - davinci-002
+        - babbage-002
+        type: string
+      description: |
+        ID of the model to use. You can use the [List models](/docs/api-reference/models/list) API to see all of your available models, or see our [Model overview](/docs/models/overview) for descriptions of them.
+      title: CreateCompletionRequest_model
+      x-oaiTypeLabel: string
+    CreateCompletionRequest_prompt:
+      default: <|endoftext|>
+      description: |
+        The prompt(s) to generate completions for, encoded as a string, array of strings, array of tokens, or array of token arrays.
+
+        Note that <|endoftext|> is the document separator that the model sees during training, so if a prompt is not specified the model will generate as if from the beginning of a new document.
+      nullable: true
+      oneOf:
+      - default: ""
+        example: This is a test.
+        type: string
+      - items:
+          default: ""
+          example: This is a test.
+          type: string
+        type: array
+      - example: "[1212, 318, 257, 1332, 13]"
+        items:
+          type: integer
+        minItems: 1
+        type: array
+      - example: "[[1212, 318, 257, 1332, 13]]"
+        items:
+          items:
+            type: integer
+          minItems: 1
+          type: array
+        minItems: 1
+        type: array
+      title: CreateCompletionRequest_prompt
+    CreateCompletionRequest_stop:
+      default: null
+      description: |
+        Up to 4 sequences where the API will stop generating further tokens. The returned text will not contain the stop sequence.
+      nullable: true
+      oneOf:
+      - default: <|endoftext|>
+        example: |2+
+
+        nullable: true
+        type: string
+      - items:
+          example: "[\"\\n\"]"
+          type: string
+        maxItems: 4
+        minItems: 1
+        type: array
+      title: CreateCompletionRequest_stop
+    CreateCompletionResponse_choices_inner_logprobs:
+      example:
+        top_logprobs:
+        - key: 5.962133916683182
+        - key: 5.962133916683182
+        token_logprobs:
+        - 1.4658129805029452
+        - 1.4658129805029452
+        tokens:
+        - tokens
+        - tokens
+        text_offset:
+        - 6
+        - 6
+      nullable: true
+      properties:
+        text_offset:
+          items:
+            type: integer
+          title: text_offset
+          type: array
+        token_logprobs:
+          items:
+            type: number
+          title: token_logprobs
+          type: array
+        tokens:
+          items:
+            type: string
+          title: tokens
+          type: array
+        top_logprobs:
+          items:
+            additionalProperties:
+              type: number
+            type: object
+          title: top_logprobs
+          type: array
+      title: CreateCompletionResponse_choices_inner_logprobs
+      type: object
+    CreateCompletionResponse_choices_inner:
+      example:
+        finish_reason: stop
+        index: 0
+        text: text
+        logprobs:
+          top_logprobs:
+          - key: 5.962133916683182
+          - key: 5.962133916683182
+          token_logprobs:
+          - 1.4658129805029452
+          - 1.4658129805029452
+          tokens:
+          - tokens
+          - tokens
+          text_offset:
+          - 6
+          - 6
+      properties:
+        finish_reason:
+          description: |
+            The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence,
+            `length` if the maximum number of tokens specified in the request was reached,
+            or `content_filter` if content was omitted due to a flag from our content filters.
+          enum:
+          - stop
+          - length
+          - content_filter
+          title: finish_reason
+          type: string
+        index:
+          title: index
+          type: integer
+        logprobs:
+          $ref: '#/components/schemas/CreateCompletionResponse_choices_inner_logprobs'
+        text:
+          title: text
+          type: string
+      required:
+      - finish_reason
+      - index
+      - logprobs
+      - text
+      title: CreateCompletionResponse_choices_inner
+      type: object
+    ChatCompletionRequestMessageContentPartImage_image_url:
+      properties:
+        url:
+          description: Either a URL of the image or the base64 encoded image data.
+          format: uri
+          title: url
+          type: string
+        detail:
+          default: auto
+          description: "Specifies the detail level of the image. Learn more in the\
+            \ [Vision guide](/docs/guides/vision/low-or-high-fidelity-image-understanding)."
+          enum:
+          - auto
+          - low
+          - high
+          title: detail
+          type: string
+      required:
+      - url
+      title: ChatCompletionRequestMessageContentPartImage_image_url
+      type: object
+    ChatCompletionRequestUserMessage_content:
+      description: |
+        The contents of the user message.
+      oneOf:
+      - description: The text contents of the message.
+        title: Text content
+        type: string
+      - description: "An array of content parts with a defined type, each can be of\
+          \ type `text` or `image_url` when passing in images. You can pass multiple\
+          \ images by adding multiple `image_url` content parts. Image input is only\
+          \ supported when using the `gpt-4-visual-preview` model."
+        items:
+          $ref: '#/components/schemas/ChatCompletionRequestMessageContentPart'
+        minItems: 1
+        title: Array of content parts
+        type: array
+      title: ChatCompletionRequestUserMessage_content
+      x-oaiExpandable: true
+    ChatCompletionRequestAssistantMessage_function_call:
+      deprecated: true
+      description: "Deprecated and replaced by `tool_calls`. The name and arguments\
+        \ of a function that should be called, as generated by the model."
+      example:
+        name: name
+        arguments: arguments
+      properties:
+        arguments:
+          description: "The arguments to call the function with, as generated by the\
+            \ model in JSON format. Note that the model does not always generate valid\
+            \ JSON, and may hallucinate parameters not defined by your function schema.\
+            \ Validate the arguments in your code before calling your function."
+          title: arguments
+          type: string
+        name:
+          description: The name of the function to call.
+          title: name
+          type: string
+      required:
+      - arguments
+      - name
+      title: ChatCompletionRequestAssistantMessage_function_call
+      type: object
+    ChatCompletionNamedToolChoice_function:
+      properties:
+        name:
+          description: The name of the function to call.
+          title: name
+          type: string
+      required:
+      - name
+      title: ChatCompletionNamedToolChoice_function
+      type: object
+    ChatCompletionMessageToolCall_function:
+      description: The function that the model called.
+      example:
+        name: name
+        arguments: arguments
+      properties:
+        name:
+          description: The name of the function to call.
+          title: name
+          type: string
+        arguments:
+          description: "The arguments to call the function with, as generated by the\
+            \ model in JSON format. Note that the model does not always generate valid\
+            \ JSON, and may hallucinate parameters not defined by your function schema.\
+            \ Validate the arguments in your code before calling your function."
+          title: arguments
+          type: string
+      required:
+      - arguments
+      - name
+      title: ChatCompletionMessageToolCall_function
+      type: object
+    ChatCompletionMessageToolCallChunk_function:
+      properties:
+        name:
+          description: The name of the function to call.
+          title: name
+          type: string
+        arguments:
+          description: "The arguments to call the function with, as generated by the\
+            \ model in JSON format. Note that the model does not always generate valid\
+            \ JSON, and may hallucinate parameters not defined by your function schema.\
+            \ Validate the arguments in your code before calling your function."
+          title: arguments
+          type: string
+      title: ChatCompletionMessageToolCallChunk_function
+      type: object
+    ChatCompletionStreamResponseDelta_function_call:
+      deprecated: true
+      description: "Deprecated and replaced by `tool_calls`. The name and arguments\
+        \ of a function that should be called, as generated by the model."
+      properties:
+        arguments:
+          description: "The arguments to call the function with, as generated by the\
+            \ model in JSON format. Note that the model does not always generate valid\
+            \ JSON, and may hallucinate parameters not defined by your function schema.\
+            \ Validate the arguments in your code before calling your function."
+          title: arguments
+          type: string
+        name:
+          description: The name of the function to call.
+          title: name
+          type: string
+      title: ChatCompletionStreamResponseDelta_function_call
+      type: object
+    CreateChatCompletionRequest_model:
+      anyOf:
+      - type: string
+      - enum:
+        - gpt-4-turbo
+        - gpt-4-turbo-2024-04-09
+        - gpt-4-0125-preview
+        - gpt-4-turbo-preview
+        - gpt-4-1106-preview
+        - gpt-4-vision-preview
+        - gpt-4
+        - gpt-4-0314
+        - gpt-4-0613
+        - gpt-4-32k
+        - gpt-4-32k-0314
+        - gpt-4-32k-0613
+        - gpt-3.5-turbo
+        - gpt-3.5-turbo-16k
+        - gpt-3.5-turbo-0301
+        - gpt-3.5-turbo-0613
+        - gpt-3.5-turbo-1106
+        - gpt-3.5-turbo-0125
+        - gpt-3.5-turbo-16k-0613
+        type: string
+      description: "ID of the model to use. See the [model endpoint compatibility](/docs/models/model-endpoint-compatibility)\
+        \ table for details on which models work with the Chat API."
+      example: gpt-4-turbo
+      title: CreateChatCompletionRequest_model
+      x-oaiTypeLabel: string
+    CreateChatCompletionRequest_response_format:
+      description: |
+        An object specifying the format that the model must output. Compatible with [GPT-4 Turbo](/docs/models/gpt-4-and-gpt-4-turbo) and all GPT-3.5 Turbo models newer than `gpt-3.5-turbo-1106`.
+
+        Setting to `{ "type": "json_object" }` enables JSON mode, which guarantees the message the model generates is valid JSON.
+
+        **Important:** when using JSON mode, you **must** also instruct the model to produce JSON yourself via a system or user message. Without this, the model may generate an unending stream of whitespace until the generation reaches the token limit, resulting in a long-running and seemingly "stuck" request. Also note that the message content may be partially cut off if `finish_reason="length"`, which indicates the generation exceeded `max_tokens` or the conversation exceeded the max context length.
+      example:
+        type: json_object
+      properties:
+        type:
+          default: text
+          description: Must be one of `text` or `json_object`.
+          enum:
+          - text
+          - json_object
+          example: json_object
+          title: type
+          type: string
+      title: CreateChatCompletionRequest_response_format
+      type: object
+    CreateChatCompletionRequest_stop:
+      default: null
+      description: |
+        Up to 4 sequences where the API will stop generating further tokens.
+      oneOf:
+      - nullable: true
+        type: string
+      - items:
+          type: string
+        maxItems: 4
+        minItems: 1
+        type: array
+      title: CreateChatCompletionRequest_stop
+    CreateChatCompletionRequest_function_call:
+      deprecated: true
+      description: |
+        Deprecated in favor of `tool_choice`.
+
+        Controls which (if any) function is called by the model.
+        `none` means the model will not call a function and instead generates a message.
+        `auto` means the model can pick between generating a message or calling a function.
+        Specifying a particular function via `{"name": "my_function"}` forces the model to call that function.
+
+        `none` is the default when no functions are present. `auto` is the default if functions are present.
+      oneOf:
+      - description: |
+          `none` means the model will not call a function and instead generates a message. `auto` means the model can pick between generating a message or calling a function.
+        enum:
+        - none
+        - auto
+        type: string
+      - $ref: '#/components/schemas/ChatCompletionFunctionCallOption'
+      title: CreateChatCompletionRequest_function_call
+      x-oaiExpandable: true
+    CreateChatCompletionResponse_choices_inner_logprobs:
+      description: Log probability information for the choice.
+      example:
+        content:
+        - top_logprobs:
+          - logprob: 5.962133916683182
+            bytes:
+            - 5
+            - 5
+            token: token
+          - logprob: 5.962133916683182
+            bytes:
+            - 5
+            - 5
+            token: token
+          logprob: 6.027456183070403
+          bytes:
+          - 1
+          - 1
+          token: token
+        - top_logprobs:
+          - logprob: 5.962133916683182
+            bytes:
+            - 5
+            - 5
+            token: token
+          - logprob: 5.962133916683182
+            bytes:
+            - 5
+            - 5
+            token: token
+          logprob: 6.027456183070403
+          bytes:
+          - 1
+          - 1
+          token: token
+      nullable: true
+      properties:
+        content:
+          description: A list of message content tokens with log probability information.
+          items:
+            $ref: '#/components/schemas/ChatCompletionTokenLogprob'
+          nullable: true
+          title: content
+          type: array
+      required:
+      - content
+      title: CreateChatCompletionResponse_choices_inner_logprobs
+      type: object
+    CreateChatCompletionResponse_choices_inner:
+      example:
+        finish_reason: stop
+        index: 0
+        message:
+          role: assistant
+          function_call:
+            name: name
+            arguments: arguments
+          tool_calls:
+          - function:
+              name: name
+              arguments: arguments
+            id: id
+            type: function
+          - function:
+              name: name
+              arguments: arguments
+            id: id
+            type: function
+          content: content
+        logprobs:
+          content:
+          - top_logprobs:
+            - logprob: 5.962133916683182
+              bytes:
+              - 5
+              - 5
+              token: token
+            - logprob: 5.962133916683182
+              bytes:
+              - 5
+              - 5
+              token: token
+            logprob: 6.027456183070403
+            bytes:
+            - 1
+            - 1
+            token: token
+          - top_logprobs:
+            - logprob: 5.962133916683182
+              bytes:
+              - 5
+              - 5
+              token: token
+            - logprob: 5.962133916683182
+              bytes:
+              - 5
+              - 5
+              token: token
+            logprob: 6.027456183070403
+            bytes:
+            - 1
+            - 1
+            token: token
+      properties:
+        finish_reason:
+          description: |
+            The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence,
+            `length` if the maximum number of tokens specified in the request was reached,
+            `content_filter` if content was omitted due to a flag from our content filters,
+            `tool_calls` if the model called a tool, or `function_call` (deprecated) if the model called a function.
+          enum:
+          - stop
+          - length
+          - tool_calls
+          - content_filter
+          - function_call
+          title: finish_reason
+          type: string
+        index:
+          description: The index of the choice in the list of choices.
+          title: index
+          type: integer
+        message:
+          $ref: '#/components/schemas/ChatCompletionResponseMessage'
+        logprobs:
+          $ref: '#/components/schemas/CreateChatCompletionResponse_choices_inner_logprobs'
+      required:
+      - finish_reason
+      - index
+      - logprobs
+      - message
+      title: CreateChatCompletionResponse_choices_inner
+      type: object
+    CreateChatCompletionFunctionResponse_choices_inner:
+      properties:
+        finish_reason:
+          description: |
+            The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence, `length` if the maximum number of tokens specified in the request was reached, `content_filter` if content was omitted due to a flag from our content filters, or `function_call` if the model called a function.
+          enum:
+          - stop
+          - length
+          - function_call
+          - content_filter
+          title: finish_reason
+          type: string
+        index:
+          description: The index of the choice in the list of choices.
+          title: index
+          type: integer
+        message:
+          $ref: '#/components/schemas/ChatCompletionResponseMessage'
+      required:
+      - finish_reason
+      - index
+      - logprobs
+      - message
+      title: CreateChatCompletionFunctionResponse_choices_inner
+      type: object
+    ChatCompletionTokenLogprob_top_logprobs_inner:
+      example:
+        logprob: 5.962133916683182
+        bytes:
+        - 5
+        - 5
+        token: token
+      properties:
+        token:
+          description: The token.
+          title: token
+          type: string
+        logprob:
+          description: "The log probability of this token, if it is within the top\
+            \ 20 most likely tokens. Otherwise, the value `-9999.0` is used to signify\
+            \ that the token is very unlikely."
+          title: logprob
+          type: number
+        bytes:
+          description: A list of integers representing the UTF-8 bytes representation
+            of the token. Useful in instances where characters are represented by
+            multiple tokens and their byte representations must be combined to generate
+            the correct text representation. Can be `null` if there is no bytes representation
+            for the token.
+          items:
+            type: integer
+          nullable: true
+          title: bytes
+          type: array
+      required:
+      - bytes
+      - logprob
+      - token
+      title: ChatCompletionTokenLogprob_top_logprobs_inner
+      type: object
+    CreateChatCompletionStreamResponse_choices_inner:
+      properties:
+        delta:
+          $ref: '#/components/schemas/ChatCompletionStreamResponseDelta'
+        logprobs:
+          $ref: '#/components/schemas/CreateChatCompletionResponse_choices_inner_logprobs'
+        finish_reason:
+          description: |
+            The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence,
+            `length` if the maximum number of tokens specified in the request was reached,
+            `content_filter` if content was omitted due to a flag from our content filters,
+            `tool_calls` if the model called a tool, or `function_call` (deprecated) if the model called a function.
+          enum:
+          - stop
+          - length
+          - tool_calls
+          - content_filter
+          - function_call
+          nullable: true
+          title: finish_reason
+          type: string
+        index:
+          description: The index of the choice in the list of choices.
+          title: index
+          type: integer
+      required:
+      - delta
+      - finish_reason
+      - index
+      title: CreateChatCompletionStreamResponse_choices_inner
+      type: object
+  securitySchemes:
+    ApiKeyAuth:
+      scheme: bearer
+      type: http
+x-oaiMeta:
+  navigationGroups:
+  - id: endpoints
+    title: Endpoints
+  - id: legacy
+    title: Legacy
+  groups:
+  - id: chat
+    title: Chat
+    description: |
+      Given a list of messages comprising a conversation, the model will return a response.
+
+      Related guide: [Chat Completions](/docs/guides/text-generation)
+    navigationGroup: endpoints
+    sections:
+    - type: endpoint
+      key: createChatCompletion
+      path: create
+    - type: object
+      key: CreateChatCompletionResponse
+      path: object
+    - type: object
+      key: CreateChatCompletionStreamResponse
+      path: streaming
+  - id: models
+    title: Models
+    description: |
+      List and describe the various models available in the API. You can refer to the [Models](/docs/models) documentation to understand what models are available and the differences between them.
+    navigationGroup: endpoints
+    sections:
+    - type: endpoint
+      key: listModels
+      path: list
+    - type: endpoint
+      key: retrieveModel
+      path: retrieve
+    - type: endpoint
+      key: deleteModel
+      path: delete
+    - type: object
+      key: Model
+      path: object
+  - id: completions
+    title: Completions
+    legacy: true
+    navigationGroup: legacy
+    description: |
+      Given a prompt, the model will return one or more predicted completions along with the probabilities of alternative tokens at each position. Most developer should use our [Chat Completions API](/docs/guides/text-generation/text-generation-models) to leverage our best and newest models.
+    sections:
+    - type: endpoint
+      key: createCompletion
+      path: create
+    - type: object
+      key: CreateCompletionResponse
+      path: object
