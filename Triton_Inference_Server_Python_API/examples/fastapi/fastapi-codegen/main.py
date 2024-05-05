@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+import time
 
-from .openai_protocol_types import (
+from fastapi import FastAPI
+from openai_protocol_types import (
     CreateChatCompletionRequest,
     CreateChatCompletionResponse,
     CreateCompletionRequest,
@@ -14,7 +15,25 @@ from .openai_protocol_types import (
     DeleteModelResponse,
     ListModelsResponse,
     Model,
+    ObjectType,
 )
+
+owned_by = "ACME"
+
+model_list = [
+    Model(
+        id="llama-3-8b-instruct",
+        created=int(time.time()),
+        object=ObjectType.model,
+        owned_by=owned_by,
+    )
+]
+
+import tritonserver
+
+server = tritonserver.Server(
+    model_repository="/workspace/llm-models", log_verbose=6, strict_model_config=False
+).start(wait_until_ready=True)
 
 app = FastAPI(
     title="OpenAI API",
@@ -55,7 +74,7 @@ def list_models() -> ListModelsResponse:
     """
     Lists the currently available models, and provides basic information about each one such as the owner and availability.
     """
-    pass
+    return ListModelsResponse(object=ObjectType.list, data=model_list)
 
 
 @app.get("/models/{model}", response_model=Model, tags=["Models"])

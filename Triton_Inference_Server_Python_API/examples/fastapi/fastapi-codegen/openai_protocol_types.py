@@ -830,3 +830,11 @@ class CreateChatCompletionRequest(BaseModel):
         max_items=128,
         min_items=1,
     )
+
+
+# Additional Aliases for Convenience
+
+
+class ObjectType:
+    model = Object5.model
+    list = Object.list

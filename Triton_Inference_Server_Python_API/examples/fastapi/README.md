@@ -28,6 +28,17 @@
 
 # Triton Inference Server Fast API / Open API / Open AI Example
 
+## Build Image
+```
+../../build.sh --framework vllm --build-arg TRITON_CLI_TAG=rmccormick-trtllm-0.9
+```
+
+## Import Model
+```
+triton remove -m all --model-repository llm-models
+triton import -m llama-3-8b-instruct --backend vllm --model-repository llm-models
+```
+
 ## Open AI API Specification
 
 We use
@@ -38,14 +49,46 @@ As this tutorial only covers LLM applications we use a trimmed specficiation (ap
 
 ## Generating the Fast API server using fastapi-codegen
 
+```
+./scripts/fastapi-codegen.sh "-i api-spec/openai_trimmed.yml -o fastapi-codegen --model-file openai_protocol_types"
+```
+
+### Modifications
+
+1. Remove relative import
+
+Before:
 
 ```
-./scripts/fastapi-codegen.sh "-i $PWD/api-spec/openai_trimmed.yml -o $PWD/foo --model-file openai_protocol_types"
+from .openapi_protocol_types
 ```
-### Modifications
+
+After:
+```
+from openapi_protocol_types
+```
 
 
 ## Generating the Fast API server using openapi-code-generator
 
 
+## curl examples
 
+### Models
+
+```
+curl -s http://localhost:8000/models | jq .
+```
+
+```
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "llama-3-8b-instruct",
+      "created": 1714952401,
+      "object": "model",
+      "owned_by": "ACME"
+    }
+  ]
+```
