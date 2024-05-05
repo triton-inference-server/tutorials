@@ -38,7 +38,12 @@ As this tutorial only covers LLM applications we use a trimmed specficiation (ap
 
 ## Generating the Fast API server using fastapi-codegen
 
+
+```
+./scripts/fastapi-codegen.sh "-i $PWD/api-spec/openai_trimmed.yml -o $PWD/foo --model-file openai_protocol_types"
+```
 ### Modifications
+
 
 ## Generating the Fast API server using openapi-code-generator
 
