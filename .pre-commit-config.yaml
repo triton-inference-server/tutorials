@@ -65,7 +65,7 @@ repos:
   - id: check-json
   - id: check-toml
   - id: check-yaml
-    exclude: ^deploy(\/[^\/]+)*\/templates\/.*$
+    exclude: ^deploy(\/[^\/]+)*\/templates\/.*$|^fastapi/api-spec/openai.yml$
   - id: check-shebang-scripts-are-executable
   - id: end-of-file-fixer
     types_or: [c, c++, cuda, proto, textproto, java, python]
