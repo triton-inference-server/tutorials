@@ -101,14 +101,14 @@ get_options() {
     fi
 
     if [ -z "$IMAGE" ]; then
-        IMAGE="triton-python-api:r24.03"
+        IMAGE="triton-python-api:r24.04"
 
 	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
 	    IMAGE+="-trt-llm"
 	fi
 
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
-	    IMAGE="triton-python-api:r24.01-diffusion"
+	    IMAGE+="-diffusion"
 	fi
 
 	if [[ $FRAMEWORK == "VLLM" ]]; then
