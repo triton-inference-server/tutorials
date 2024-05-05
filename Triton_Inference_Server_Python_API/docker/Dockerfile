@@ -65,7 +65,7 @@ RUN pip install "git+https://github.com/triton-inference-server/client.git@${GEN
 
 ARG INCLUDE_PYTHON_REPL
 
-RUN if [[ "$INCLUDE_PYTHON_REPL" != "" ]] ; then pip install --timeout=2000 -r /tmp/python_repl.txt ; fi
+RUN if [[ "$INCLUDE_PYTHON_REPL" != "" ]] ; then pip install --timeout=2000 -r /tmp/requirements_python_repl.txt ; fi
 
 ARG FRAMEWORK=DIFFUSION
 
