@@ -38,7 +38,9 @@ COPY ./deps/requirements.txt /tmp/requirements.txt
 
 COPY ./deps/requirements_trt_llm.txt /tmp/requirements_trt_llm.txt
 
-COPY ./deps/requirements_trt_llm.txt /tmp/requirements_vllm.txt
+COPY ./deps/requirements_vllm.txt /tmp/requirements_vllm.txt
+
+COPY ./deps/requirements_python_repl.txt /tmp/requirements_python_repl.txt
 
 COPY ./deps/tritonserver-2.46.0.dev0-py3-none-any.whl /tmp/tritonserver-2.46.0.dev0-py3-none-any.whl
 
@@ -61,11 +63,9 @@ ARG GENAI_PERF_TAG=r24.04
 
 RUN pip install "git+https://github.com/triton-inference-server/client.git@${GENAI_PERF_TAG}#subdirectory=src/c++/perf_analyzer/genai-perf"
 
-RUN pip install bpython
+ARG INCLUDE_PYTHON_REPL
 
-RUN pip install ipython
-
-RUN pip install ptpython
+RUN if [[ "$INCLUDE_PYTHON_REPL" != "" ]] ; then pip install --timeout=2000 -r /tmp/python_repl.txt ; fi
 
 ARG FRAMEWORK=DIFFUSION
 
