@@ -28,7 +28,17 @@
 
 # Triton Inference Server Fast API / Open API / Open AI Example
 
+## Open AI API Specification
+
+We use
+https://raw.githubusercontent.com/openai/openai-openapi/25d9dacc86a94df1db98725fe87494564317cafa/openapi.yaml
+as the base specification.
+
+As this tutorial only covers LLM applications we use a trimmed specficiation (api-spec/openai_trimmed.yml).
+
 ## Generating the Fast API server using fastapi-codegen
+
+### Modifications
 
 ## Generating the Fast API server using openapi-code-generator
 
