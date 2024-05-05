@@ -1,3 +1,6 @@
+# Modified From:
+# https://raw.githubusercontent.com/openai/openai-openapi/25d9dacc86a94df1db98725fe87494564317cafa/openapi.yaml
+
 openapi: 3.0.0
 info:
   title: OpenAI API
