@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import time
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from openai_protocol_types import (
     CreateChatCompletionRequest,
     CreateChatCompletionResponse,
@@ -20,14 +20,14 @@ from openai_protocol_types import (
 
 owned_by = "ACME"
 
-model_list = [
-    Model(
+model_map = {
+    "llama-3-8b-instruct": Model(
         id="llama-3-8b-instruct",
         created=int(time.time()),
         object=ObjectType.model,
         owned_by=owned_by,
     )
-]
+}
 
 import tritonserver
 
@@ -74,7 +74,7 @@ def list_models() -> ListModelsResponse:
     """
     Lists the currently available models, and provides basic information about each one such as the owner and availability.
     """
-    return ListModelsResponse(object=ObjectType.list, data=model_list)
+    return ListModelsResponse(object=ObjectType.list, data=list(model_map.values()))
 
 
 @app.get("/models/{model}", response_model=Model, tags=["Models"])
@@ -82,7 +82,11 @@ def retrieve_model(model: str) -> Model:
     """
     Retrieves a model instance, providing basic information about the model such as the owner and permissioning.
     """
-    pass
+
+    if model in model_map:
+        return model_map[model]
+
+    raise HTTPException(status_code=404, detail=f"Unknown model: {model}")
 
 
 @app.delete("/models/{model}", response_model=DeleteModelResponse, tags=["Models"])

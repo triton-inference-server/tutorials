@@ -76,6 +76,8 @@ from openapi_protocol_types
 
 ### Models
 
+#### List
+
 ```
 curl -s http://localhost:8000/models | jq .
 ```
@@ -91,4 +93,18 @@ curl -s http://localhost:8000/models | jq .
       "owned_by": "ACME"
     }
   ]
+```
+#### Retrieve Model Info
+
+```
+curl -s http://localhost:8000/models/llama-3-8b-instruct | jq .
+```
+
+```
+{
+  "id": "llama-3-8b-instruct",
+  "created": 1714953302,
+  "object": "model",
+  "owned_by": "ACME"
+}
 ```
