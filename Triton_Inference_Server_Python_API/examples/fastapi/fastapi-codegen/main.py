@@ -37,7 +37,7 @@ import tritonserver
 
 server = tritonserver.Server(
     model_repository="/workspace/llm-models",
-    log_verbose=6,
+    #    log_verbose=6,
     strict_model_config=False,
     model_control_mode=tritonserver.ModelControlMode.EXPLICIT,
 ).start(wait_until_ready=True)
@@ -147,11 +147,16 @@ def create_completion(
         )
     else:
         response = list(responses)[0]
+        try:
+            text = response.outputs["text_output"].to_string_array()[0]
+        except:
+            text = str(response.outputs["text_output"].to_bytes_array()[0])
+
         choice = Choice(
             finish_reason=FinishReason.stop if response.final else None,
             index=0,
             logprobs=None,
-            text=response.outputs["text_output"].to_string_array()[0],
+            text=text,
         )
         return CreateCompletionResponse(
             id=request_id,
