@@ -923,58 +923,6 @@ paths:
               "created": 1686935002,
               "owned_by": "openai"
             }
-    delete:
-      operationId: deleteModel
-      tags:
-        - Models
-      summary: Delete a fine-tuned model. You must have the Owner role in your organization to delete a model.
-      parameters:
-        - in: path
-          name: model
-          required: true
-          schema:
-            type: string
-            example: ft:gpt-3.5-turbo:acemeco:suffix:abc123
-          description: The model to delete
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DeleteModelResponse"
-      x-oaiMeta:
-        name: Delete a fine-tuned model
-        group: models
-        returns: Deletion status.
-        examples:
-          request:
-            curl: |
-              curl https://api.openai.com/v1/models/ft:gpt-3.5-turbo:acemeco:suffix:abc123 \
-                -X DELETE \
-                -H "Authorization: Bearer $OPENAI_API_KEY"
-            python: |
-              from openai import OpenAI
-              client = OpenAI()
-
-              client.models.delete("ft:gpt-3.5-turbo:acemeco:suffix:abc123")
-            node.js: |-
-              import OpenAI from "openai";
-
-              const openai = new OpenAI();
-
-              async function main() {
-                const model = await openai.models.del("ft:gpt-3.5-turbo:acemeco:suffix:abc123");
-
-                console.log(model);
-              }
-              main();
-          response: |
-            {
-              "id": "ft:gpt-3.5-turbo:acemeco:suffix:abc123",
-              "object": "model",
-              "deleted": true
-            }
 
 components:
   securitySchemes:
