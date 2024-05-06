@@ -111,7 +111,7 @@ TensorRT-LLM requires each model to be compiled for the configuration
 you need before running. To do so, before you run your model for the first time
 on Triton Server you will need to create a TensorRT-LLM engine.
 
-Starting with 24.04 release, Triton Server TensrRT LLM container comes with
+Starting with 24.04 release, Triton Server TensorRT-LLM container comes with
 pre-installed TensorRT-LLM package, which allows users to build engines inside
 the Triton container. Simply follow the next steps:
 
