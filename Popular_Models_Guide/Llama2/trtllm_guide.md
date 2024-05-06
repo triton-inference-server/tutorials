@@ -93,7 +93,7 @@ to build a specialized container.
 
 Don't forget to allow gpu usage when you launch the container.
 
-> Optional: For simplicity, we've condenced all following steps into
+> Optional: For simplicity, we've condensed all following steps into
 > a [deploy_trtllm_llama.sh](tutorials/Popular_Models_Guide/Llama2/deploy_trtllm_llama.sh).
 > Make sure to clone tutorials repo to your machine and start the docker
 > container with the tutorial repo mounted to `/tutorials` by adding
