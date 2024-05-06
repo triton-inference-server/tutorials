@@ -87,11 +87,3 @@ def retrieve_model(model: str) -> Model:
         return model_map[model]
 
     raise HTTPException(status_code=404, detail=f"Unknown model: {model}")
-
-
-@app.delete("/models/{model}", response_model=DeleteModelResponse, tags=["Models"])
-def delete_model(model: str) -> DeleteModelResponse:
-    """
-    Delete a fine-tuned model. You must have the Owner role in your organization to delete a model.
-    """
-    pass
