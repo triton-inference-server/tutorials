@@ -131,12 +131,12 @@ class Logprobs(BaseModel):
 
 
 class Choice(BaseModel):
-    finish_reason: FinishReason = Field(
+    finish_reason: FinishReason | None = Field(
         ...,
         description="The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence,\n`length` if the maximum number of tokens specified in the request was reached,\nor `content_filter` if content was omitted due to a flag from our content filters.\n",
     )
     index: int
-    logprobs: Logprobs
+    logprobs: Logprobs | None
     text: str
 
 
@@ -838,3 +838,4 @@ class CreateChatCompletionRequest(BaseModel):
 class ObjectType:
     model = Object5.model
     list = Object.list
+    text_completion = Object1.text_completion

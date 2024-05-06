@@ -5,14 +5,18 @@
 from __future__ import annotations
 
 import time
+import uuid
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from openai_protocol_types import (
+    Choice,
     CreateChatCompletionRequest,
     CreateChatCompletionResponse,
     CreateCompletionRequest,
     CreateCompletionResponse,
     DeleteModelResponse,
+    FinishReason,
     ListModelsResponse,
     Model,
     ObjectType,
@@ -32,8 +36,14 @@ model_map = {
 import tritonserver
 
 server = tritonserver.Server(
-    model_repository="/workspace/llm-models", log_verbose=6, strict_model_config=False
+    model_repository="/workspace/llm-models",
+    log_verbose=6,
+    strict_model_config=False,
+    model_control_mode=tritonserver.ModelControlMode.EXPLICIT,
 ).start(wait_until_ready=True)
+
+for model in model_map.values():
+    server.load(model.id)
 
 app = FastAPI(
     title="OpenAI API",
@@ -53,20 +63,104 @@ app = FastAPI(
     "/chat/completions", response_model=CreateChatCompletionResponse, tags=["Chat"]
 )
 def create_chat_completion(
-    body: CreateChatCompletionRequest,
+    request: CreateChatCompletionRequest,
 ) -> CreateChatCompletionResponse:
     """
     Creates a model response for the given chat conversation.
     """
+
     pass
+
+
+def streaming_response(request_id, created, model, responses):
+    for response in responses:
+        choice = Choice(
+            finish_reason=FinishReason.stop if response.final else None,
+            index=0,
+            logprobs=None,
+            text=response.outputs["text_output"].to_string_array()[0],
+        )
+        response = CreateCompletionResponse(
+            id=request_id,
+            choices=[choice],
+            system_fingerprint=None,
+            object=ObjectType.text_completion,
+            created=created,
+            model=model,
+        )
+
+        yield f"data: {response.json(exclude_unset=True)}\n\n"
+    yield "data: [DONE]\n\n"
 
 
 @app.post("/completions", response_model=CreateCompletionResponse, tags=["Completions"])
-def create_completion(body: CreateCompletionRequest) -> CreateCompletionResponse:
+def create_completion(
+    request: CreateCompletionRequest, raw_request: Request
+) -> CreateCompletionResponse | StreamingResponse:
     """
     Creates a completion for the provided prompt and parameters.
     """
-    pass
+    if request.suffix is not None:
+        raise HTTPException(status_code=400, detail="suffix is not currently supported")
+
+    if request.model not in model_map:
+        raise HTTPException(status_code=404, detail=f"Unknown model: {request.model}")
+    else:
+        model = server.model(model_map[request.model].id)
+
+    if request.prompt is None:
+        request.prompt = "<|endoftext|>"
+
+    # Currently only support single string as input
+    if not isinstance(request.prompt, str):
+        raise HTTPException(
+            status_code=400, detail="only single string input is supported"
+        )
+
+    if request.logit_bias is not None or request.logprobs is not None:
+        raise HTTPException(
+            status_code=400, detail="logit bias and log probs not supported"
+        )
+
+    request_id = f"cmpl-{uuid.uuid1()}"
+    created = int(time.time())
+    exclude_input_in_output = True
+
+    if request.echo:
+        exclude_input_in_output = False
+
+    sampling_parameters = request.copy(
+        exclude={"model", "prompt", "stream", "echo"}
+    ).dict()
+
+    responses = model.infer(
+        inputs={
+            "text_input": [request.prompt],
+            "stream": [request.stream],
+            "exclude_input_in_output": [exclude_input_in_output],
+        },
+        parameters=sampling_parameters,
+    )
+    if request.stream:
+        return StreamingResponse(
+            streaming_response(request_id, created, request.model, responses)
+        )
+    else:
+        response = list(responses)[0]
+        choice = Choice(
+            finish_reason=FinishReason.stop if response.final else None,
+            index=0,
+            logprobs=None,
+            text=response.outputs["text_output"].to_string_array()[0],
+        )
+        return CreateCompletionResponse(
+            id=request_id,
+            choices=[choice],
+            system_fingerprint=None,
+            object=ObjectType.text_completion,
+            created=created,
+            model=request.model,
+        )
 
 
 @app.get("/models", response_model=ListModelsResponse, tags=["Models"])

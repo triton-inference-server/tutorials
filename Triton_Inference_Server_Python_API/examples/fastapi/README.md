@@ -108,3 +108,7 @@ curl -s http://localhost:8000/models/llama-3-8b-instruct | jq .
   "owned_by": "ACME"
 }
 ```
+
+## Comparison
+
+python3 -m vllm.entrypoints.openai.api_server --model "meta-llama/Meta-Llama-3-8B-Instruct"
