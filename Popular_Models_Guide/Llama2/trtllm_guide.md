@@ -26,12 +26,14 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
+# Deploying Hugging Face Llama2-7b Model in Triton
+
 TensorRT-LLM is Nvidia's recommended solution of running Large Language
 Models(LLMs) on Nvidia GPUs. Read more about TensoRT-LLM [here](https://github.com/NVIDIA/TensorRT-LLM)
 and Triton's TensorRT-LLM Backend [here](https://github.com/triton-inference-server/tensorrtllm_backend).
 
 *NOTE:* If some parts of this tutorial doesn't work, it is possible that there
-are some version mismatches between the `tutorials` and `tensorrt_backend`
+are some version mismatches between the `tutorials` and `tensorrtllm_backend`
 repository. Refer to [llama.md](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md)
 for more detailed modifications if necessary. And if you are familiar with
 python, you can also try using
@@ -48,7 +50,103 @@ You will need to get permissions for the Llama2 repository as well as get access
 to the huggingface cli. To get access to the huggingface cli,
 go here: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
 
-## Prerequisite: TensorRT-LLM backend
+## Deploying with Triton CLI
+
+[Triton CLI](https://github.com/triton-inference-server/triton_cli) is
+an open source command line interface that enables users to create,
+deploy, and profile models served by the Triton Inference Server.
+
+### Launch Triton TensorRT-LLM container
+
+Launch Triton docker container with TensorRT-LLM backend.
+Note that we're mounting the acquired Llama2-7b model to `/root/.cache/huggingface`
+in the docker container so that Triton CLI could use it and skip the download
+step.
+
+Make an `engines` folder outside docker to reuse engines for future runs.
+Please, make sure to replace <xx.yy> with the version of Triton that you want
+to use.
+
+```bash
+docker run --rm -it --net host --shm-size=2g \
+    --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
+    -v </path/to/Llama2/repo>:/root/.cache/huggingface \
+    -v </path/to/engines>:/engines \
+    nvcr.io/nvidia/tritonserver:<xx.yy>-trtllm-python-py3
+```
+### Install Triton CLI
+
+Install [the latest release](https://github.com/triton-inference-server/triton_cli/releases)
+of Triton CLI:
+```bash
+GIT_REF=<LATEST_RELEASE>
+pip install git+https://github.com/triton-inference-server/triton_cli.git@${GIT_REF}
+```
+
+### Prepare Triton model repository
+Triton CLI has a single command `triton import` that automatically converts HF
+checkpoint into TensorRT-LLM checkpoint format, builds TensorRT-LLM engines,
+and prepares a Triton model repository:
+```bash
+ENGINE_DEST_PATH=/engines triton import -m llama-2-7b --backend tensorrtllm
+```
+
+Please, note that specifying `ENGINE_DEST_PATH` is optional, but recmmended
+if you want to re-use compiled engines in the future.
+
+After successful run of `triton import`, you should see the structure of
+a model repository printed in the console:
+```
+...
+triton - INFO - Current repo at /root/models:
+models/
+├── llama-2-7b/
+│   ├── 1/
+│   │   ├── lib/
+│   │   │   ├── decode.py
+│   │   │   └── triton_decoder.py
+│   │   └── model.py
+│   └── config.pbtxt
+├── postprocessing/
+│   ├── 1/
+│   │   └── model.py
+│   └── config.pbtxt
+├── preprocessing/
+│   ├── 1/
+│   │   └── model.py
+│   └── config.pbtxt
+└── tensorrt_llm/
+    ├── 1/
+    └── config.pbtxt
+
+```
+
+### Start Triton Inference Server
+
+Start server pointing at the default model repository:
+```
+triton start
+```
+
+### Send an inference request
+Use the [generate endpoint](https://github.com/triton-inference-server/tensorrtllm_backend/tree/release/0.5.0#query-the-server-with-the-triton-generate-endpoint).
+to send an inference request to the deployed model.
+
+```bash
+curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "What is ML?", "max_tokens": 50, "bad_words": "", "stop_words": "", "pad_id": 2, "end_id": 2}'
+```
+> You should expect the following response:
+> ```
+> {"context_logits":0.0,...,"text_output":"What is ML?\nML is a branch of AI that allows computers to learn from data, identify patterns, and make predictions. It is a powerful tool that can be used in a variety of industries, including healthcare, finance, and transportation."}
+> ```
+
+## Deploying with Triton Inference Server
+
+If you would like to hava a better control over the deployment process,
+next steps will guide you over the process of TensorRT-LLM engine building
+process and Triton model repository set up.
+
+### Prerequisite: TensorRT-LLM backend
 
 This tutorial requires TensorRT-LLM Backend repository. Please note,
 that for best user experience we recommend using the latest
@@ -68,7 +166,7 @@ git lfs install
 git submodule update --init --recursive
 ```
 
-## Launch Triton TensorRT-LLM container
+### Launch Triton TensorRT-LLM container
 
 Launch Triton docker container with TensorRT-LLM backend.
 Note that we're mounting `tensorrtllm_backend` to `/tensorrtllm_backend`
@@ -100,25 +198,26 @@ Don't forget to allow gpu usage when you launch the container.
 > `-v /path/to/tutorials/:/tutorials` to docker run command, listed above.
 > Then, when container has started, simply run the script via
 > ```bash
-> /tutorials/Popular_Models_Guide/Llama2/deploy_trtllm_llama.sh <world size>
+> /tutorials/Popular_Models_Guide/Llama2/deploy_trtllm_llama.sh <WORLD_SIZE>
 > ```
 > For how to run an inference request, refer to the [Client](#client) section
 > of this tutorial.
 
-## Create Engines for each model [skip this step if you already have an engine]
+### Create Engines for each model [skip this step if you already have an engine]
 
 TensorRT-LLM requires each model to be compiled for the configuration
 you need before running. To do so, before you run your model for the first time
 on Triton Server you will need to create a TensorRT-LLM engine.
 
-Starting with 24.04 release, Triton Server TensorRT-LLM container comes with
+Starting with [24.04 release](https://github.com/triton-inference-server/server/releases/tag/v2.45.0),
+Triton Server TensrRT-LLM container comes with
 pre-installed TensorRT-LLM package, which allows users to build engines inside
 the Triton container. Simply follow the next steps:
 
 ```bash
 HF_LLAMA_MODEL=/Llama-2-7b-hf
 UNIFIED_CKPT_PATH=/tmp/ckpt/llama/7b/
-ENGINE_PATH=/engines
+ENGINE_DIR=/engines
 CONVERT_CHKPT_SCRIPT=/tensorrtllm_backend/tensorrt_llm/examples/llama/convert_checkpoint.py
 python3 ${CONVERT_CHKPT_SCRIPT} --model_dir ${HF_LLAMA_MODEL} --output_dir ${UNIFIED_CKPT_PATH} --dtype float16
 trtllm-build --checkpoint_dir ${UNIFIED_CKPT_PATH} \
@@ -126,7 +225,7 @@ trtllm-build --checkpoint_dir ${UNIFIED_CKPT_PATH} \
             --gpt_attention_plugin float16 \
             --context_fmha enable \
             --gemm_plugin float16 \
-            --output_dir ${ENGINE_PATH} \
+            --output_dir ${ENGINE_DIR} \
             --paged_kv_cache enable \
             --max_batch_size 4
 ```
@@ -146,7 +245,7 @@ trtllm-build --checkpoint_dir ${UNIFIED_CKPT_PATH} \
 > ML is a branch of AI that allows computers to learn from data, identify patterns, and make predictions. It is a powerful tool that can be used in a variety of industries, including healthcare, finance, and transportation."
 > ```
 
-## Serving with Triton
+### Serving with Triton
 
 The last step is to create a Triton readable model. You can
 find a template of a model that uses inflight batching in
@@ -171,7 +270,6 @@ and [perf_best_practices](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/
 TOKENIZER_DIR=/Llama-2-7b-hf/
 TOKENIZER_TYPE=auto
 DECOUPLED_MODE=false
-ENGINE_DIR=/engines/1-gpu/
 MODEL_FOLDER=/opt/tritonserver/inflight_batcher_llm
 MAX_BATCH_SIZE=4
 INSTANCE_COUNT=1
@@ -203,7 +301,7 @@ To stop Triton Server inside the container, run:
 pkill tritonserver
 ```
 
-## Client
+### Send an inference request
 
 You can test the results of the run with:
 1. The [inflight_batcher_llm_client.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/inflight_batcher_llm/client/inflight_batcher_llm_client.py) script.
