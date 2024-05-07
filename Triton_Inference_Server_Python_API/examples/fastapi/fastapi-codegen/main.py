@@ -6,23 +6,30 @@ from __future__ import annotations
 
 import time
 import uuid
+from dataclasses import dataclass
+from typing import TypedDict
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from openai_protocol_types import (
+    ChatCompletionStreamingResponseChoice,
+    ChatCompletionStreamResponseDelta,
     Choice,
     CreateChatCompletionRequest,
     CreateChatCompletionResponse,
+    CreateChatCompletionStreamResponse,
     CreateCompletionRequest,
     CreateCompletionResponse,
-    DeleteModelResponse,
     FinishReason,
     ListModelsResponse,
     Model,
     ObjectType,
 )
+from transformers import AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast
+from vllm.transformers_utils.tokenizer import get_tokenizer
 
 owned_by = "ACME"
+
 
 model_map = {
     "llama-3-8b-instruct": Model(
@@ -32,12 +39,18 @@ model_map = {
         owned_by=owned_by,
     )
 }
+tokenizer_map = {
+    "llama-3-8b-instruct": get_tokenizer(
+        tokenizer_name="meta-llama/Meta-Llama-3-8B-Instruct"
+    )
+}
+
 
 import tritonserver
 
 server = tritonserver.Server(
     model_repository="/workspace/llm-models",
-    #    log_verbose=6,
+    log_verbose=6,
     strict_model_config=False,
     model_control_mode=tritonserver.ModelControlMode.EXPLICIT,
 ).start(wait_until_ready=True)
@@ -59,20 +72,85 @@ app = FastAPI(
 )
 
 
+def streaming_chat_completion_response(request_id, created, model, role, responses):
+    first_response = True
+
+    for response in responses:
+        choice = ChatCompletionResponse
+
+        choice = Choice(
+            finish_reason=FinishReason.stop if response.final else None,
+            index=0,
+            logprobs=None,
+            text=response.outputs["text_output"].to_string_array()[0],
+        )
+        response = CreateCompletionResponse(
+            id=request_id,
+            choices=[choice],
+            system_fingerprint=None,
+            object=ObjectType.text_completion,
+            created=created,
+            model=model,
+        )
+
+        yield f"data: {response.json(exclude_unset=True)}\n\n"
+    yield "data: [DONE]\n\n"
+
+
 @app.post(
     "/chat/completions", response_model=CreateChatCompletionResponse, tags=["Chat"]
 )
 def create_chat_completion(
     request: CreateChatCompletionRequest,
-) -> CreateChatCompletionResponse:
+) -> CreateChatCompletionResponse | StreamingResponse:
     """
     Creates a model response for the given chat conversation.
     """
 
+    if request.model not in model_map:
+        raise HTTPException(status_code=404, detail=f"Unknown model: {request.model}")
+
+    if request.n and request.n > 1:
+        raise HTTPException(status_code=400, detail=f"Only single choice is supported")
+
+    model = server.model(request.model)
+    tokenizer = tokenizer_map[request.model]
+
+    conversation = [
+        {"role": str(message.role), "content": str(message.content)}
+        for message in request.messages
+    ]
+
+    prompt = tokenizer.apply_chat_template(
+        conversation=conversation, tokenize=False, add_generation_prompt=False
+    )
+
+    request_id = f"cmpl-{uuid.uuid1()}"
+    created = int(time.time())
+    exclude_input_in_output = True
+
+    sampling_parameters = request.copy(exclude={"model", "stream", "messages"}).dict()
+
+    responses = model.infer(
+        inputs={
+            "text_input": [prompt],
+            "stream": [request.stream],
+            "exclude_input_in_output": [exclude_input_in_output],
+        },
+        parameters=sampling_parameters,
+    )
+
+    if request.stream:
+        return StreamingResponse(
+            streaming_chat_completion_response(
+                request_id, created, request.model, conversation[-1]["role"], responses
+            )
+        )
+
     pass
 
 
-def streaming_response(request_id, created, model, responses):
+def streaming_completion_response(request_id, created, model, responses):
     for response in responses:
         choice = Choice(
             finish_reason=FinishReason.stop if response.final else None,
@@ -143,29 +221,29 @@ def create_completion(
     )
     if request.stream:
         return StreamingResponse(
-            streaming_response(request_id, created, request.model, responses)
+            streaming_completion_response(request_id, created, request.model, responses)
         )
-    else:
-        response = list(responses)[0]
-        try:
-            text = response.outputs["text_output"].to_string_array()[0]
-        except:
-            text = str(response.outputs["text_output"].to_bytes_array()[0])
+    response = list(responses)[0]
 
-        choice = Choice(
-            finish_reason=FinishReason.stop if response.final else None,
-            index=0,
-            logprobs=None,
-            text=text,
-        )
-        return CreateCompletionResponse(
-            id=request_id,
-            choices=[choice],
-            system_fingerprint=None,
-            object=ObjectType.text_completion,
-            created=created,
-            model=request.model,
-        )
+    try:
+        text = response.outputs["text_output"].to_string_array()[0]
+    except:
+        text = str(response.outputs["text_output"].to_bytes_array()[0])
+
+    choice = Choice(
+        finish_reason=FinishReason.stop if response.final else None,
+        index=0,
+        logprobs=None,
+        text=text,
+    )
+    return CreateCompletionResponse(
+        id=request_id,
+        choices=[choice],
+        system_fingerprint=None,
+        object=ObjectType.text_completion,
+        created=created,
+        model=request.model,
+    )
 
 
 @app.get("/models", response_model=ListModelsResponse, tags=["Models"])

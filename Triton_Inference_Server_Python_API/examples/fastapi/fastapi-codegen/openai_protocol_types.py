@@ -462,7 +462,7 @@ class Logprobs2(BaseModel):
     )
 
 
-class FinishReason3(Enum):
+class ChatCompletionFinishReason(Enum):
     stop = "stop"
     length = "length"
     tool_calls = "tool_calls"
@@ -470,12 +470,12 @@ class FinishReason3(Enum):
     function_call = "function_call"
 
 
-class Choice3(BaseModel):
+class ChatCompletionStreamingResponseChoice(BaseModel):
     delta: ChatCompletionStreamResponseDelta
     logprobs: Optional[Logprobs2] = Field(
         None, description="Log probability information for the choice."
     )
-    finish_reason: FinishReason3 = Field(
+    finish_reason: ChatCompletionFinishReason = Field(
         ...,
         description="The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence,\n`length` if the maximum number of tokens specified in the request was reached,\n`content_filter` if content was omitted due to a flag from our content filters,\n`tool_calls` if the model called a tool, or `function_call` (deprecated) if the model called a function.\n",
     )
@@ -493,7 +493,7 @@ class CreateChatCompletionStreamResponse(BaseModel):
         ...,
         description="A unique identifier for the chat completion. Each chunk has the same ID.",
     )
-    choices: List[Choice3] = Field(
+    choices: List[ChatCompletionStreamingResponseChoice] = Field(
         ...,
         description="A list of chat completion choices. Can be more than one if `n` is greater than 1.",
     )
@@ -741,6 +741,14 @@ class ChatCompletionRequestMessage(BaseModel):
         ChatCompletionRequestFunctionMessage,
     ]
 
+    @property
+    def role(self):
+        return self.role()
+
+    @property
+    def content(self):
+        return self.content()
+
 
 class CreateChatCompletionRequest(BaseModel):
     messages: List[ChatCompletionRequestMessage] = Field(
@@ -839,3 +847,4 @@ class ObjectType:
     model = Object5.model
     list = Object.list
     text_completion = Object1.text_completion
+    chat_completion_chunk = Object4.chat_completion_chunk
