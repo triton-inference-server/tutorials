@@ -181,6 +181,9 @@ class ChatCompletionRequestMessageContentPartText(BaseModel):
 class Role(Enum):
     system = "system"
 
+    def __str__(self):
+        return self.name
+
 
 class ChatCompletionRequestSystemMessage(BaseModel):
     content: str = Field(..., description="The contents of the system message.")
@@ -196,9 +199,15 @@ class ChatCompletionRequestSystemMessage(BaseModel):
 class Role1(Enum):
     user = "user"
 
+    def __str__(self):
+        return self.name
+
 
 class Role2(Enum):
     assistant = "assistant"
+
+    def __str__(self):
+        return self.name
 
 
 class FunctionCall(BaseModel):
@@ -211,6 +220,9 @@ class FunctionCall(BaseModel):
 
 class Role3(Enum):
     tool = "tool"
+
+    def __str__(self):
+        return self.name
 
 
 class ChatCompletionRequestToolMessage(BaseModel):
@@ -225,6 +237,9 @@ class ChatCompletionRequestToolMessage(BaseModel):
 
 class Role4(Enum):
     function = "function"
+
+    def __str__(self):
+        return self.name
 
 
 class ChatCompletionRequestFunctionMessage(BaseModel):
@@ -338,6 +353,9 @@ class ChatCompletionRole(Enum):
 class Role5(Enum):
     assistant = "assistant"
 
+    def __str__(self):
+        return self.name
+
 
 class FunctionCall2(BaseModel):
     arguments: Optional[str] = Field(
@@ -352,6 +370,9 @@ class Role6(Enum):
     user = "user"
     assistant = "assistant"
     tool = "tool"
+
+    def __str__(self):
+        return self.name
 
 
 class ChatCompletionStreamResponseDelta(BaseModel):
