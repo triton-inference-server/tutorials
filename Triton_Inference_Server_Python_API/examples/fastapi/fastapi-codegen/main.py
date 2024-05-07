@@ -11,7 +11,11 @@ from typing import TypedDict
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from huggingface_hub.utils import chunk_iterable
 from openai_protocol_types import (
+    ChatCompletionChoice,
+    ChatCompletionFinishReason,
+    ChatCompletionResponseMessage,
     ChatCompletionStreamingResponseChoice,
     ChatCompletionStreamResponseDelta,
     Choice,
@@ -29,7 +33,8 @@ from transformers import AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizer
 from vllm.transformers_utils.tokenizer import get_tokenizer
 
 owned_by = "ACME"
-
+default_role = "assistant"
+add_generation_prompt_default = True
 
 model_map = {
     "llama-3-8b-instruct": Model(
@@ -73,27 +78,52 @@ app = FastAPI(
 
 
 def streaming_chat_completion_response(request_id, created, model, role, responses):
-    first_response = True
+    # first chunk
+
+    choice = ChatCompletionStreamingResponseChoice(
+        index=0,
+        delta=ChatCompletionStreamResponseDelta(
+            role=role, content=None, function_call=None
+        ),
+        logprobs=None,
+        finish_reason=None,
+    )
+    chunk = CreateChatCompletionStreamResponse(
+        id=request_id,
+        choices=[choice],
+        created=created,
+        model=model,
+        system_fingerprint=None,
+        object=ObjectType.chat_completion_chunk,
+    )
+    yield f"data: {chunk.json(exclude_unset=True)}\n\n"
 
     for response in responses:
-        choice = ChatCompletionResponse
+        try:
+            text = response.outputs["text_output"].to_string_array()[0]
+        except:
+            text = str(response.outputs["text_output"].to_bytes_array()[0])
 
-        choice = Choice(
-            finish_reason=FinishReason.stop if response.final else None,
+        choice = ChatCompletionStreamingResponseChoice(
             index=0,
+            delta=ChatCompletionStreamResponseDelta(
+                role=None, content=text, function_call=None
+            ),
             logprobs=None,
-            text=response.outputs["text_output"].to_string_array()[0],
+            finish_reason=ChatCompletionFinishReason.stop if response.final else None,
         )
-        response = CreateCompletionResponse(
+
+        chunk = CreateChatCompletionStreamResponse(
             id=request_id,
             choices=[choice],
-            system_fingerprint=None,
-            object=ObjectType.text_completion,
             created=created,
             model=model,
+            system_fingerprint=None,
+            object=ObjectType.chat_completion_chunk,
         )
 
-        yield f"data: {response.json(exclude_unset=True)}\n\n"
+        yield f"data: {chunk.json(exclude_unset=True)}\n\n"
+
     yield "data: [DONE]\n\n"
 
 
@@ -122,7 +152,9 @@ def create_chat_completion(
     ]
 
     prompt = tokenizer.apply_chat_template(
-        conversation=conversation, tokenize=False, add_generation_prompt=False
+        conversation=conversation,
+        tokenize=False,
+        add_generation_prompt=add_generation_prompt_default,
     )
 
     request_id = f"cmpl-{uuid.uuid1()}"
@@ -147,16 +179,44 @@ def create_chat_completion(
             )
         )
 
-    pass
+    response = list(responses)[-1]
+
+    try:
+        text = response.outputs["text_output"].to_string_array()[0]
+    except:
+        text = str(response.outputs["text_output"].to_bytes_array()[0])
+
+    return CreateChatCompletionResponse(
+        id=request_id,
+        choices=[
+            ChatCompletionChoice(
+                index=0,
+                message=ChatCompletionResponseMessage(
+                    content=text, role=default_role, function_call=None
+                ),
+                logprobs=None,
+                finish_reason=ChatCompletionFinishReason.stop,
+            )
+        ],
+        created=created,
+        model=request.model,
+        system_fingerprint=None,
+        object=ObjectType.chat_completion,
+    )
 
 
 def streaming_completion_response(request_id, created, model, responses):
     for response in responses:
+        try:
+            text = response.outputs["text_output"].to_string_array()[0]
+        except:
+            text = str(response.outputs["text_output"].to_bytes_array()[0])
+
         choice = Choice(
             finish_reason=FinishReason.stop if response.final else None,
             index=0,
             logprobs=None,
-            text=response.outputs["text_output"].to_string_array()[0],
+            text=text,
         )
         response = CreateCompletionResponse(
             id=request_id,
