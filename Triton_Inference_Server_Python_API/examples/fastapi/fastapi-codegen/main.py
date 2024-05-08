@@ -100,10 +100,9 @@ def streaming_chat_completion_response(request_id, created, model, role, respons
     yield f"data: {chunk.json(exclude_unset=True)}\n\n"
 
     for response in responses:
+        text = None
         if "text_output" in response.outputs:
             text = str(response.outputs["text_output"].to_bytes_array()[0])
-        else:
-            text = None
 
         choice = ChatCompletionStreamingResponseChoice(
             index=0,
@@ -128,6 +127,59 @@ def streaming_chat_completion_response(request_id, created, model, role, respons
     yield "data: [DONE]\n\n"
 
 
+def create_vllm_inference_request(
+    model, prompt, request: CreateChatCompletionRequest | CreateCompletionRequest
+):
+    inputs = {}
+    sampling_parameters = request.copy(
+        exclude={"model", "stream", "messages", "prompt", "echo"}
+    ).dict()
+    inputs["text_input"] = [prompt]
+    inputs["stream"] = [request.stream]
+    exclude_input_in_output = True
+    echo = getattr(request, "echo", None)
+    if echo:
+        exclude_input_in_output = not echo
+    inputs["exclude_input_in_output"] = [exclude_input_in_output]
+    return model.create_request(inputs=inputs, parameters=sampling_parameters)
+
+
+def create_trtllm_inference_request(
+    model, prompt, request: CreateChatCompletionRequest | CreateCompletionRequest
+):
+    inputs = {}
+    if model.name == "llama-3-8b-instruct":
+        inputs["stop_words"] = [["<|eot_id|>", "<|end_of_text|>"]]
+    inputs["text_input"] = [[prompt]]
+    inputs["stream"] = [[request.stream]]
+    if request.max_tokens:
+        inputs["max_tokens"] = [[numpy.int32(request.max_tokens)]]
+    if request.stop:
+        if isinstance(request.stop, str):
+            request.stop = [request.stop]
+        inputs["stop_words"] = request.stop
+    if request.top_p:
+        inputs["top_p"] = [[numpy.float32(request.top_p)]]
+    if request.frequency_penalty:
+        inputs["frequence_penalty"] = [[numpy.int32(request.frequency_penalty)]]
+    if request.presence_penalty:
+        inputs["presence_penalty":] = [[numpy.int32(request.presence_penalty)]]
+    if request.seed:
+        inputs["random_seed"] = [[numpy.uint64(request.seed)]]
+    if request.temperature:
+        inputs["temperature"] = [[numpy.float32(request.temperature)]]
+
+    return model.create_request(inputs=inputs)
+
+
+create_inference_request = None
+
+if backend == "vllm":
+    create_inference_request = create_vllm_inference_request
+elif backend == "tensorrtllm":
+    create_inference_request = create_trtllm_inference_request
+
+
 @app.post(
     "/chat/completions", response_model=CreateChatCompletionResponse, tags=["Chat"]
 )
@@ -137,6 +189,9 @@ def create_chat_completion(
     """
     Creates a model response for the given chat conversation.
     """
+
+    if not model or not tokenizer or not create_inference_request:
+        raise Exception("Unknown Model")
 
     add_generation_prompt_default = True
     default_role = "assistant"
@@ -160,20 +215,8 @@ def create_chat_completion(
 
     request_id = f"cmpl-{uuid.uuid1()}"
     created = int(time.time())
-    exclude_input_in_output = True
 
-    sampling_parameters = request.copy(exclude={"model", "stream", "messages"}).dict()
-
-    responses = model.infer(
-        inputs={
-            "text_input": [[prompt]],
-            "stream": [[request.stream]],
-            "max_tokens": [[numpy.int32(request.max_tokens)]],
-            "stop_words": [["<|eot_id|>", "<|end_of_text|>"]]
-            #            "exclude_input_in_output": [exclude_input_in_output],
-        },
-        #        parameters=sampling_parameters,
-    )
+    responses = model.infer(create_inference_request(model, prompt, request))
 
     if request.stream:
         return StreamingResponse(
@@ -184,11 +227,8 @@ def create_chat_completion(
 
     response = list(responses)[0]
 
-    try:
-        print(response)
-        print(response.outputs)
-        text = response.outputs["text_output"].to_string_array()[0]
-    except:
+    text = None
+    if "text_output" in response.outputs:
         text = str(response.outputs["text_output"].to_bytes_array()[0])
 
     return CreateChatCompletionResponse(
@@ -212,9 +252,8 @@ def create_chat_completion(
 
 def streaming_completion_response(request_id, created, model, responses):
     for response in responses:
-        try:
-            text = response.outputs["text_output"].to_string_array()[0]
-        except:
+        text = None
+        if "text_output" in response.outputs:
             text = str(response.outputs["text_output"].to_bytes_array()[0])
 
         choice = Choice(
@@ -243,13 +282,15 @@ def create_completion(
     """
     Creates a completion for the provided prompt and parameters.
     """
+
+    if not model or not tokenizer or not create_inference_request:
+        raise Exception("Unknown Model")
+
     if request.suffix is not None:
         raise HTTPException(status_code=400, detail="suffix is not currently supported")
 
-    if request.model not in model_map:
+    if request.model != model.name:
         raise HTTPException(status_code=404, detail=f"Unknown model: {request.model}")
-    else:
-        model = server.model(model_map[request.model].id)
 
     if request.prompt is None:
         request.prompt = "<|endoftext|>"
@@ -267,32 +308,15 @@ def create_completion(
 
     request_id = f"cmpl-{uuid.uuid1()}"
     created = int(time.time())
-    exclude_input_in_output = True
 
-    if request.echo:
-        exclude_input_in_output = False
-
-    sampling_parameters = request.copy(
-        exclude={"model", "prompt", "stream", "echo"}
-    ).dict()
-
-    responses = model.infer(
-        inputs={
-            "text_input": [request.prompt],
-            "stream": [request.stream],
-            "exclude_input_in_output": [exclude_input_in_output],
-        },
-        parameters=sampling_parameters,
-    )
+    responses = model.infer(create_inference_request(model, request.prompt, request))
     if request.stream:
         return StreamingResponse(
-            streaming_completion_response(request_id, created, request.model, responses)
+            streaming_completion_response(request_id, created, model.name, responses)
         )
     response = list(responses)[0]
-
-    try:
-        text = response.outputs["text_output"].to_string_array()[0]
-    except:
+    text = None
+    if "text_output" in response.outputs:
         text = str(response.outputs["text_output"].to_bytes_array()[0])
 
     choice = Choice(
@@ -307,7 +331,7 @@ def create_completion(
         system_fingerprint=None,
         object=ObjectType.text_completion,
         created=created,
-        model=request.model,
+        model=model.name,
     )
 
 
