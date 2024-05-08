@@ -173,7 +173,8 @@ def create_chat_completion(
         inputs={
             "text_input": [[prompt]],
             "stream": [[request.stream]],
-            "max_tokens": [[numpy.int32(request.max_tokens)]]
+            "max_tokens": [[numpy.int32(request.max_tokens)]],
+            "stop_words": [["<|eot_id|>", "<|end_of_text|>"]]
             #            "exclude_input_in_output": [exclude_input_in_output],
         },
         #        parameters=sampling_parameters,
