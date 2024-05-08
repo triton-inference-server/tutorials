@@ -69,7 +69,7 @@ RUN if [[ "$INCLUDE_PYTHON_REPL" != "" ]] ; then pip install --timeout=2000 -r /
 
 ARG FRAMEWORK=DIFFUSION
 
-# RUN if [[ "$FRAMEWORK" == "TRT_LLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_trt_llm.txt ; fi
+RUN if [[ "$FRAMEWORK" == "TRT_LLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_trt_llm.txt ; fi
 
 RUN if [[ "$FRAMEWORK" == "VLLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_vllm.txt ; fi
 

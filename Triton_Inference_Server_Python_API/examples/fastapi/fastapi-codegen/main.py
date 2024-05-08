@@ -6,13 +6,11 @@ from __future__ import annotations
 
 import time
 import uuid
-from dataclasses import dataclass
-from typing import TypedDict
 
 import numpy
+import tritonserver
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from huggingface_hub.utils import chunk_iterable
 from openai_protocol_types import (
     ChatCompletionChoice,
     ChatCompletionFinishReason,
@@ -30,29 +28,9 @@ from openai_protocol_types import (
     Model,
     ObjectType,
 )
-from transformers import AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast
 from transformers_utils.tokenizer import get_tokenizer
-
-owned_by = "ACME"
-default_role = "assistant"
-add_generation_prompt_default = True
-
-model_map = {
-    "llama-3-8b-instruct": Model(
-        id="llama-3-8b-instruct",
-        created=int(time.time()),
-        object=ObjectType.model,
-        owned_by=owned_by,
-    )
-}
-tokenizer_map = {
-    "llama-3-8b-instruct": get_tokenizer(
-        tokenizer_name="meta-llama/Meta-Llama-3-8B-Instruct"
-    )
-}
-
-
-import tritonserver
+from triton_cli.constants import SUPPORTED_BACKENDS
+from triton_cli.parser import KNOWN_MODEL_SOURCES as KNOWN_MODELS
 
 server = tritonserver.Server(
     model_repository="/workspace/llm-models",
@@ -61,13 +39,30 @@ server = tritonserver.Server(
     model_control_mode=tritonserver.ModelControlMode.EXPLICIT,
 ).start(wait_until_ready=True)
 
-for model in model_map.values():
-    server.load(model.id)
 
-server.load("preprocessing")
-server.load("postprocessing")
-server.load("tensorrt_llm")
+def load_model(server):
+    model = None
+    backends = []
+    tokenizer = None
+    for model_name, version in server.models().keys():
+        if version != -1:
+            continue
+        current_model = server.load(model_name)
+        backends.append(current_model.config()["backend"])
+        if model_name in KNOWN_MODELS.keys():
+            model = current_model
+            tokenizer = get_tokenizer(KNOWN_MODELS[model_name].replace("hf:", ""))
+    if model and tokenizer:
+        for backend in backends:
+            if backend in SUPPORTED_BACKENDS:
+                return model, int(time.time()), backend, tokenizer
+    return None, None, None, None
 
+
+model, model_create_time, backend, tokenizer = load_model(server)
+
+if not (model and backend and tokenizer and model_create_time):
+    raise Exception("Unknown Model")
 
 app = FastAPI(
     title="OpenAI API",
@@ -105,10 +100,10 @@ def streaming_chat_completion_response(request_id, created, model, role, respons
     yield f"data: {chunk.json(exclude_unset=True)}\n\n"
 
     for response in responses:
-        try:
-            text = response.outputs["text_output"].to_string_array()[0]
-        except:
+        if "text_output" in response.outputs:
             text = str(response.outputs["text_output"].to_bytes_array()[0])
+        else:
+            text = None
 
         choice = ChatCompletionStreamingResponseChoice(
             index=0,
@@ -143,14 +138,14 @@ def create_chat_completion(
     Creates a model response for the given chat conversation.
     """
 
-    if request.model not in model_map:
+    add_generation_prompt_default = True
+    default_role = "assistant"
+
+    if request.model != model.name:
         raise HTTPException(status_code=404, detail=f"Unknown model: {request.model}")
 
     if request.n and request.n > 1:
         raise HTTPException(status_code=400, detail=f"Only single choice is supported")
-
-    model = server.model(request.model)
-    tokenizer = tokenizer_map[request.model]
 
     conversation = [
         {"role": str(message.role), "content": str(message.content)}
@@ -316,21 +311,39 @@ def create_completion(
     )
 
 
+owned_by = "ACME"
+
+
 @app.get("/models", response_model=ListModelsResponse, tags=["Models"])
 def list_models() -> ListModelsResponse:
     """
     Lists the currently available models, and provides basic information about each one such as the owner and availability.
     """
-    return ListModelsResponse(object=ObjectType.list, data=list(model_map.values()))
+
+    model_list = [
+        Model(
+            id=model.name,
+            created=model_create_time,
+            object=ObjectType.model,
+            owned_by=owned_by,
+        )
+    ]
+
+    return ListModelsResponse(object=ObjectType.list, data=model_list)
 
 
-@app.get("/models/{model}", response_model=Model, tags=["Models"])
-def retrieve_model(model: str) -> Model:
+@app.get("/models/{model_name}", response_model=Model, tags=["Models"])
+def retrieve_model(model_name: str) -> Model:
     """
     Retrieves a model instance, providing basic information about the model such as the owner and permissioning.
     """
 
-    if model in model_map:
-        return model_map[model]
+    if model_name == model.name:
+        return Model(
+            id=model.name,
+            created=model_create_time,
+            object=ObjectType.model,
+            owned_by=owned_by,
+        )
 
-    raise HTTPException(status_code=404, detail=f"Unknown model: {model}")
+    raise HTTPException(status_code=404, detail=f"Unknown model: {model_name}")
