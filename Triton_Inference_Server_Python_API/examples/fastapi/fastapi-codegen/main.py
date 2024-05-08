@@ -9,6 +9,7 @@ import uuid
 
 import numpy
 import tritonserver
+import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from openai_protocol_types import (
@@ -339,6 +340,11 @@ def create_completion(
 owned_by = "ACME"
 
 
+@app.get("/metrics")
+def metrics() -> str:
+    return server.metrics()
+
+
 @app.get("/models", response_model=ListModelsResponse, tags=["Models"])
 def list_models() -> ListModelsResponse:
     """
@@ -372,3 +378,7 @@ def retrieve_model(model_name: str) -> Model:
         )
 
     raise HTTPException(status_code=404, detail=f"Unknown model: {model_name}")
+
+
+if __name__ == "__main__":
+    uvicorn.run(app)
