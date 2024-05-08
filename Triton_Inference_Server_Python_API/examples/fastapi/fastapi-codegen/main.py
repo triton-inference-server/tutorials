@@ -4,8 +4,10 @@
 
 from __future__ import annotations
 
+import argparse
 import time
 import uuid
+from typing import Optional, Union
 
 import numpy
 import tritonserver
@@ -29,16 +31,20 @@ from openai_protocol_types import (
     Model,
     ObjectType,
 )
+from transformers import AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast
 from transformers_utils.tokenizer import get_tokenizer
 from triton_cli.constants import SUPPORTED_BACKENDS
 from triton_cli.parser import KNOWN_MODEL_SOURCES as KNOWN_MODELS
 
-server = tritonserver.Server(
-    model_repository="/workspace/llm-models",
-    log_verbose=6,
-    strict_model_config=False,
-    model_control_mode=tritonserver.ModelControlMode.EXPLICIT,
-).start(wait_until_ready=True)
+TIMEOUT_KEEP_ALIVE = 5  # seconds
+
+
+server: tritonserver.Server
+model: tritonserver.Model
+model_create_time: int
+backend: str
+tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast]
+create_inference_request = None
 
 
 def load_model(server):
@@ -59,11 +65,6 @@ def load_model(server):
                 return model, int(time.time()), backend, tokenizer
     return None, None, None, None
 
-
-model, model_create_time, backend, tokenizer = load_model(server)
-
-if not (model and backend and tokenizer and model_create_time):
-    raise Exception("Unknown Model")
 
 app = FastAPI(
     title="OpenAI API",
@@ -178,14 +179,6 @@ def create_trtllm_inference_request(
         inputs["temperature"] = [[numpy.float32(request.temperature)]]
 
     return model.create_request(inputs=inputs)
-
-
-create_inference_request = None
-
-if backend == "vllm":
-    create_inference_request = create_vllm_inference_request
-elif backend == "tensorrtllm":
-    create_inference_request = create_trtllm_inference_request
 
 
 @app.post(
@@ -380,5 +373,69 @@ def retrieve_model(model_name: str) -> Model:
     raise HTTPException(status_code=404, detail=f"Unknown model: {model_name}")
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Triton OpenAI Compatible RESTful API server."
+    )
+    parser.add_argument("--host", type=str, default=None, help="host name")
+    parser.add_argument("--port", type=int, default=8000, help="port number")
+    parser.add_argument(
+        "--uvicorn-log-level",
+        type=str,
+        default="info",
+        choices=["debug", "info", "warning", "error", "critical", "trace"],
+        help="log level for uvicorn",
+    )
+    parser.add_argument(
+        "--response-role", type=str, default="assistant", help="The role name to return"
+    )
+
+    parser.add_argument(
+        "--tritonserver-log-level",
+        type=int,
+        default=0,
+        help="The tritonserver log level",
+    )
+
+    parser.add_argument(
+        "--model-repository",
+        type=str,
+        default="/workspace/llm-models",
+        help="model repository",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    uvicorn.run(app)
+    args = parse_args()
+
+    print("Starting Triton Server Core", flush=True)
+
+    server = tritonserver.Server(
+        model_repository=args.model_repository,
+        log_verbose=args.tritonserver_log_level,
+        strict_model_config=False,
+        model_control_mode=tritonserver.ModelControlMode.EXPLICIT,
+    ).start(wait_until_ready=True)
+
+    print("Loading Model...\n\n", flush=True)
+
+    model, model_create_time, backend, tokenizer = load_model(server)
+
+    if not (model and backend and tokenizer and model_create_time):
+        raise Exception("Unknown Model")
+
+    print(f"\n\nModel: {model.name} Loaded with Backend: {backend}\n\n", flush=True)
+
+    if backend == "vllm":
+        create_inference_request = create_vllm_inference_request
+    elif backend == "tensorrtllm":
+        create_inference_request = create_trtllm_inference_request
+
+    uvicorn.run(
+        app,
+        host=args.host,
+        port=args.port,
+        log_level=args.uvicorn_log_level,
+        timeout_keep_alive=TIMEOUT_KEEP_ALIVE,
+    )
