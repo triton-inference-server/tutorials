@@ -112,6 +112,12 @@ curl -s http://localhost:8000/models/llama-3-8b-instruct | jq .
 
 #### Completion
 
+### Comparison
+
+curl http://localhost:8000/v1/completions -H "Content-Type: application/json" -d '{"model":"meta-llama/Meta-Llama-3-8B-Instruct","prompt":"say this is a test, but is it?","seed":800}'
+
+
+
 #### chat completion
 
 curl http://localhost:8000/chat/completions -H "Content-Type: application/json" -d '{"model":"llama-3-8b-instruct","messages":[{"role":"system","content":"you are a helpful assistant."},{"role":"user","content":"Hello!"}]}'

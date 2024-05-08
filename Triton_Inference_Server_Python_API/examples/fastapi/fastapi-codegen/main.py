@@ -78,6 +78,15 @@ app = FastAPI(
 )
 
 
+def get_output(response):
+    if "text_output" in response.outputs:
+        try:
+            return response.outputs["text_output"].to_string_array()[0]
+        except:
+            return str(response.outputs["text_output"].to_bytes_array()[0])
+    return None
+
+
 def streaming_chat_completion_response(request_id, created, model, role, responses):
     # first chunk
 
@@ -100,9 +109,7 @@ def streaming_chat_completion_response(request_id, created, model, role, respons
     yield f"data: {chunk.json(exclude_unset=True)}\n\n"
 
     for response in responses:
-        text = None
-        if "text_output" in response.outputs:
-            text = str(response.outputs["text_output"].to_bytes_array()[0])
+        text = get_output(response)
 
         choice = ChatCompletionStreamingResponseChoice(
             index=0,
@@ -227,9 +234,7 @@ def create_chat_completion(
 
     response = list(responses)[0]
 
-    text = None
-    if "text_output" in response.outputs:
-        text = str(response.outputs["text_output"].to_bytes_array()[0])
+    text = get_output(response)
 
     return CreateChatCompletionResponse(
         id=request_id,
@@ -252,9 +257,7 @@ def create_chat_completion(
 
 def streaming_completion_response(request_id, created, model, responses):
     for response in responses:
-        text = None
-        if "text_output" in response.outputs:
-            text = str(response.outputs["text_output"].to_bytes_array()[0])
+        text = get_output(response)
 
         choice = Choice(
             finish_reason=FinishReason.stop if response.final else None,
@@ -315,9 +318,7 @@ def create_completion(
             streaming_completion_response(request_id, created, model.name, responses)
         )
     response = list(responses)[0]
-    text = None
-    if "text_output" in response.outputs:
-        text = str(response.outputs["text_output"].to_bytes_array()[0])
+    text = get_output(response)
 
     choice = Choice(
         finish_reason=FinishReason.stop if response.final else None,
