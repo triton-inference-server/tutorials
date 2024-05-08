@@ -55,7 +55,7 @@ RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
 
 RUN pip3 install --force-reinstall --upgrade /tmp/tritonserver-2.46.0.dev0-py3-none-any.whl[all]
 
-ARG TRITON_CLI_TAG="0.0.6"
+ARG TRITON_CLI_TAG="0.0.7"
 
 RUN pip install git+https://github.com/triton-inference-server/triton_cli.git@${TRITON_CLI_TAG}
 
@@ -69,7 +69,7 @@ RUN if [[ "$INCLUDE_PYTHON_REPL" != "" ]] ; then pip install --timeout=2000 -r /
 
 ARG FRAMEWORK=DIFFUSION
 
-RUN if [[ "$FRAMEWORK" == "TRT_LLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_trt_llm.txt ; fi
+# RUN if [[ "$FRAMEWORK" == "TRT_LLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_trt_llm.txt ; fi
 
 RUN if [[ "$FRAMEWORK" == "VLLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_vllm.txt ; fi
 

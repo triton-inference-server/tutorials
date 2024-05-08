@@ -9,6 +9,7 @@ import uuid
 from dataclasses import dataclass
 from typing import TypedDict
 
+import numpy
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from huggingface_hub.utils import chunk_iterable
@@ -30,7 +31,7 @@ from openai_protocol_types import (
     ObjectType,
 )
 from transformers import AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast
-from vllm.transformers_utils.tokenizer import get_tokenizer
+from transformers_utils.tokenizer import get_tokenizer
 
 owned_by = "ACME"
 default_role = "assistant"
@@ -62,6 +63,11 @@ server = tritonserver.Server(
 
 for model in model_map.values():
     server.load(model.id)
+
+server.load("preprocessing")
+server.load("postprocessing")
+server.load("tensorrt_llm")
+
 
 app = FastAPI(
     title="OpenAI API",
@@ -165,11 +171,12 @@ def create_chat_completion(
 
     responses = model.infer(
         inputs={
-            "text_input": [prompt],
-            "stream": [request.stream],
-            "exclude_input_in_output": [exclude_input_in_output],
+            "text_input": [[prompt]],
+            "stream": [[request.stream]],
+            "max_tokens": [[numpy.int32(request.max_tokens)]]
+            #            "exclude_input_in_output": [exclude_input_in_output],
         },
-        parameters=sampling_parameters,
+        #        parameters=sampling_parameters,
     )
 
     if request.stream:
@@ -179,9 +186,11 @@ def create_chat_completion(
             )
         )
 
-    response = list(responses)[-1]
+    response = list(responses)[0]
 
     try:
+        print(response)
+        print(response.outputs)
         text = response.outputs["text_output"].to_string_array()[0]
     except:
         text = str(response.outputs["text_output"].to_bytes_array()[0])
