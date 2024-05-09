@@ -85,4 +85,4 @@ RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then pytest /workspace/deps ; fi
 
 ARG INCLUDE_EMACS
 
-RUN if [[ "$INCLUDE_EMACS" == "TRUE" ]] ; apt-get install -y emacs ; fi
+RUN if [[ "$INCLUDE_EMACS" == "TRUE" ]] ; then apt-get install -y emacs ; fi
