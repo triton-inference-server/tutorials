@@ -185,7 +185,7 @@ def create_trtllm_inference_request(
 
 
 @app.post(
-    "/chat/completions", response_model=CreateChatCompletionResponse, tags=["Chat"]
+    "/v1/chat/completions", response_model=CreateChatCompletionResponse, tags=["Chat"]
 )
 def create_chat_completion(
     request: CreateChatCompletionRequest,
@@ -275,7 +275,9 @@ def streaming_completion_response(request_id, created, model, responses):
     yield "data: [DONE]\n\n"
 
 
-@app.post("/completions", response_model=CreateCompletionResponse, tags=["Completions"])
+@app.post(
+    "/v1/completions", response_model=CreateCompletionResponse, tags=["Completions"]
+)
 def create_completion(
     request: CreateCompletionRequest, raw_request: Request
 ) -> CreateCompletionResponse | StreamingResponse:
@@ -341,7 +343,7 @@ def metrics() -> str:
     return server.metrics()
 
 
-@app.get("/models", response_model=ListModelsResponse, tags=["Models"])
+@app.get("/v1/models", response_model=ListModelsResponse, tags=["Models"])
 def list_models() -> ListModelsResponse:
     """
     Lists the currently available models, and provides basic information about each one such as the owner and availability.
@@ -365,7 +367,7 @@ def list_models() -> ListModelsResponse:
     return ListModelsResponse(object=ObjectType.list, data=model_list)
 
 
-@app.get("/models/{model_name}", response_model=Model, tags=["Models"])
+@app.get("/v1/models/{model_name}", response_model=Model, tags=["Models"])
 def retrieve_model(model_name: str) -> Model:
     """
     Retrieves a model instance, providing basic information about the model such as the owner and permissioning.
