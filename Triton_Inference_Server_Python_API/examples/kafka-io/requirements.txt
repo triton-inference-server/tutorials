@@ -1,0 +1,8 @@
+gcn-kafka
+confluent_kafka
+transformers
+pandas
+torch
+jsonschema
+tritonclient
+click
