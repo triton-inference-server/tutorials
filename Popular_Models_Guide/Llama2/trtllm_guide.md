@@ -91,7 +91,7 @@ and prepares a Triton model repository:
 ENGINE_DEST_PATH=/engines triton import -m llama-2-7b --backend tensorrtllm
 ```
 
-Please, note that specifying `ENGINE_DEST_PATH` is optional, but recmmended
+Please, note that specifying `ENGINE_DEST_PATH` is optional, but recommended
 if you want to re-use compiled engines in the future.
 
 After successful run of `triton import`, you should see the structure of
@@ -133,7 +133,7 @@ Use the [generate endpoint](https://github.com/triton-inference-server/tensorrtl
 to send an inference request to the deployed model.
 
 ```bash
-curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "What is ML?", "max_tokens": 50, "bad_words": "", "stop_words": "", "pad_id": 2, "end_id": 2}'
+curl -X POST localhost:8000/v2/models/llama-2-7b/generate -d '{"text_input": "What is ML?", "max_tokens": 50, "bad_words": "", "stop_words": "", "pad_id": 2, "end_id": 2}'
 ```
 > You should expect the following response:
 > ```
