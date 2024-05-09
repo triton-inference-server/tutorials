@@ -41,6 +41,7 @@ TIMEOUT_KEEP_ALIVE = 5  # seconds
 
 server: tritonserver.Server
 model: tritonserver.Model
+model_source_name: str
 model_create_time: int
 backend: str
 tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast]
@@ -51,6 +52,7 @@ def load_model(server):
     model = None
     backends = []
     tokenizer = None
+    model_source_name = None
     for model_name, version in server.models().keys():
         if version != -1:
             continue
@@ -58,12 +60,13 @@ def load_model(server):
         backends.append(current_model.config()["backend"])
         if model_name in KNOWN_MODELS.keys():
             model = current_model
-            tokenizer = get_tokenizer(KNOWN_MODELS[model_name].replace("hf:", ""))
+            model_source_name = KNOWN_MODELS[model_name].replace("hf:", "")
+            tokenizer = get_tokenizer(model_source_name)
     if model and tokenizer:
         for backend in backends:
             if backend in SUPPORTED_BACKENDS:
-                return model, int(time.time()), backend, tokenizer
-    return None, None, None, None
+                return model, int(time.time()), backend, tokenizer, model_source_name
+    return None, None, None, None, None
 
 
 app = FastAPI(
@@ -197,7 +200,7 @@ def create_chat_completion(
     add_generation_prompt_default = True
     default_role = "assistant"
 
-    if request.model != model.name:
+    if request.model != model.name and request.model != model_source_name:
         raise HTTPException(status_code=404, detail=f"Unknown model: {request.model}")
 
     if request.n and request.n > 1:
@@ -286,7 +289,7 @@ def create_completion(
     if request.suffix is not None:
         raise HTTPException(status_code=400, detail="suffix is not currently supported")
 
-    if request.model != model.name:
+    if request.model != model.name and request.model != model_source_name:
         raise HTTPException(status_code=404, detail=f"Unknown model: {request.model}")
 
     if request.prompt is None:
@@ -350,7 +353,13 @@ def list_models() -> ListModelsResponse:
             created=model_create_time,
             object=ObjectType.model,
             owned_by=owned_by,
-        )
+        ),
+        Model(
+            id=model_source_name,
+            created=model_create_time,
+            object=ObjectType.model,
+            owned_by=owned_by,
+        ),
     ]
 
     return ListModelsResponse(object=ObjectType.list, data=model_list)
@@ -365,6 +374,14 @@ def retrieve_model(model_name: str) -> Model:
     if model_name == model.name:
         return Model(
             id=model.name,
+            created=model_create_time,
+            object=ObjectType.model,
+            owned_by=owned_by,
+        )
+
+    if model_name == model_source_name:
+        return Model(
+            id=model_source_name,
             created=model_create_time,
             object=ObjectType.model,
             owned_by=owned_by,
@@ -420,7 +437,7 @@ if __name__ == "__main__":
 
     print("Loading Model...\n\n", flush=True)
 
-    model, model_create_time, backend, tokenizer = load_model(server)
+    model, model_create_time, backend, tokenizer, model_source_name = load_model(server)
 
     if not (model and backend and tokenizer and model_create_time):
         raise Exception("Unknown Model")
