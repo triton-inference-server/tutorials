@@ -83,3 +83,6 @@ RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then cd /tmp && git clone -b r24.04 https:
 
 RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then pytest /workspace/deps ; fi
 
+ARG INCLUDE_EMACS
+
+RUN if [[ "$INCLUDE_EMACS" == "TRUE" ]] ; apt-get install -y emacs ; fi
