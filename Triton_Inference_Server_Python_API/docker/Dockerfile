@@ -55,11 +55,11 @@ RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
 
 RUN pip3 install --force-reinstall --upgrade /tmp/tritonserver-2.46.0.dev0-py3-none-any.whl[all]
 
-ARG TRITON_CLI_TAG="0.0.7"
+ARG TRITON_CLI_TAG="nnshah1-default-echo"
 
 RUN pip install git+https://github.com/triton-inference-server/triton_cli.git@${TRITON_CLI_TAG}
 
-ARG GENAI_PERF_TAG=r24.04
+ARG GENAI_PERF_TAG=tgerdes-request-count-for-izzy
 
 RUN pip install "git+https://github.com/triton-inference-server/client.git@${GENAI_PERF_TAG}#subdirectory=src/c++/perf_analyzer/genai-perf"
 
