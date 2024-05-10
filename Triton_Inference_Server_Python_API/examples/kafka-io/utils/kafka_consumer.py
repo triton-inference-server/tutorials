@@ -1,10 +1,12 @@
-from gcn_kafka import Consumer
-from confluent_kafka import  KafkaError, KafkaException
-from typing import List
 from collections import deque
+from typing import List
+
+from confluent_kafka import KafkaError, KafkaException
+from gcn_kafka import Consumer
+
 
 class KafkaConsumer:
-    def __init__(self, config:dict, topics:List[str], message_queue:deque):
+    def __init__(self, config: dict, topics: List[str], message_queue: deque):
         self.config = config
         self.topics = topics
         self.message_queue = message_queue
@@ -22,10 +24,10 @@ class KafkaConsumer:
                     continue
                 if msg.error():
                     if msg.error().code() == KafkaError._PARTITION_EOF:
-                        print(f'End of partition has been reached {msg.topic()}/{msg.partition()}')
+                        print(f"End of partition has been reached {msg.topic()}/{msg.partition()}")
                     else:
                         raise KafkaException(msg.error())
-                print(f'Key: {msg.key()}, Value: {msg.value()}')
+                print(f"Key: {msg.key()}, Value: {msg.value()}")
                 self.message_queue.append(msg.value())
             except KeyboardInterrupt as e:
                 print(f"Keyboard Interrupt Received: {e}")

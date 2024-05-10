@@ -1,8 +1,10 @@
-from gcn_kafka import Producer
-import numpy as np
 import json
-from confluent_kafka.serialization import StringSerializer
 from collections import deque
+
+import numpy as np
+from confluent_kafka.serialization import StringSerializer
+from gcn_kafka import Producer
+
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -12,11 +14,11 @@ class NumpyEncoder(json.JSONEncoder):
 
 
 class KafkaProducer:
-    def __init__(self, config:dict, topic:str, message_queue:deque):
+    def __init__(self, config: dict, topic: str, message_queue: deque):
         self.config = config
         self.topics = topic
         self.message_queue = message_queue
-        self.serializer = StringSerializer('utf_8')
+        self.serializer = StringSerializer("utf_8")
 
     def send_data(self):
         producer = Producer(self.config)
@@ -31,9 +33,9 @@ class KafkaProducer:
                 msg (Message): The message that was produced or failed.
             """
             if err is not None:
-                print(f'Delivery failed for User record {msg.key()}: {err}')
+                print(f"Delivery failed for User record {msg.key()}: {err}")
                 return
-            print(f'User record successfully produced to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}')
+            print(f"User record successfully produced to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
 
         while True:
             producer.poll(0.0)
@@ -49,7 +51,8 @@ class KafkaProducer:
                     json_message["model"].pop("_server", None)
                     del message
 
-                    producer.produce(topic=self.topics, value=self.serializer(json.dumps(json_message,cls=NumpyEncoder)),
+                    producer.produce(topic=self.topics,
+                                     value=self.serializer(json.dumps(json_message, cls=NumpyEncoder)),
                                      on_delivery=delivery_report)
                     producer.flush()
             except KeyboardInterrupt as e:

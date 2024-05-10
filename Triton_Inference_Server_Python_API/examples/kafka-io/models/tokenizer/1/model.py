@@ -32,7 +32,11 @@ class TritonPythonModel:
                 .tolist()
             ]
             tokens: Dict[str, np.ndarray] = self.tokenizer(
-                text=query, return_tensors=TensorType.NUMPY, padding="max_length", max_length=256, truncation=True
+                text=query,
+                return_tensors=TensorType.NUMPY,
+                padding="max_length",
+                max_length=256,
+                truncation=True,
             )
             # tensorrt uses int32 as input type, ort uses int64
             tokens = {k: v.astype(np.int64) for k, v in tokens.items()}
