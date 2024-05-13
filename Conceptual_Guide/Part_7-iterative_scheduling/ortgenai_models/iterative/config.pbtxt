@@ -1,0 +1,42 @@
+backend: "python"
+max_batch_size: 8
+input [{
+    name: "text_input",
+    data_type: TYPE_STRING,
+    dims: [1]
+}]
+
+output [{
+    name: "text_output",
+    data_type: TYPE_STRING,
+    dims: [1]
+}]
+
+model_transaction_policy {
+    decoupled: true
+}
+
+sequence_batching {
+    max_sequence_idle_microseconds: 5000000
+    iterative_sequence: true
+    control_input [{
+        name: "correlation_id",
+        control [{
+            kind: CONTROL_SEQUENCE_CORRID,
+            data_type: TYPE_UINT64
+        }],
+    },
+    {
+        name: "start",
+        control [{
+            kind: CONTROL_SEQUENCE_START,
+            fp32_false_true: [0, 1]
+        }],
+    }]
+    oldest {}
+}
+
+parameters: {
+  key: "EXECUTION_ENV_PATH",
+  value: {string_value: "/home/triton-server/micromamba/envs/ortllm/"}
+}
