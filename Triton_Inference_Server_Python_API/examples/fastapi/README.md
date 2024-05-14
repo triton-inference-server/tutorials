@@ -26,107 +26,174 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-# Triton Inference Server Fast API / Open API / Open AI Example
+# Triton Inference Server Open AI Compatible Server 
 
-## Build Image
+Using the Triton In-Process Python API you can integrat triton server
+based models into any Python framework including FastAPI with an
+OpenAI compatible interface.
+
+This directory contains a FastAPI based Triton Inference Server
+supporing `llama-3-8b-instruct` with both the vLLM and TRT-LLM
+backends. 
+
+The front end application was generated using a trimmed version of the
+OpenAI OpenAPI [specification](api-spec/openai_trimmed.yml) and the
+tool [`fastapi-codegen`](scripts/openai_trimmed.yml).
+
+## Installation
+
+The following instructions assume you have a huggingface token set in
+the environment variable `HF_TOKEN`.
+
+### Clone Repository
 ```
-../../build.sh --framework vllm --build-arg TRITON_CLI_TAG=rmccormick-trtllm-0.9
+git clone https://github.com/triton-inference-server/tutorials.git -b nnshah1-meetup-04-2024
+cd tutorials/Triton_Inference_Server_Python_API/examples/fastapi
 ```
+## Triton + vLLM
 
-## Import Model
+### Build and Run Image
 ```
-triton remove -m all --model-repository llm-models
-triton import -m llama-3-8b-instruct --backend vllm --model-repository llm-models
-```
-
-## Open AI API Specification
-
-We use
-https://raw.githubusercontent.com/openai/openai-openapi/25d9dacc86a94df1db98725fe87494564317cafa/openapi.yaml
-as the base specification.
-
-As this tutorial only covers LLM applications we use a trimmed specficiation (api-spec/openai_trimmed.yml).
-
-## Generating the Fast API server using fastapi-codegen
-
-```
-./scripts/fastapi-codegen.sh "-i api-spec/openai_trimmed.yml -o fastapi-codegen --model-file openai_protocol_types"
-```
-
-### Modifications
-
-1. Remove relative import
-
-Before:
-
-```
-from .openapi_protocol_types
+export HF_TOKEN=<hf_token>
+../../build.sh --framework vllm
+../../run.sh --framework vllm
+cd examples/fastapi
 ```
 
-After:
-```
-from openapi_protocol_types
-```
+### Import Model
 
-
-## Generating the Fast API server using openapi-code-generator
-
-
-## curl examples
-
-### Models
-
-#### List
+Note: Model import only has to be done the first time running the server.
 
 ```
-curl -s http://localhost:8000/models | jq .
+triton remove -m all --model-repository llama-3-8b-instruct-vllm
+triton import -m llama-3-8b-instruct --backend vllm --model-repository llama-3-8b-instruct-vllm
+```
+
+### Run Server
+
+```
+python3 fastapi-codegen/openai-tritonserver.py --model-repository llama-3-8b-instruct-vllm
+```
+
+## Triton + TRT-LLM
+
+### Build and Run Image
+```
+export HF_TOKEN=<hf_token>
+../../build.sh --framework trt_llm
+../../run.sh --framework trt_llm
+cd examples/fastapi
+```
+
+### Import Model
+
+Note: Model import only has to be done the first time running the server.
+
+```
+triton remove -m all --model-repository llama-3-8b-instruct-trt-llm
+triton import -m llama-3-8b-instruct --backend tensorrtllm --model-repository llama-3-8b-instruct-trt-llm
+```
+
+### Run Server
+
+```
+python3 fastapi-codegen/openai-tritonserver.py --model-repository llama-3-8b-instruct-trt-llm
+```
+
+## Send OpenAI API Requests
+
+#### Completions `/v1/completions`
+
+```
+curl -X 'POST' \
+    'http://0.0.0.0:8000/v1/completions' \
+    -H 'accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "model": "llama-3-8b-instruct",
+    "prompt": "Once upon a time",
+    "max_tokens": 16,
+    "top_p": 1,
+    "n": 1,
+    "stream": false,
+    "stop": "string",
+    "frequency_penalty": 0.0
+    }' | jq . 
+```
+
+#### Chat Completions `/v1/chat/completions`
+
+```
+curl -X 'POST' \
+'http://0.0.0.0:8000/v1/chat/completions' \
+    -H 'accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "model": "llama-3-8b-instruct",
+    "messages": [
+        {
+            "role":"user",
+            "content":"Hello there how are you?"
+        },
+        {
+            "role":"assistant",
+            "content":"Good and you?"
+        },
+        {
+            "role":"user",
+            "content":"Whats your name?"
+        }
+    ],
+    "max_tokens": 16,
+    "top_p": 1,
+    "n": 1,
+    "stream": false,
+    "stop": "string",
+    "frequency_penalty": 0.0
+    }' | jq .
+```
+
+#### Model List
+
+```
+curl -s http://localhost:8000/v1/models | jq .
+```
+
+#### Model Info
+
+```
+curl -s http://localhost:8000/v1/models/llama-3-8b-instruct | jq .
+```
+
+## Comparison to vllm 
+
+The vLLM container can also be used to run the vLLM FastAPI Server
+
+### Run the vLLM Open AI Server
+```
+python3 -m vllm.entrypoints.openai.api_server --model "meta-llama/Meta-Llama-3-8B-Instruct" --disable-log-requests
 ```
 
 ```
-{
-  "object": "list",
-  "data": [
-    {
-      "id": "llama-3-8b-instruct",
-      "created": 1714952401,
-      "object": "model",
-      "owned_by": "ACME"
-    }
-  ]
-```
-#### Retrieve Model Info
-
-```
-curl -s http://localhost:8000/models/llama-3-8b-instruct | jq .
+curl http://localhost:8000/v1/chat/completions -H "Content-Type: application/json" -d '{"model":"meta-llama/Meta-Llama-3-8B-Instruct","messages":[{"role":"system","content":"you are a helpful assistant."},{"role":"user","content":"Hello!"}]}' | jq .
 ```
 
+## Running GenAI Perf
+
+Note: the following command requires the 24.05 pre-release version of genai-perf.
+
+Preliminary results show performance is on par with vLLM with concurrency 2
+
 ```
-{
-  "id": "llama-3-8b-instruct",
-  "created": 1714953302,
-  "object": "model",
-  "owned_by": "ACME"
-}
+genai-perf -m meta-llama/Meta-Llama-3-8B-Instruct --endpoint v1/chat/completions --endpoint-type chat --service-kind openai -u http://localhost:8000 --num-prompts 100 --synthetic-input-tokens-mean 1024 --synthetic-input-tokens-stddev 50 --concurrency 2 --measurement-interval 40000 --extra-inputs max_tokens:512 --extra-input ignore_eos:true -- -v --max-threads=256 
+erval 40000 --extra-inputs max_tokens:512 --extra-input ignore_eos:true -- -v --max-threads=256
 ```
 
+## Known Limitations
 
-#### Completion
-
-### Comparison
-
-curl http://localhost:8000/v1/completions -H "Content-Type: application/json" -d '{"model":"meta-llama/Meta-Llama-3-8B-Instruct","prompt":"say this is a test, but is it?","seed":800}'
-
-
-
-#### chat completion
-
-curl http://localhost:8000/chat/completions -H "Content-Type: application/json" -d '{"model":"llama-3-8b-instruct","messages":[{"role":"system","content":"you are a helpful assistant."},{"role":"user","content":"Hello!"}]}'
-
-
-## Comparison
-
-python3 -m vllm.entrypoints.openai.api_server --model "meta-llama/Meta-Llama-3-8B-Instruct"
-
-curl http://localhost:8000/v1/chat/completions -H "Content-Type: application/json" -d '{"model":"meta-llama/Meta-Llama-3-8B-Instruct","messages":[{"role":"system","content":"you are a helpful assistant."},{"role":"user","content":"Hello!"}]}'
-
-
+* Concurrency leads to data corruption
+* Max tokens is not processed by trt-llm backend correctly
+* Usage information is not populated
+* `finish_reason` is currently always set to `stop`
+* Limited performance testing has been done 
+* Using genai-perf to test streaming requires changes to genai-perf SSE handling
