@@ -35,7 +35,9 @@ class KafkaProducer:
             if err is not None:
                 print(f"Delivery failed for User record {msg.key()}: {err}")
                 return
-            print(f"User record successfully produced to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
+            print(
+                f"User record successfully produced to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}"
+            )
 
         while True:
             producer.poll(0.0)
@@ -51,9 +53,13 @@ class KafkaProducer:
                     json_message["model"].pop("_server", None)
                     del message
 
-                    producer.produce(topic=self.topics,
-                                     value=self.serializer(json.dumps(json_message, cls=NumpyEncoder)),
-                                     on_delivery=delivery_report)
+                    producer.produce(
+                        topic=self.topics,
+                        value=self.serializer(
+                            json.dumps(json_message, cls=NumpyEncoder)
+                        ),
+                        on_delivery=delivery_report,
+                    )
                     producer.flush()
             except KeyboardInterrupt as e:
                 print(f"Keyboard Interrupt received {e}")

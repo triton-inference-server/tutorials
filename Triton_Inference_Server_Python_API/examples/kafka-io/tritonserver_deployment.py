@@ -7,7 +7,6 @@ import certifi
 import click
 import numpy as np
 import tritonserver
-
 from utils.kafka_consumer import KafkaConsumer
 from utils.kafka_producer import KafkaProducer
 
@@ -26,12 +25,16 @@ def check_ssl_requirement(config: dict) -> dict:
 
 
 class TritonKafkaEndpoint:
-    def __init__(self, consumer_queue: deque, producer_queue: deque, model_repository: str):
+    def __init__(
+        self, consumer_queue: deque, producer_queue: deque, model_repository: str
+    ):
         self.producer_queue = producer_queue
         self.queue = consumer_queue
-        self._triton_server = tritonserver.Server(model_repository=model_repository,
-                                                  model_control_mode=tritonserver.ModelControlMode.EXPLICIT,
-                                                  log_info=True)
+        self._triton_server = tritonserver.Server(
+            model_repository=model_repository,
+            model_control_mode=tritonserver.ModelControlMode.EXPLICIT,
+            log_info=True,
+        )
         self._triton_server.start(wait_until_ready=True)
         _print_heading("Triton Server Started")
         _print_heading("Metadata")
@@ -40,9 +43,7 @@ class TritonKafkaEndpoint:
     def infer(self):
         if not self._triton_server.model("tokenizer").ready():
             try:
-                self._tokenizer_model = self._triton_server.load(
-                    "tokenizer"
-                )
+                self._tokenizer_model = self._triton_server.load("tokenizer")
 
                 if not self._tokenizer_model.ready():
                     raise Exception("Model not ready")
@@ -59,7 +60,9 @@ class TritonKafkaEndpoint:
             if self.queue.__len__() > 0:
                 message = self.queue.pop()
                 try:
-                    response = self._triton_server.model('tokenizer').infer(inputs={'TEXT': np.array([message])})
+                    response = self._triton_server.model("tokenizer").infer(
+                        inputs={"TEXT": np.array([message])}
+                    )
                     for resp in response:
                         self.producer_queue.append(resp)
                 except Exception as e:
@@ -72,7 +75,13 @@ class TritonKafkaEndpoint:
 @click.option("--consumer_topics", type=str, multiple=True)
 @click.option("--producer_topic", type=str, default="data-tokenizer-output")
 @click.option("--model_repository", type=str, default="/models")
-def main(consumer_config: str, producer_config: str, consumer_topics: list, producer_topic: str, model_repository: str):
+def main(
+    consumer_config: str,
+    producer_config: str,
+    consumer_topics: list,
+    producer_topic: str,
+    model_repository: str,
+):
     consumer_config = check_ssl_requirement(json.loads(consumer_config))
     producer_config = check_ssl_requirement(json.loads(producer_config))
     consumer_queue = deque()

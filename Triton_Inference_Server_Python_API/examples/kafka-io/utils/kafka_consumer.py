@@ -24,7 +24,9 @@ class KafkaConsumer:
                     continue
                 if msg.error():
                     if msg.error().code() == KafkaError._PARTITION_EOF:
-                        print(f"End of partition has been reached {msg.topic()}/{msg.partition()}")
+                        print(
+                            f"End of partition has been reached {msg.topic()}/{msg.partition()}"
+                        )
                     else:
                         raise KafkaException(msg.error())
                 print(f"Key: {msg.key()}, Value: {msg.value()}")

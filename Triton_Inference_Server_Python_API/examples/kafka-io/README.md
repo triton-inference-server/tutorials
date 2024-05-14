@@ -87,7 +87,7 @@ In our example, we ingest the following data `this is test message - new {str(i)
 
 
 #### Example Output
-Once the workflow consumes the ingested messages from the kafka topic, it invokes the triton server and produces the inference output as `json` string to the output kafka topic. Once the message has been ingested, we should see an ouput message displayed on the console indicating that the message has been pushed to the topic.
+Once the workflow consumes the ingested messages from the kafka topic, it invokes the triton server and produces the inference output as `json` string to the output kafka topic. Once the message has been ingested, we should see an output message displayed on the console indicating that the message has been pushed to the topic.
 
 ```bash
 User record successfully produced to <output-topic> [1] at offset 0
