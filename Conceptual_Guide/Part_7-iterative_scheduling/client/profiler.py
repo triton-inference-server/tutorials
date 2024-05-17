@@ -29,6 +29,7 @@ import time
 from queue import SimpleQueue
 from threading import Event
 
+import prettytable
 import tqdm
 from tritonserver import InferenceRequest, Server
 
@@ -46,17 +47,14 @@ class TimeStampedQueue(SimpleQueue):
 
 
 class PerfAnalyzer:
-    def __init__(self, model_name, concurrency, input_data, model_repository):
+    def __init__(self, server, model_name, concurrency, input_data):
         self._concurrency = concurrency
         self._input_data = input_data
         self._requests = []
 
-        self._server = Server(model_repository=model_repository)
-        self._server.start(wait_until_ready=True)
-
         self._measurement_interval_seconds = 5
         self._number_of_intervals = 5
-        self._model = self._server.model(model_name)
+        self._model = server.model(model_name)
         self._prepare_requests()
         self._queues = []
         self._request_timestamps = []
@@ -74,6 +72,8 @@ class PerfAnalyzer:
             self._requests.append(request)
 
     def profile(self):
+        self._queues = []
+        self._request_timestamps = []
         for i in tqdm.tqdm(range(20)):
             results = []
             current_queues = []
@@ -116,6 +116,17 @@ class PerfAnalyzer:
 
         return (sum(time_to_last_response) / len(time_to_last_response)) * 1000
 
+    def _calculate_inter_token_latency(self, timestamp_lists):
+        inter_token_latencies = []
+        for _, timestamp_list in enumerate(timestamp_lists):
+            before = None
+            for timestamp in timestamp_list:
+                if before is None:
+                    before = timestamp
+                else:
+                    inter_token_latencies.append(timestamp - before)
+        return sum(inter_token_latencies) / len(inter_token_latencies)
+
     def get_stats(self):
         timestamp_lists = []
         for queue in self._queues:
@@ -129,13 +140,19 @@ class PerfAnalyzer:
             "time_to_last_response": self._calculate_time_to_last_response(
                 timestamp_lists
             ),
+            "inter_token_latency": self._calculate_inter_token_latency(timestamp_lists),
         }
 
 
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser(description="Profile a model")
     argument_parser.add_argument(
-        "--model-name", type=str, required=True, help="Name of the model to profile"
+        "--model-name",
+        type=str,
+        required=True,
+        help="Name of the model to profile",
+        action="extend",
+        nargs="+",
     )
     argument_parser.add_argument(
         "--model-repository",
@@ -153,10 +170,31 @@ if __name__ == "__main__":
             "parameters": {"ignore_eos": True, "max_tokens": 32},
         }
     ]
-    perf_analyzer = PerfAnalyzer(
-        args.model_name, args.concurrency, input_data, args.model_repository
+
+    data = []
+    server = Server(model_repository=args.model_repository, log_error=True)
+    server.start(wait_until_ready=True)
+    for model_name in args.model_name:
+        perf_analyzer = PerfAnalyzer(server, model_name, args.concurrency, input_data)
+        perf_analyzer.profile()
+        stats = perf_analyzer.get_stats()
+        data.append(stats)
+
+    table = prettytable.PrettyTable(
+        [
+            "Model Name",
+            "Tokens/sec",
+            "Time to last token [TTLT] (ms)",
+            "Inter token latency [ITL] (ms)",
+        ]
     )
-    perf_analyzer.profile()
-    stats = perf_analyzer.get_stats()
-    print(f"Response throughput is {stats['response_throughput']:.2f} responses/sec.")
-    print(f"Time to last response is {stats['time_to_last_response']:.2f} ms.")
+    for i, entry in enumerate(data):
+        table.add_row(
+            [
+                args.model_name[i],
+                f"{entry['response_throughput']:.2f}",
+                f"{entry['time_to_last_response']:.3f}",
+                f"{entry['inter_token_latency']:.3f}",
+            ]
+        )
+    print(table)
