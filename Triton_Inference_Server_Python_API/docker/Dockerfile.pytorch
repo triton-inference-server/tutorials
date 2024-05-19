@@ -73,7 +73,7 @@ ARG TRITON_CLI_TAG="nnshah1-default-echo"
 
 RUN pip install git+https://github.com/triton-inference-server/triton_cli.git@${TRITON_CLI_TAG}
 
-ARG GENAI_PERF_TAG=tgerdes-request-count-for-izzy
+ARG GENAI_PERF_TAG="r24.05"
 
 RUN pip install "git+https://github.com/triton-inference-server/client.git@${GENAI_PERF_TAG}#subdirectory=src/c++/perf_analyzer/genai-perf"
 
