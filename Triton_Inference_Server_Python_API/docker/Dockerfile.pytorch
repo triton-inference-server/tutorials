@@ -1,0 +1,103 @@
+# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ARG BASE_IMAGE=nvcr.io/nvidia/pytorch
+ARG BASE_IMAGE_TAG=24.04-py3
+ARG FRAMEWORK=PYTORCH
+ARG GENAI_PERF_TAG=r24.04
+ARG TRITON_CLI_TAG="0.0.6"
+
+FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as triton-python-api
+
+ARG TRITONSERVER_BASE_IMAGE=nvcr.io/nvidia/tritonserver
+ARG TRITONSERVER_BASE_IMAGE_TAG=24.04-py3
+
+COPY --from=nvcr.io/nvidia/tritonserver:24.04-py3 /opt/tritonserver /opt/tritonserver
+
+RUN distribution=$(. /etc/os-release;echo $ID$VERSION_ID | sed -e 's/\.//g') && \
+    wget https://developer.download.nvidia.com/compute/cuda/repos/$distribution/x86_64/cuda-keyring_1.1-1_all.deb && \
+    dpkg -i cuda-keyring_1.1-1_all.deb && \
+    rm -rf cuda-keyring_1.1-1_all.deb
+
+RUN apt-get update; apt-get install -y gdb datacenter-gpu-manager libxml2 libb64-dev
+
+COPY ./scripts/pytorch/replace_duplicate_libraries.py /tmp/replace_duplicate_libraries.py
+
+RUN python3 /tmp/replace_duplicate_libraries.py > /opt/tritonserver/backends/pytorch/sym_linked.txt
+
+COPY ./deps/requirements.txt /tmp/requirements.txt
+
+COPY ./deps/requirements_trt_llm.txt /tmp/requirements_trt_llm.txt
+
+COPY ./deps/requirements_vllm.txt /tmp/requirements_vllm.txt
+
+COPY ./deps/requirements_python_repl.txt /tmp/requirements_python_repl.txt
+
+COPY ./deps/tritonserver-2.46.0.dev0-py3-none-any.whl /tmp/tritonserver-2.46.0.dev0-py3-none-any.whl
+
+RUN pip install --timeout=2000 -r /tmp/requirements.txt
+
+# Finish pyright install
+
+RUN pyright --help
+
+RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
+    "tritonserver-*.whl" | xargs -I {} pip3 install --force-reinstall --upgrade {}[all]
+
+RUN pip3 install --force-reinstall --upgrade /tmp/tritonserver-2.46.0.dev0-py3-none-any.whl[all]
+
+ARG TRITON_CLI_TAG="nnshah1-default-echo"
+
+RUN pip install git+https://github.com/triton-inference-server/triton_cli.git@${TRITON_CLI_TAG}
+
+ARG GENAI_PERF_TAG=tgerdes-request-count-for-izzy
+
+RUN pip install "git+https://github.com/triton-inference-server/client.git@${GENAI_PERF_TAG}#subdirectory=src/c++/perf_analyzer/genai-perf"
+
+ARG INCLUDE_PYTHON_REPL
+
+RUN if [[ "$INCLUDE_PYTHON_REPL" != "" ]] ; then pip install --timeout=2000 -r /tmp/requirements_python_repl.txt ; fi
+
+ARG FRAMEWORK=DIFFUSION
+
+RUN if [[ "$FRAMEWORK" == "TRT_LLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_trt_llm.txt ; fi
+
+RUN if [[ "$FRAMEWORK" == "VLLM" ]] ; then pip install --timeout=2000 -r /tmp/requirements_vllm.txt ; fi
+
+RUN ln -sf /bin/bash /bin/sh
+
+COPY . /workspace
+
+ARG RUN_TESTS=FALSE
+
+RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then cd /tmp && git clone -b r24.04 https://github.com/triton-inference-server/core.git && cp -rf /tmp/core/python/test /workspace/deps/ ; fi
+
+RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then pytest /workspace/deps ; fi
+
+ARG INCLUDE_EMACS
+
+RUN if [[ "$INCLUDE_EMACS" == "TRUE" ]] ; then apt-get install -y emacs ; fi
+

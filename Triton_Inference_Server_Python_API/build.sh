@@ -30,7 +30,7 @@ RUN_PREFIX=
 BUILD_MODELS=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3 ["VLLM"]=4)
+declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3 ["VLLM"]=4 ["PYTORCH"]=5)
 DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
@@ -38,12 +38,13 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
 
 # Base Images
-BASE_IMAGE=nvcr.io/nvidia/tritonserver
+BASE_IMAGE_DEFAULT=nvcr.io/nvidia/tritonserver
 BASE_IMAGE_TAG_IDENTITY=24.04-py3
 BASE_IMAGE_TAG_DIFFUSION=24.04-py3
 BASE_IMAGE_TAG_TRT_LLM=24.04-trtllm-python-py3
 BASE_IMAGE_TAG_VLLM=24.04-vllm-python-py3
-
+BASE_IMAGE_PYTORCH=nvcr.io/nvidia/pytorch
+BASE_IMAGE_TAG_PYTORCH=24.04-py3
 
 get_options() {
     while :; do
@@ -137,6 +138,16 @@ get_options() {
 	    BASE_IMAGE_TAG=BASE_IMAGE_TAG_${FRAMEWORK}
 	    BASE_IMAGE_TAG=${!BASE_IMAGE_TAG}
 	fi
+
+	if [ -z $BASE_IMAGE ]; then
+	    BASE_IMAGE=BASE_IMAGE_${FRAMEWORK}
+	    BASE_IMAGE=${!BASE_IMAGE}
+	fi
+
+	if [ -z $BASE_IMAGE ]; then
+	    BASE_IMAGE=${BASE_IMAGE_DEFAULT}
+	fi
+
     fi
 
     if [ -z "$TAG" ]; then
@@ -154,6 +165,10 @@ get_options() {
 	    TAG+="-vllm"
 	fi
 
+	if [[ $FRAMEWORK == "PYTORCH" ]]; then
+	    TAG+="-pytorch"
+	    DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile.pytorch
+	fi
 
     fi
 
