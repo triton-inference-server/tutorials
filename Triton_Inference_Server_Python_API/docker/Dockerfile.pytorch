@@ -37,6 +37,15 @@ ARG TRITONSERVER_BASE_IMAGE_TAG=24.04-py3
 
 COPY --from=nvcr.io/nvidia/tritonserver:24.04-py3 /opt/tritonserver /opt/tritonserver
 
+# Build pytorch without torchvision support
+RUN cd /tmp && \
+    git clone https://github.com/triton-inference-server/pytorch_backend.git -b r24.04 && \
+    cd pytorch_backend &&  mkdir build &&  cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX:PATH=$PWD/install -DTRITON_PYTORCH_INCLUDE_PATHS="/opt/pytorch/pytorch;/opt/pytorch/pytorch/torch/torch/csrc/api/include;/opt/pytorch/torchvision;/usr/local/lib/python3.10/dist-packages/torch/include" -DTRITON_PYTORCH_LIB_PATHS="/usr/local/lib/python3.10/dist-packages/torch/lib" -DTRITON_PYTORCH_ENABLE_TORCHVISION=OFF .. && \
+    make install
+
+RUN cp /tmp/pytorch_backend/build/install/backends/pytorch/libtriton_pytorch.* /opt/tritonserver/backends/pytorch
+
 RUN distribution=$(. /etc/os-release;echo $ID$VERSION_ID | sed -e 's/\.//g') && \
     wget https://developer.download.nvidia.com/compute/cuda/repos/$distribution/x86_64/cuda-keyring_1.1-1_all.deb && \
     dpkg -i cuda-keyring_1.1-1_all.deb && \
