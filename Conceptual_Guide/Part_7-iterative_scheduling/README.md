@@ -28,6 +28,9 @@
 
 # Deploying a GPT-2 Model using Python Backend and Iterative Scheduling
 
+| Navigate to | [Part 6: Building Complex Pipelines: Stable Diffusion](../Part_6-building_complex_pipelines)  | [Documentation: Iterative Scheduling](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html#iterative-sequences) |
+| ------------ | --------------- | --------------- |
+
 In this tutorial, we will deploy a GPT-2 model using the Python backend and
 demonstrate the
 [iterative scheduling](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html#iterative-sequences)
