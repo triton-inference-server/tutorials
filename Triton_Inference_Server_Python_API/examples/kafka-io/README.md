@@ -66,6 +66,32 @@ If triton server is not already installed, install the dependency by using the f
 pip install /opt/tritonserver/python/tritonserver-2.44.0-py3-none-any.whl
 ```
 
+In order to run kafka server, we need to download and start the kafka service, execute the below script that starts the kafka service in the background by doing the following:
+1. Download kafka
+2. Start Kafka service by starting Zookeeper and Kafka brokers
+3. Create 2 new topics with names `inference-input` as input queue and `inference-output` to store the inference results
+
+```bash
+chmod +x start-kafka.sh
+./start-kafka.sh
+```
+
+In case, you see any issues starting the server, make sure the system has java installed. If there is no java installed, please follow the instructions below to install java.
+
+```bash
+apt-get update
+apt-get upgrade
+apt install openjdk-17-jdk openjdk-17-jre
+```
+
+Once successfully installed, you should see an output similar to the output shown below
+
+```bash
+java --version
+openjdk 17.0.10 2024-01-16
+OpenJDK Runtime Environment (build 17.0.10+7-Ubuntu-122.04.1)
+OpenJDK 64-Bit Server VM (build 17.0.10+7-Ubuntu-122.04.1, mixed mode, sharing)
+```
 
 ## Starting the pipeline
 
@@ -74,7 +100,7 @@ pip install /opt/tritonserver/python/tritonserver-2.44.0-py3-none-any.whl
 Start the pipeline using the following command once you have logged into the triton container
 
 ```bash
-python tritonserver_deployment.py --consumer_config="{\"bootstrap.servers\": \"<brokers>\", \"sasl.mechanisms\": \"OAUTHBEARER\", \"sasl.oauthbearer.method\": \"oidc\", \"sasl.oauthbearer.scope\": \"<scope>\", \"sasl.oauthbearer.client.id\": \"<client_id>\", \"sasl.oauthbearer.client.secret\": \"<client_secret>\", \"sasl.oauthbearer.token.endpoint.url\": \"<token_url>\", \"security.protocol\": \"SASL_SSL\"}" --producer_config="{\"bootstrap.servers\": \"<brokers>\", \"sasl.mechanisms\": \"OAUTHBEARER\", \"sasl.oauthbearer.method\": \"oidc\", \"sasl.oauthbearer.scope\": \"<scope>\", \"sasl.oauthbearer.client.id\": \"<client_id>\", \"sasl.oauthbearer.client.secret\": \"<client_secret>\", \"sasl.oauthbearer.token.endpoint.url\": \"<token_url>\", \"security.protocol\": \"SASL_SSL\"}" --consumer_topics="<input_topic>" --producer_topic="output_topic" --model_repository="<model_repository>"
+python tritonserver_deployment.py --consumer_config="{\"bootstrap.servers\": \"localhost:9092\", \"security.protocol\": \"PLAINTEXT\"}" --producer_config="{\"bootstrap.servers\": \"localhost:9092\", \"security.protocol\": \"PLAINTEXT\"}" --consumer_topics="inference-input" --producer_topic="inference-output" --model_repository="./models"
 ```
 
 *Note: In the above command we have used Consumer and Producer to have OIDC based authentication with the Kafka brokers, these settings can be changed to meet the Kafka connection requirements based on your infrastructure.*
