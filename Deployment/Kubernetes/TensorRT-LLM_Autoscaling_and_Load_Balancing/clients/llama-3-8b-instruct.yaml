@@ -1,0 +1,51 @@
+# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
+#
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-llama-3-8b-instruct
+spec:
+  selector:
+    matchLabels:
+      app: client-llama-3-8b-instruct
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: client-llama-3-8b-instruct
+        app.kubernetes.io/component: client
+    spec:
+      containers:
+      - name: client
+        command:
+        - python3
+        - ./client.py
+        env:
+        - name: TRTLLM_MODEL_NAME
+          value: llama-3-8b-instruct
+        - name: TRTLLM_TRITON_URL
+          value: llama-3-8b-instruct
+        # - name: TRTLLM_MAX_TOKENS
+        #   value: "512"
+        # - name: TRTLLM_DEBUG
+        #   value: debug
+        image: nvcr.io/nvstaging/nvaie/jwyman:trtllm-client-0520.1
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 1000m
+            ephemeral-storage: 1Gi
+            memory: 2Gi
+          requests:
+            cpu: 750m
+            ephemeral-storage: 1Gi
+            memory: 1536Mi
+      imagePullSecrets:
+      - name: ngc-container-pull
+      restartPolicy: Always
