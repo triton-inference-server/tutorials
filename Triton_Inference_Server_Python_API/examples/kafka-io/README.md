@@ -95,28 +95,39 @@ OpenJDK 64-Bit Server VM (build 17.0.10+7-Ubuntu-122.04.1, mixed mode, sharing)
 
 ## Starting the pipeline
 
-### Start Container
+### Start the inference pipeline
 
-Start the pipeline using the following command once you have logged into the triton container
+Start the pipeline in the background using the following command once you have logged into the triton container
 
 ```bash
-python tritonserver_deployment.py --consumer_config="{\"bootstrap.servers\": \"localhost:9092\", \"security.protocol\": \"PLAINTEXT\"}" --producer_config="{\"bootstrap.servers\": \"localhost:9092\", \"security.protocol\": \"PLAINTEXT\"}" --consumer_topics="inference-input" --producer_topic="inference-output" --model_repository="./models"
+nohup python tritonserver_deployment.py --consumer_config="{\"bootstrap.servers\": \"localhost:9092\", \"security.protocol\": \"PLAINTEXT\"}" --producer_config="{\"bootstrap.servers\": \"localhost:9092\", \"security.protocol\": \"PLAINTEXT\"}" --consumer_topics="inference-input" --producer_topic="inference-output" --model_repository="./models" &
 ```
 
 *Note: In the above command we have used Consumer and Producer to have OIDC based authentication with the Kafka brokers, these settings can be changed to meet the Kafka connection requirements based on your infrastructure.*
 
 ## Send Requests to Deployment
 
-In order to send requests to inference pipeline deployed, produce messages into the input kafka topic.
-
-In our example, we ingest the following data `this is test message - new {str(i)}` in a loop
-
-
-#### Example Output
-Once the workflow consumes the ingested messages from the kafka topic, it invokes the triton server and produces the inference output as `json` string to the output kafka topic. Once the message has been ingested, we should see an output message displayed on the console indicating that the message has been pushed to the topic.
+In order to send requests to inference pipeline deployed, produce messages into the input kafka topic using the following command.
 
 ```bash
-User record successfully produced to <output-topic> [1] at offset 0
+cd kafka_2.13-3.7.0
+bin/kafka-console-producer.sh --topic inference-input --bootstrap-server localhost:9092
+```
+
+Once, the above command has been executed, you should see a prompt `>` to start ingesting the messages to the input topic.
+
+```bash
+> this is a sample message
+>
+```
+
+Once you have produced enough messages, you can exit the prompt by pressing `Ctrl+C`.
+
+#### Example Output
+Once the workflow consumes the ingested messages from the kafka topic, it invokes the triton server and produces the inference output as `json` string to the output kafka topic. Once the message has been ingested, we can start the consumer to see the output messages from the pipeline ingested to the output topic
+
+```bash
+bin/kafka-console-consumer.sh --topic inference-output --from-beginning --bootstrap-server localhost:9092
 ```
 
 Since, our example has a tokenizer deployed as a custom model in triton, we should see an output inserted into kafka topic as shown below.
