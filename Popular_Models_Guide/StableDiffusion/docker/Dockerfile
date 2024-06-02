@@ -31,7 +31,7 @@ FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as tritonserver-stable-diffusion
 
 RUN pip install --pre --upgrade --extra-index-url https://pypi.nvidia.com tensorrt
 
-RUN git clone https://github.com/NVIDIA/TensorRT.git -b release/9.2 --single-branch /tmp/TensorRT
+RUN git clone https://github.com/NVIDIA/TensorRT.git -b release/10.0 --single-branch /tmp/TensorRT
 
 RUN pip3 install -r /tmp/TensorRT/demo/Diffusion/requirements.txt
 
