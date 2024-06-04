@@ -144,8 +144,8 @@ def create_vllm_inference_request(
 ):
     inputs = {}
     sampling_parameters = request.copy(
-        exclude={"model", "stream", "messages", "prompt", "echo"}
-    ).dict()
+        exclude={"model", "stream", "messages", "prompt", "echo"},
+    ).model_dump(exclude_none=True)
     inputs["text_input"] = [prompt]
     inputs["stream"] = [request.stream]
     exclude_input_in_output = True
