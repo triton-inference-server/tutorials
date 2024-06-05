@@ -19,7 +19,6 @@ gpu:
 
 model:
   name: llama-2-7b-chat
-  pullSecret: hf-model-pull
   tensorrtLlm:
     parallelism:
       tensor: 2

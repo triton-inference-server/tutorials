@@ -20,4 +20,3 @@ gpu:
 
 model:
   name: llama-3-8b
-  pullSecret: hf-model-pull

@@ -14,6 +14,7 @@
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -21,7 +22,7 @@ import time
 # These values are expected to match the mount points in the Helm Chart.
 # Any changes here must also be made there, and vice versa.
 CACHE_DIRECTORY = "/var/run/cache"
-HF_TOKEN_PATH = "/var/run/secrets/hugging_face/password"
+HUGGING_FACE_TOKEN_PATH = "/var/run/secrets/hugging_face/password"
 MODEL_DIRECTORY = "/var/run/models"
 
 ERROR_EXIT_DELAY = 15
@@ -36,30 +37,22 @@ HUGGING_FACE_KEY = "HF_HOME"
 
 HUGGING_FACE_CLI = "huggingface-cli"
 
+
 # ---
 
 
 def clean_directory(directory_path: str):
-    if os.path.exists(directory_path):
-        for root, dirs, files in os.walk(top=directory_path, topdown=False):
-            for name in files:
-                file_path = os.path.join(directory_path, name)
-                try:
-                    os.remove(file_path)
+    if os.path.exists(path):
+        if os.path.isfile(path):
+            if is_verbose:
+                write_output(f"> rm {path}")
 
-                except Exception as exception:
-                    write_error(f"   Failed to remove {file_path}")
-                    write_error(f"   {exception}")
+            os.remove(path)
+        else:
+            if is_verbose:
+                write_output(f"> rm -rf {path}")
 
-            for name in dirs:
-                dir_path = os.path.join(directory_path, name)
-                write_error(f" - Removing {dir_path}")
-                try:
-                    os.rmdir(dir_path)
-
-                except Exception as exception:
-                    write_error(f"   Failed to remove {dir_path}")
-                    write_error(f"   {exception}")
+            shutil.rmtree(path)
 
 
 # ---
@@ -85,17 +78,17 @@ def hugging_face_authenticate(args):
         raise Exception(f"Required environment variable '{HUGGING_FACE_KEY}' not set.")
 
     # When a Hugging Face secret has been mounted, we'll use that to authenticate with Hugging Face.
-    if os.path.exists(HF_TOKEN_PATH):
-        with open(HF_TOKEN_PATH) as token_file:
+    if os.path.exists(HUGGING_FACE_TOKEN_PATH):
+        with open(HUGGING_FACE_TOKEN_PATH) as token_file:
             write_output(
-                f"Hugging Face token file '{HF_TOKEN_PATH}' detected, attempting to authenticate w/ Hugging Face."
+                f"Hugging Face token file '{HUGGING_FACE_TOKEN_PATH}' detected, attempting to authenticate w/ Hugging Face."
             )
             write_output(" ")
 
-            hf_token = token_file.read()
+            hugging_face_token = token_file.read()
 
             # Use Hugging Face's CLI to complete the authentication.
-            result = run_command([HUGGING_FACE_CLI, "login", "--token"], [hf_token])
+            result = run_command([HUGGING_FACE_CLI, "login", "--token"], [hugging_face_token])
 
             if result != 0:
                 raise Exception(f"Hugging Face authentication failed. ({result})")
@@ -301,6 +294,7 @@ def parse_arguments():
 
 
 # ---
+
 
 try:
     ENGINE_DIRECTORY = os.getenv(ENGINE_PATH_KEY)

@@ -19,10 +19,9 @@ gpu:
 
 model:
   name: llama-3-70b-instruct
-  pullSecret: hf-model-pull
   tensorrtLlm:
     parallelism:
-      tensor: 8
+      tensor: 4
 
 autoscaling:
   metric:

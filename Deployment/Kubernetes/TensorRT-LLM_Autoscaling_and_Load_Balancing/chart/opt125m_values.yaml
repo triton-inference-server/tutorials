@@ -20,4 +20,3 @@ gpu:
 
 model:
   name: opt125m
-  pullSecret: hf-model-pull
