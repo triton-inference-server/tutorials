@@ -27,7 +27,6 @@
 {{- $model_dt := "float16" }}
 {{- $model_pp := 1 }}
 {{- $model_tp := 1 }}
-{{- $model_trtllm := true }}
 {{- with $.Values.kubernetes }}
 {{-   with .hostRootPath }}
 {{-     $hostRootPath = . }}
@@ -36,7 +35,6 @@
 {{- with $.Values.model }}
 {{-   $model_name = required "Property '.model.name' is required." .name }}
 {{-   with .tensorrtLlm }}
-{{-     $model_trtllm = .enable }}
 {{-     with .dataType }}
 {{-       $model_dt = . }}
 {{-     end }}
@@ -123,14 +121,10 @@ spec:
         - python3
         - ./server.py
         - exec
-{{- if $model_trtllm }}
         - --engine=trtllm
         - --dt={{ $model_dt }}
         - --pp={{ $model_pp }}
         - --tp={{ $model_tp }}
-{{- else }}
-        - --engine=vllm
-{{- end }}
 {{- with $.Values.logging }}
 {{-   with .tritonServer }}
 {{-     if .useIso8601 }}
@@ -191,11 +185,9 @@ spec:
             memory: {{ $triton_memory }}
             nvidia.com/gpu: {{ $model_gpus }}
         volumeMounts:
-{{- if $model_trtllm }}
         - mountPath: /var/run/engines
           name: engine-repository
           readOnly: false
-{{- end }}
         - mountPath: /var/run/models
           name: model-repository
           readOnly: true
@@ -217,14 +209,10 @@ spec:
         - ./server.py
         - init
         - --model={{ $model_lower }}
-{{- if $model_trtllm }}
         - --engine=trtllm
         - --dt={{ $model_dt }}
         - --pp={{ $model_pp }}
         - --tp={{ $model_tp }}
-{{- else }}
-        - --engine=vllm
-{{- end }}
 {{- with $.Values.logging }}
 {{-   with .initialization }}
 {{-     if .verbose }}
@@ -267,11 +255,9 @@ spec:
             ephemeral-storage: 96Gi
             nvidia.com/gpu: {{ $model_gpus }}
         volumeMounts:
-{{- if $model_trtllm }}
         - mountPath: /var/run/engines
           name: engine-repository
           readOnly: false
-{{- end }}
         - mountPath: /var/run/models
           name: model-repository
           readOnly: false
@@ -297,19 +283,13 @@ spec:
 {{-   end }}
 {{- end }}
       volumes:
-{{- if $model_trtllm }}
       - name: engine-repository
         hostPath:
           path: {{ printf "%s/models/%s/%dx%d/engines" $hostRootPath $model_lower (int $model_pp) (int $model_tp) }}
           type: DirectoryOrCreate
-{{- end }}
       - name: model-repository
         hostPath:
-{{- if $model_trtllm }}
           path: {{ printf "%s/models/%s/%dx%d/models" $hostRootPath $model_lower (int $model_pp) (int $model_tp) }}
-{{- else }}
-          path: {{ printf "%s/models/%s/vllm" $hostRootPath $model_lower }}
-{{- end }}
           type: DirectoryOrCreate
 {{- with $.Values.model }}
 {{-   with .pullSecret }}

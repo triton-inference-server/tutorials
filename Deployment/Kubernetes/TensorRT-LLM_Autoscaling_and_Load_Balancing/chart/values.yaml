@@ -39,9 +39,6 @@ model: # (required)
   name: # (required)
   # Configuration options related to the conversion of a non-optimized model into TensorRT format.
   tensorrtLlm: # (optional)
-    # When `true`, enables conversion of models into TensorRT format before loading them into Triton Server.
-    # When 'false', the init container will fall back to vLLM and parallelism options are ignored.
-    enable: # (default: true)
     # Data type used when compiling and optimizing the model for TensorRT.
     # Supported options are float16, bfloat16, float32
     dataType: # (default: float16)

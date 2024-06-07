@@ -88,7 +88,9 @@ def hugging_face_authenticate(args):
             hugging_face_token = token_file.read()
 
             # Use Hugging Face's CLI to complete the authentication.
-            result = run_command([HUGGING_FACE_CLI, "login", "--token"], [hugging_face_token])
+            result = run_command(
+                [HUGGING_FACE_CLI, "login", "--token"], [hugging_face_token]
+            )
 
             if result != 0:
                 raise Exception(f"Hugging Face authentication failed. ({result})")
@@ -165,17 +167,20 @@ def execute_triton(args):
         cmd_args = ["mpirun", "--allow-run-as-root"]
 
         for i in range(world_size):
+            if i != 0:
+                cmd_args += [":"]
+
             cmd_args += [
                 "-n",
                 "1",
                 "tritonserver",
-                f"--model-repository={MODEL_DIRECTORY}",
-                "--disable-auto-complete-config",
-            ]
-            cmd_args += [
+                f"--id=rank{i}",
                 f"--http-port={(8000 + i * 10)}",
                 f"--grpc-port={(8001 + i * 10)}",
                 "--model-load-thread-count=2",
+                f"--model-repository={MODEL_DIRECTORY}",
+                "--disable-auto-complete-config",
+                f"--backend-config=python,shm-region-prefix-name=rank{i}_",
             ]
 
             if i == 0:
@@ -184,7 +189,6 @@ def execute_triton(args):
                     "--allow-gpu-metrics=false",
                     "--allow-metrics=true",
                     "--metrics-interval-ms=1000",
-                    f"--id=rank{i}",
                 ]
 
                 if args.verbose > 0:
@@ -198,14 +202,11 @@ def execute_triton(args):
                     "--allow-http=false",
                     "--allow-grpc=false",
                     "--allow-metrics=false",
+                    "--log-info=false",
+                    "--log-warning=false",
+                    "--model-control-mode=explicit",
+                    "--load-model=tensorrt_llm",
                 ]
-                cmd_args += ["--log-info=false", "--log-warning=false"]
-
-            cmd_args += [
-                "--disable-auto-complete-config",
-                f"--backend-config=python,shm-region-prefix-name=rank{i}_",
-                ":",
-            ]
 
     result = run_command(cmd_args)
     exit(result)

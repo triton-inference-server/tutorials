@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# See values.yaml for reference values.
+
 gpu:
 - Tesla-T4
 - Tesla-V100-SXM2-16GB

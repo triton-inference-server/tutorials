@@ -54,9 +54,7 @@
                 "enable": {
                   "description": "When `true`, enables conversion of models into TensorRT format before loading them into Triton Server.",
                   "oneOf": [
-                    {
-                      "type": "boolean"
-                    },
+                    { "type": "boolean" },
                     { "type": "null" }
                   ]
                 },
