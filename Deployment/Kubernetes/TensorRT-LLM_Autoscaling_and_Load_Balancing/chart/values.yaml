@@ -69,7 +69,7 @@ triton: # (required)
   image: # (required)
     # Optional list of pull secrets to be used when downloading the Triton Server container image.
     pullSecrets: # (optional)
-    # - name: ngc-container-pull
+    - name: ngc-container-pull
     # Name of the container image containing the version of Triton Server to be used.
     name: # (required)
   # Configuration options managing the resources assigned to individual Triton Server instances.

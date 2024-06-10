@@ -24,6 +24,13 @@ TensorRT, and configuring automatic scaling and load balancing for your models. 
 basics, secure ingress/egress from your cluster to external clients, nor cloud provider interfaces or implementations of
 Kubernetes.
 
+The intent of setting up autoscaling is that it provides the ability for LLM based services to automatically and dynamically
+adapt to the current workload intensity.
+As the number of clients generating inference requests for a given Triton Server deployment, load will increase on the server
+and the queue-to-compute ratio will eventually cause the horizontal pod autoscaler to increase the number of Triton Server
+instancing handle requests until the desired ratio is achieved.
+Inversely, decreasing the number of clients will reduce the number of Triton Server instances deployed.
+
 We'll cover the following topics:
 
 * [Cluster Setup](#cluster-setup)
@@ -75,6 +82,7 @@ This guide assumes that all nodes with NVIDIA GPUs have the following:
 - A node label of `nvidia.com/gpu=present` to more easily identify nodes with NVIDIA GPUs.
 - A node taint of `nvidia.com/gpu=present:NoSchedule` to prevent non-GPU pods from being deployed to GPU nodes.
 
+> [!Tip]
 > When using a Kubernetes provider like AKS, EKA, or GKE, it is usually best to use their interface when configuring nodes
 > instead of using `kubectl` to do it directly.
 
@@ -107,6 +115,12 @@ capabilities.
       --set worker.tolerations[0].effect=NoSchedule
     ```
 
+    > [!Note]
+    > The above command sets toleration values which allow for the deployment of a pod onto a node with
+    > a matching taint.
+    > See this document's [prerequisites](#prerequisites) for the taints this document expected to have been applied to GPU
+    > nodes in the cluster.
+
 #### NVIDIA Device Plugin for Kubernetes
 
 1.  This step is unnecessary if the Device Plugin has already been installed in your cluster.
@@ -117,17 +131,18 @@ capabilities.
     the output for `nvidia-device-plugin-daemonset`.
 
     ```bash
-    kubectl get daemonsets -n kube-system
+    kubectl get daemonsets --all-namespaces
     ```
 
     Example output:
     ```text
-    NAME                             DESIRED  CURRENT  READY  UP-TO-DATE  AVAILABLE
-    kube-proxy                       6        6        6      6           6
-    nvidia-device-plugin-daemonset   6        6        6      6           6
+    NAME                                          DESIRED  CURRENT  READY  UP-TO-DATE  AVAILABLE
+    kube-proxy                                    6        6        6      6           6
+    kube-system   node-feature-discovery-worker   1        1        1      1           1
+    nvidia-device-plugin-daemonset                6        6        6      6           6
     ```
 
-2.  Run the command below to install the plugin.
+2.  If `nvidia-device-plugin-daemonset` is not listed, run the command below to install the plugin.
     Once installed it will provide containers access to GPUs in your clusters.
 
     For additional information, see
@@ -139,7 +154,28 @@ capabilities.
 
 #### NVIDIA GPU Feature Discovery Service
 
-1.  Use the YAML contents below create a file named `nvidia_gpu-feature-discovery_daemonset.yaml`.
+1.  This step is unnecessary if the service has already been installed in your cluster.
+
+    To check if your cluster requires the NVIDIA Device Plugin for Kubernetes, run the following command and inspect
+    the output for `nvidia-device-plugin-daemonset`.
+
+    ```bash
+    kubectl get daemonsets --all-namespaces
+    ```
+
+    Example output:
+    ```text
+    kubectl get daemonsets --all-namespaces
+    NAMESPACE     NAME                                  DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE
+    kube-system   gpu-feature-discovery                 2         2         2       2            2
+    kube-system   kube-proxy                            6         6         6       6            6
+    kube-system   node-feature-discovery-worker         6         6         6       6            6
+    kube-system   nvidia-device-plugin-daemonset        6         6         6       6            6
+    ```
+
+2.  If `gpu-feature-discover` is listed, skip this step and the next.
+
+    Otherwise, use the YAML file below to install the GPU Feature Discovery service.
 
     > [nvidia_gpu-feature-discovery_daemonset.yaml](nvidia_gpu-feature-discovery_daemonset.yaml)
 
@@ -152,7 +188,7 @@ capabilities.
       >  nvidia_gpu-feature-discovery_daemonset.yaml
     ```
 
-2.  Then run the command below to install the
+3.  Then run the command below to install the
 
     ```bash
     kubectl apply -f ./nvidia_gpu-feature-discovery_daemonset.yaml
@@ -178,8 +214,10 @@ Create the `monitoring` namespace in your cluster for all of the metrics and mon
 
 #### Prometheus Services
 
-We a service to collect, store, aggregate, and provide metrics collected from your cluster and the services deployed in it.
-One of the easiest ways to do this is to leverage the functionality of the [Prometheus Metrics Server](https://prometheus.io/).
+We need a service to collect, store, aggregate, and provide metrics collected from your cluster and the services deployed in
+it.
+One of the easiest ways to do this is to leverage the functionality of the
+[Prometheus Metrics Server](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack).
 Using the following steps, we'll install the Prometheus Stack for Kubernetes Helm chart so that we can leverage Prometheus.
 
 1.  Add the Prometheus Community chart repository to the local cache.
@@ -198,12 +236,18 @@ Using the following steps, we'll install the Prometheus Stack for Kubernetes Hel
       --set tolerations[0].effect=NoSchedule
     ```
 
+    > [!Note]
+    > The above command sets toleration values which allow for the deployment of a pod onto a node with
+    > a matching taint.
+    > See this document's [prerequisites](#prerequisites) for the taints this document expected to have been applied to GPU
+    > nodes in the cluster.
+
 #### NVIDIA Data Center GPU Manager (DCGM) Exporter
 
 The best solution for management of GPUs in your cluster is
 [NVIDIA DCGM](https://docs.nvidia.com/data-center-gpu-manager-dcgm)(DCGM).
 However, for this example we do not need the entirety of the DCGM stack.
-Instead, we'll use the steps below to install the [DCGM Exporter](https://github.com/NVIDIA/dcgm-exporter) to enable the
+Instead, we'll use the steps below to install the just [DCGM Exporter](https://github.com/NVIDIA/dcgm-exporter) to enable the
 collection of GPU metrics in your cluster.
 
 1.  Add the NVIDIA DCGM chart repository to the local cache.
@@ -213,7 +257,7 @@ collection of GPU metrics in your cluster.
       && helm repo update
     ```
 
-2.  Use the YAML contents below to create a file named `nvidia_dcgm-exporter_values.yaml`.
+2.  Use the YAML file below to install the DCGM Exporter.
 
     > [nvidia_dcgm-exporter_values.yaml](nvidia_dcgm-exporter_values.yaml)
 
@@ -228,10 +272,10 @@ collection of GPU metrics in your cluster.
 
 #### Connect DCGM and Triton Metrics to Prometheus
 
-We need to provide a mechanism that will scrape the metrics produced by DCGM Exporter and inject them into the Prometheus
-metrics server.
-The steps below will setup a Prometheus Adapter that collects metrics from every DCGM Exporter worker and provides them to
-Prometheus.
+We need to provide a mechanism that will export the metrics collected by Prometheus Server and make them available to
+Kubernetes' Horizontal Pod Autoscaler service.
+The steps below will setup a Prometheus Adapter that creates a custom metrics service API which the HPA service can use to
+read metrics from Prometheus.
 
 1.  Run the command below to install the Prometheus Adapter Helm chart.
 
@@ -277,10 +321,10 @@ We'll create a set of rules specific to Triton Server which generate metrics use
     ```
 
 In all of value files for the example Helm chart, the horizontal-pod autoscaler is configured to use the
-`triton:queue_compute:ratio` metric provide by the above rules.
+`triton:queue_compute:ratio` metric provided by the above rules.
 The benefit of using this metric is that it is hardware and model independent since it measures the ratio between the time a
 request spends in the inference queue to the time it takes to complete once it has left the queue.
-This kind of metric allows he performance of models on diverse hardware to compared to each other.
+This kind of metric allows the performance of models on diverse hardware to be compared to each other.
 
 If absolute response times are a more important metric the `triton:request_duration:average` or
 `triton:compute_duration:average` metrics would more likely meet this requirement.
@@ -336,14 +380,14 @@ This drastically reduces the time required for subsequent pod starts on the same
     could be used to globally cache per model/GPU plan and engine files.
     Subsequent pod starts on new nodes with the same GPU could download the pregenerated files instead generating them
     locally.
-    This could save significant sime depending on the delta between the time to download the files instead of generating them
+    This could save significant time depending on the delta between the time to download the files instead of generating them
     (likely several seconds at least).
 
 #### Custom Container Image
 
-1.  Create a container file with the content below named `triton_trt-llm.containerfile`.
+1.  Using the file below, we'll create a custom container image in the next step.
 
-    > [triton_trt-llm.containerfile](containers/server.containerfile)
+    > [triton_trt-llm.containerfile](containers/triton_trt-llm.containerfile)
 
 2.  Run the following command to create a custom Triton Inference Server w/ all necessary tools to generate TensorRT-LLM
     plan and engine files. In this example we'll use the tag `24.04` to match the date portion of `24.04-trtllm-python-py3`
@@ -372,7 +416,7 @@ This drastically reduces the time required for subsequent pod starts on the same
 
     In order for your Kubernetes cluster to be able to download out new container image, it will need to be pushed to a
     container image repository that nodes in your cluster can reach.
-    In this example, we'll use the `nvcr.io/nvaie/staging` repository for demonstration purposes.
+    In this example, we'll use the fictional `nvcr.io/example` repository for demonstration purposes.
     You will need to determine which repositories you have write access to that your cluster can also access.
 
     1. First, re-tag the container image with the repository's name like below.
@@ -380,13 +424,13 @@ This drastically reduces the time required for subsequent pod starts on the same
         ```bash
         docker tag \
           triton_trt-llm:24.04 \
-          nvcr.io/nvaie/staging/triton_trt-llm:24.04
+          nvcr.io/example/triton_trt-llm:24.04
         ```
 
     2. Next, upload the container image to your repository.
 
         ```bash
-        docker push nvcr.io/nvaie/staging/triton_trt-llm:24.04
+        docker push nvcr.io/example/triton_trt-llm:24.04
         ```
 
 #### Kubernetes Pull Secrets
@@ -401,8 +445,8 @@ to the example below.
 
     ```bash
     kubectl create secret docker-registry ngc-container-pull \
-      --docker-password='dGhpcyBpcyBub3QgYSByZWFsIHNlY3JldC4gaXQgaXMgb25seSBmb3IgZGVtb25zdHJhdGlvbiBwdXJwb3Nlcy4' \
-      --docker-server='nvcr.io'
+      --docker-password='dGhpcyBpcyBub3QgYSByZWFsIHNlY3JldC4gaXQgaXMgb25seSBmb3IgZGVtb25zdHJhdGlvbiBwdXJwb3Nlcy4=' \
+      --docker-server='nvcr.io' \
       --docker-username='\$oauthtoken'
     ```
 
@@ -447,12 +491,19 @@ to the example below.
     }
     ```
 
-    The values of `password` and `auth` are also base-64 encoded string.
-    We recommend inspecting the values of the following values:
+    You can use this compact command line to get the above output with a single command.
 
-    * Value of `.auths['nvcr.io'].username`.
-    * Base64 decoded value of `.auths['nvcr.io'].password`.
-    * Base64 decoded value of `.auths['nvcr.io'].auths`.
+    ```bash
+    kubectl get secret/ngc-container-pull -o json | jq -r '.data[".dockerconfigjson"]' | base64 -d | jq
+    ```
+
+    > [!Note]
+    > The values of `password` and `auth` are also base-64 encoded string.
+    > We recommend inspecting the values of the following values:
+    >
+    > * Value of `.auths['nvcr.io'].username`.
+    > * Base64 decoded value of `.auths['nvcr.io'].password`.
+    > * Base64 decoded value of `.auths['nvcr.io'].auths`.
 
 
 ## Triton Deployment
@@ -470,15 +521,16 @@ Deploying Triton Server with a model that fits on a single GPU is straightforwar
     * Hugging Face secret name.
 
     The provided sample Helm [chart](./chart/) include several example values files such as
-    [llama-3-8b_values.yaml](client/llama-3-8b-instruct_values.yaml).
+    [llama-3-8b_values.yaml](chart/llama-3-8b-instruct_values.yaml).
 
 2.  Deploy LLM on Triton + TRT-LLM.
 
     Apply the custom values file to override the exported base values file using the command below, and create the Triton
     Server Kubernetes deployment.
 
-    _Note: the order that the values files are specified on the command line is important with values are applied and
-    override existing values in the order they are specified._
+    > [!Tip]
+    > The order that the values files are specified on the command line is important with values are applied and
+    > override existing values in the order they are specified.
 
     ```bash
     helm install <installation_name> \
@@ -488,7 +540,8 @@ Deploying Triton Server with a model that fits on a single GPU is straightforwar
       ./chart/.
     ```
 
-    _Be sure to substitute the correct values for `<installation_name>` and `<custom_values>` in the example above._
+    > [!Important]
+    > Be sure to substitute the correct values for `<installation_name>` and `<custom_values>` in the example above.
 
 3.  Verify the Chart Installation.
 
@@ -498,7 +551,8 @@ Deploying Triton Server with a model that fits on a single GPU is straightforwar
     kubectl get deployments,pods,hpa,services,podmonitors --selector='app=<installation_name>'
     ```
 
-    _Be sure to substitute the correct value for `<installation_name>` in the example above._
+    > [!Important]
+    > Be sure to substitute the correct value for `<installation_name>` in the example above.
 
     You should output similar to below (assuming the installation name of "llama-3"):
 
@@ -552,18 +606,19 @@ Pipeline parallelism is used to combine the compute capacity of multiple GPUs to
 The number of GPUs required to host the model is equal to product of the values of `.tensor` and `.pipeline`.
 It is important to note that the GPUs used to host a model must reside on the same node.
 
-_Combining GPUs which reside on separate nodes is not covered in this guide._
+> [!Note]
+> Combining GPUs which reside on separate nodes is not covered in this guide.
 
 
 ### Utilizing Multiple GPU SKUs
 
 Given the relative limited availability of certain SKUs of GPU, it is not uncommon for services to be required to operate on a
 mix of GPU hardware.
-For example, the number of nodes with NVIDIA Hopper based devices might be insufficient to me load requirements and your
-clusters have spare nodes with NVIDIA Ampere based devices.
+For example, the number of nodes with NVIDIA Hopper based devices might be insufficient to meet load requirements and your
+clusters may have spare nodes with NVIDIA Ampere based devices.
 In this scenario, it would make sense to create multiple deployment of the same model using the steps
 [above](#deploying-single-gpu-models) and placing them all behind a single Kubernetes service for load-balancing needs.
-Doing so will enable both SKU of devices to automatically scale independently and provide compute capacity for the service.
+Doing so will enable both SKUs of devices to automatically scale independently and provide compute capacity for the service.
 
 To achieve this, we can update the chart to not create a service with our deployment and to include the selector labels
 specified by the shared service.
@@ -600,7 +655,7 @@ llama-3-8b-h100         1/1     1            1
 ### Monitoring Triton in Kubernetes
 
 Monitoring Triton in Kubernetes can be done using the Prometheus software installed as part of the
-[Prometheus Services](#prometheus-services) second of this document.
+[Prometheus Services](#prometheus-services) section of this document.
 The installed software includes a Grafana dashboard server.
 To connect to the Grafana server, we first need to create a networking tunnel from your local workstation into you cluster.
 
@@ -626,7 +681,8 @@ To connect to the Grafana server, we first need to create a networking tunnel fr
     * Username: `admin`
     * Password: `prom-operator`
 
-    _The above the default username and password for Grafana when it is installed as part of the Prometheus Helm chart._
+    > [!Tip]
+    > The above the default username and password for Grafana when it is installed as part of the Prometheus Helm chart.
 
 4.  The first thing we'll want to do is to create a new custom dashboard.
     To do this, click on the `+` icon in the upper-right of the user interface and select `New dashboard` from the dropdown menu.
@@ -739,7 +795,7 @@ Firstly, many processes on the same machine querying the NVIDIA device driver fo
 only values that pertain to the individual process, and serving them via Triton's open-metrics server is as wasteful as the
 the number of Triton Server process beyond the first on the node.
 
-Secondly, due to the need to interface with the kernel-mode driver to retrieve hardware metrics queries get serialized adding
+Secondly, due to the need to interface with the kernel-mode driver to retrieve hardware metrics, queries get serialized adding
 additional overhead and latency to the system.
 
 Finally, the rate at which metrics are collected from Triton Server is not the same as the rate at which metrics are collected
@@ -754,7 +810,7 @@ I decided to use a custom values file when installing the DCGM Exporter Helm cha
 Firstly, it is my professional opinion that every container in a cluster should specify resource limits and requests.
 Not doing so opens the node up to a number of difficult to diagnose failure conditions related to resource exhaustion.
 Out of memory errors are the most obvious and easiest to root cause.
-Additionally, difficult to reproduce, transient timeout and timing errors caused CPU over subscription can easily happen when
+Additionally, difficult to reproduce, transient timeout and timing errors caused CPU over-subscription can easily happen when
 any container is unconstrained and quickly waste an entire engineering team's time as they attempt to triage, debug, and
 resolve them.
 
@@ -778,7 +834,7 @@ Provides metrics collection and aggregation services for the cluster.
 While there are other tools capable of providing similar services, we found the Prometheus Stack for Kubernetes was the
 easiest to install and configure.
 Additionally, the automatic inclusion of a Grafana based user interface made visualization of the cluster's current health
-easier to setup.
+easier to set up.
 
 Out initial work on this document were based on another metrics service, but we found the configuration of metrics collection
 from Triton Server and the use of custom metrics to drive horizontal pod autoscaling overly difficult and confusing.
@@ -818,15 +874,15 @@ Once we can achieve alignment, this guide will be updated to use an official rel
 
 There are two reasons:
 
-1.  In order to retrieve a model from Hugging Face, convert and optimize it for TensorRT-LLM, and cache it on the host decided
-    that [pod initialization container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) was the most
-    straightforward solution.
+1.  In order to retrieve a model from Hugging Face, convert and optimize it for TensorRT-LLM, and cache it on the host, I
+    decided that [pod initialization container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) was the
+    most straightforward solution.
 
     In order to make the best use of the initialization container I chose to use a custom [server.py](./containers/server.py)
     script that made of the new [Triton CLI](https://github.com/triton-inference-server/triton_cli) tool.
 
-2.  Multi-GPU deployments require a rather specialized command line, and generating it using Helm chart scripting was not
-    something I wanted to deal with.
+2.  Multi-GPU deployments require a rather specialized command line to run, and generating it using Helm chart scripting was
+    not something I wanted to deal with.
     Leveraging the custom Python script was the logical, and easiest, solution.
 
 #### Why is the Python Written Like That?
@@ -842,7 +898,8 @@ I decided to use a custom image for a few reasons.
 1.  Given the answer above and the use of Triton CLI and a custom Python script, the initialization container needed both
     components pre-installed in it to avoid unnecessary use of ephemeral storage.
 
-    _Use of ephemeral storage can lead to pod eviction, and therefore should be avoided whenever possible._
+    > [!Warning]
+    > Use of ephemeral storage can lead to pod eviction, and therefore should be avoided whenever possible.
 
 2.  Since the Triton + TRT-LLM image is already incredibly large, I wanted to avoid consuming additional host storage space
     with yet another container image.
@@ -851,7 +908,7 @@ I decided to use a custom image for a few reasons.
     the initialization container is easier to understand compared to a short `Pending` state before the initialization
     container, followed by a much longer `Pending` state before the Triton Server can start.
 
-3.  I wanted custom, a constant environment variable set for `ENGINE_DEST_PATH` that could be used by both the initialization
+3.  I wanted a custom, constant environment variable set for `ENGINE_DEST_PATH` that could be used by both the initialization
     and Triton Server containers.
 
 
@@ -867,12 +924,13 @@ As you increase the number of clients generating inference requests for a given 
 on the server and the queue-to-compute ratio will eventually cause the horizontal pod autoscaler to increase the number of
 Triton Server instancing handle requests until the desired ratio is achieved.
 
-Decreasing the number fo clients will have the inverse effect and reduce the number of Triton Server instances deployed.
+Decreasing the number of clients will have the inverse effect and reduce the number of Triton Server instances deployed.
 
-Note that it is important to use the `containers/client.containerfile` to build a client container image before attempting to
-create a client deployment in your cluster.
-Just like when building the `containers/server.containerfile`, the image will need to hosted somewhere the cluster's machines
-are able to download it from.
+> [!Note]
+> It is important to use the `containers/client.containerfile` to build a client container image before attempting to
+> create a client deployment in your cluster.
+> Just like when building the `containers/triton_trt-llm.containerfile`, the image will need to hosted somewhere the cluster's machines
+> are able to download it from.
 
 
 ### Why Doesn't this Guide Include Load Balancer Instructions?
