@@ -1,0 +1,126 @@
+# Copyright (c) 2024, NVIDIA CORPORATION. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# The GPU SKU that supports `.model` and to which Triton Server instances can be deployed.
+# Value must match the node's `.metadata.labels.nvidia.com/gpu.product` label.
+# Run 'kubectl get nodes' to find node names.
+# Run 'kubectl describe node <node_name>' to inspect a node's labels.
+gpu: # (required)
+# Example values: NVIDIA-A100-SXM4-40GB, NVIDIA-A10G, Tesla-V100-SXM2-16GB, Tesla-T4
+
+# Configuration options related to the AI model to be deployed.
+model: # (required)
+  # Name of the model to be served Triton Server instances.
+  # Supported values are:
+  # - gpt2
+  # - llama-2-7b
+  # - llama-2-70b
+  # - llama-2-7b-chat
+  # - llama-2-70b-chat
+  # - llama-3-8b
+  # - llama-3-70b
+  # - llama-3-8b-instruct
+  # - llama-3-70b-instruct
+  # - opt125m
+  name: # (required)
+  # Persistent volume claim where model content will be persisted.
+  # Expected to support read/write many access.
+  persistentVolumeClaim: # (required)
+  # Name of the secret used to download the model from Hugging Face.
+  # GPT2 does not require an access token to download.
+  # Other models may require per repository permissions to be granted.
+  pullSecret: # (optional)
+  # When `false` a model conversion job is created and the leader pod will wait for the job to complete before starting Triton; otherwise this doesn't happen.
+  # When not relying on the model conversion job, the following must exist on the persistent volume:
+  # - models: "/var/run/models/{model_name}/{pipeline_parallelism}x{tensor_parallelism}/model"
+  # - engine: "/var/run/models/{model_name}/{pipeline_parallelism}x{tensor_parallelism}/engine"
+  skipConversion: # (default: false)
+  # Configuration options related to the conversion of a non-optimized model into TensorRT format.
+  tensorrtLlm: # (optional)
+    # Configuration opens related to conversion of non-TensorRT models to TensorRT engine and plan files.
+    # Ignored when `model.skipConversion` is `true`.
+    conversion: # (optional)
+      # Number of logical CPU cores reserved for, and assigned to the model conversion job.
+      cpu: # (default: 4)
+      # Number of GPUs reserved for, and assigned to the model conversion job.
+      gpu: # (default: 1)
+      # Amount of CPU-visible system memory allocated to, and reserved for the model conversion job.
+      memory: # (default: 32Gi)
+    # Data type used when compiling and optimizing the model for TensorRT.
+    # Supported options are float16, bfloat16, float32
+    dataType: # (default: float16)
+    # When `true`, enables conversion of models into TensorRT format before loading them into Triton Server.
+    # When 'false', the init container will fall back to vLLM and parallelism options are ignored.
+    enable: true # (default: true)
+    # Parallelism configuration options which affect how the model is converted to
+    # TensorRT-LLM format, specifically if/how the model is partitioned for deployment to multiple GPUs.
+    parallelism: # (optional)
+      # Pipeline parallelism involves sharding the model (vertically) into chunks, where each chunk comprises a
+      # subset of layers that is executed on a separate device.
+      # The main limitation of this method is that, due to the sequential nature of the processing, some devices or
+      # layers may remain idle while waiting for the output.
+      pipeline: # (default: 1)
+      # Tensor parallelism involves sharding (horizontally) individual layers of the model into smaller,
+      # independent blocks of computation that can be executed on different devices.
+      # Attention blocks and multi-layer perceptron (MLP) layers are major components of transformers that can take advantage of
+      # tensor parallelism.
+      # In multi-head attention blocks, each head or group of heads can be assigned to a different device so they can be computed
+      # independently and in parallel.
+      tensor: # (default: 1)
+
+# Configuration options for Triton Server.
+triton: # (required)
+  # Configuration options related to the container image for Triton Server.
+  image: # (required)
+    # Optional list of pull secrets to be used when downloading the Triton Server container image.
+    pullSecrets: # (optional)
+    # - name: ngc-container-pull
+    # Name of the container image containing the version of Triton Server to be used.
+    name: # (required)
+  # Configuration options managing the resources assigned to individual Triton Server instances.
+  resources: # (optional)
+    # Number of logical CPU cores reserved for, and assigned to each instance of Triton Server.
+    cpu: # (default: 4)
+    # Amount of CPU-visible system memory allocated to, and reserved for each instance of Triton Server.
+    memory: # (default: 32Gi)
+
+# Configuration options related to how various components generate logs.
+logging: # (optional)
+  # Logging configuration options specific to the initialization container.
+  initialization:
+    # When `true` the model download and generation of TRT engine and plan use verbose logging; otherwise standard logging is used.
+    verbose: # (default: false)
+  # Logging configuration options specific to Triton Server.
+  tritonServer:
+    # When `true` Triton Server logs are formatted using the ISO8601 standard; otherwise Triton's default format will be used.
+    useIso8601: # (default: false)
+    # When `true` Triton Server uses verbose logging; otherwise standard logging is used.
+    verbose: # (default: false)
+
+# Configurations option related to the Kubernetes objects created by the chart.
+kubernetes: # (optional)
+  # Root file-system path used when mounting content to the underlying host.
+  hostRootPath: # (default: /triton)
+  # Optional set of labels to be applied to created Kubernetes objects.
+  # These labels can be used for association with a preexisting service object.
+  labels: # (optional)
+    # customLabel: exampleValue
+  # When `false`, a service will not be created when the chart is installed; otherwise a service will be created.
+  noService: # (default: false)
+  # Name of the service account to use when deploying components.
+  # When not provided, a service account will be created.
+  serviceAccount: # (optional)
+  # Tolerations applied to every pod deployed as part of this deployment.
+  # Template already includes `nvidia.com/gpu=present:NoSchedule`.
+  tolerations: # (optional)
