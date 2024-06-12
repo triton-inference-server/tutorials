@@ -16,17 +16,17 @@
 
 # Autoscaling and Load Balancing Generative AI w/ Triton Server and TensorRT-LLM
 
-Setting up autoscaling and load balancing using Triton Inference Server, TensorRT-LLM or vLLM, and Kubernetes is not difficult,
-but it does require preparation.
+Setting up autoscaling and load balancing for large language models served by Triton Inference Server is not difficult,
+but does require preparation.
 
-This guide aims to help you automated acquisition of models from Hugging Face, minimize time spent optimizing models for
+This guide outlines the steps to download models from Hugging Face, optimize them for TensorRT, and configure automatic scaling and load balancing in Kubernetes.
 TensorRT, and configuring automatic scaling and load balancing for your models. This guide does not cover Kubernetes'
 basics, secure ingress/egress from your cluster to external clients, nor cloud provider interfaces or implementations of
 Kubernetes.
 
-The intent of setting up autoscaling is that it provides the ability for LLM based services to automatically and dynamically
+When configured properly autoscaling enables LLM based services to allocate and deallocate resources automatically based on the current load.
 adapt to the current workload intensity.
-As the number of clients generating inference requests for a given Triton Server deployment, load will increase on the server
+In this tutorial, as the number of clients grow for a given Triton Server deployment, the inference load on the server increases
 and the queue-to-compute ratio will eventually cause the horizontal pod autoscaler to increase the number of Triton Server
 instancing handle requests until the desired ratio is achieved.
 Inversely, decreasing the number of clients will reduce the number of Triton Server instances deployed.
@@ -73,7 +73,7 @@ Prior to beginning this guide/tutorial you will need a couple of things.
 
 ## Cluster Setup
 
-The following instructions are setting up Horizontal Pod Autoscaling (HPA) for Triton Server in a Kubernetes cluster.
+The following instructions detail how to set up Horizontal Pod Autoscaling (HPA) for Triton Inference Server in a Kubernetes cluster.
 
 
 ### Prerequisites
@@ -123,8 +123,8 @@ capabilities.
 
 #### NVIDIA Device Plugin for Kubernetes
 
-1.  This step is unnecessary if the Device Plugin has already been installed in your cluster.
-    Cloud provider turnkey Kubernetes clusters, such as those from AKS, EKS, and GKE, often have the Device Plugin
+1.  This step is not needed if the Device Plugin has already been installed in your cluster.
+    Cloud providers with turnkey Kubernetes clusters, such as those from AKS, EKS, and GKE, often install the Device Plugin automatically when a GPU node is added to the cluster.
     automatically once a GPU node as been added to the cluster.
 
     To check if your cluster requires the NVIDIA Device Plugin for Kubernetes, run the following command and inspect
@@ -154,9 +154,9 @@ capabilities.
 
 #### NVIDIA GPU Feature Discovery Service
 
-1.  This step is unnecessary if the service has already been installed in your cluster.
+1.  This step is not needed if the service has already been installed in your cluster.
 
-    To check if your cluster requires the NVIDIA Device Plugin for Kubernetes, run the following command and inspect
+    To check if your cluster requires the NVIDIA GPU Feature Discovery Service, run the following command and inspect
     the output for `nvidia-device-plugin-daemonset`.
 
     ```bash
@@ -197,9 +197,9 @@ capabilities.
 
 ### Metrics Collection Services
 
-Your cluster is now up, running, and can even assign GPU resources to containers.
+Your cluster is now up, running, and can assign GPU resources to containers.
 Next, we have to setup metrics collection for DCGM and Triton Server.
-Metrics provide insight to the Kubernetes Horizontal Pod Autoscaler service and enable it to make autoscaling decisions based
+Metrics services provide utilization and availability data to the Kubernetes Horizontal Pod Autoscaler. The data can then be used to make autoscaling decisions.
 on the utilization and availability of deployed models.
 
 #### Create a Monitoring Namespace
@@ -247,7 +247,7 @@ Using the following steps, we'll install the Prometheus Stack for Kubernetes Hel
 The best solution for management of GPUs in your cluster is
 [NVIDIA DCGM](https://docs.nvidia.com/data-center-gpu-manager-dcgm)(DCGM).
 However, for this example we do not need the entirety of the DCGM stack.
-Instead, we'll use the steps below to install the just [DCGM Exporter](https://github.com/NVIDIA/dcgm-exporter) to enable the
+Instead, we'll use the steps below to install just the [DCGM Exporter](https://github.com/NVIDIA/dcgm-exporter) to enable the
 collection of GPU metrics in your cluster.
 
 1.  Add the NVIDIA DCGM chart repository to the local cache.
