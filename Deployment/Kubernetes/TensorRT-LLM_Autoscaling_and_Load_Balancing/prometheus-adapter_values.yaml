@@ -1,0 +1,151 @@
+# All values are default unless otherwise specified.
+affinity: { }
+
+topologySpreadConstraints: [ ]
+
+image:
+  repository: registry.k8s.io/prometheus-adapter/prometheus-adapter
+  tag: ""
+  pullPolicy: IfNotPresent
+
+logLevel: 4
+
+# Update metrics at least ten times per minute.
+metricsRelistInterval: 6s
+
+listenPort: 6443
+
+nodeSelector: { }
+
+priorityClassName: ""
+
+namespaceOverride: ""
+
+customAnnotations:
+  role: custom-metrics
+
+customLabels:
+  monitoring: prometheus-adapter
+
+prometheus:
+  # Set ths to the name of the Prometheus service as shown by `kubectl get services -n monitoring`.
+  url: http://prometheus-kube-prometheus-prometheus
+  port: 9090
+  path: /metrics
+
+replicas: 1
+
+podSecurityContext:
+  fsGroup: 10001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ "ALL" ]
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+rbac:
+  create: true
+  useAuthReaderClusterRole: false
+  externalMetrics:
+    resources: [ "*" ]
+  customMetrics:
+    resources: [ "*" ]
+
+psp:
+  create: false
+  annotations: { }
+
+serviceAccount:
+  create: true
+  name:
+  annotations: { }
+
+dnsConfig: { }
+
+resources: { }
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: https
+    scheme: HTTPS
+  initialDelaySeconds: 30
+  timeoutSeconds: 5
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: https
+    scheme: HTTPS
+  initialDelaySeconds: 30
+  timeoutSeconds: 5
+
+startupProbe: { }
+
+rules:
+  default: true
+  custom: [ ]
+  existing:
+  external: [ ]
+
+
+service:
+  annotations: { }
+  port: 443
+  type: ClusterIP
+  ipDualStack:
+    enabled: false
+    ipFamilies: [ "IPv6", "IPv4" ]
+    ipFamilyPolicy: "PreferDualStack"
+
+tls:
+  enable: false
+  ca: |-
+    # Public CA file that signed the APIService
+  key: |-
+    # Private key of the APIService
+  certificate: |-
+    # Public key of the APIService
+
+env: [ ]
+
+extraArguments: [ ]
+
+extraContainers: [ ]
+
+extraVolumes: [ ]
+
+extraVolumeMounts: [ ]
+
+tolerations: [ ]
+
+podLabels: { }
+
+podAnnotations: { }
+
+deploymentAnnotations: { }
+
+hostNetwork:
+  enabled: false
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 25%
+    maxSurge: 25%
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable:
+  maxUnavailable: 1
+
+certManager:
+  enabled: false
+  caCertDuration: 43800h0m0s
+  certDuration: 8760h0m0s
+

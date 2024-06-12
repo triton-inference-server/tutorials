@@ -1,0 +1,345 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "copyright": [
+    "# Copyright (c) 2022-2023, NVIDIA CORPORATION.  All rights reserved.",
+    "# NVIDIA CORPORATION and its licensors retain all intellectual property",
+    "# and proprietary rights in and to this software, related documentation",
+    "# and any modifications thereto.  Any use, reproduction, disclosure or",
+    "# distribution of this software and related documentation without an express",
+    "# license agreement from NVIDIA CORPORATION is strictly prohibited."
+  ],
+  "properties": {
+    "gpu": {
+      "description": "List of the GPUs support `.model` and to which Triton Server instances can be deployed.",
+      "items": [
+        {
+          "description": "Value must match the node's `.metadata.labels.nvidia.com/gpu.product` label.",
+          "type": "string"
+        }
+      ],
+      "type": "array"
+    },
+    "model": {
+      "description": "Configuration options related to the AI model to be deployed.",
+      "properties": {
+        "name": {
+          "description": "Name of the model to be served Triton Server instances.",
+          "pattern": "(gpt2|opt125m|llama-(2-(7b|70b)(-chat)?|3-(8b|70b)(-instruct)?))",
+          "type": "string"
+        },
+        "pullSecret": {
+          "description": "Name of the secret used to download the model from Hugging Face.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            { "type": "null" }
+          ]
+        },
+        "tensorrtLlm": {
+          "description": "Configuration options related to the conversion of a non-optimized model into TensorRT format.",
+          "oneOf": [
+            {
+              "properties": {
+                "dataType": {
+                  "description": "Data type used when compiling and optimizing the model for TensorRT.",
+                  "oneOf": [
+                    {
+                      "pattern": "(bfloat16|float16|float32)",
+                      "type": "string"
+                    },
+                    { "type": "null" }
+                  ]
+                },
+                "enable": {
+                  "description": "When `true`, enables conversion of models into TensorRT format before loading them into Triton Server.",
+                  "oneOf": [
+                    { "type": "boolean" },
+                    { "type": "null" }
+                  ]
+                },
+                "parallelism": {
+                  "description": "Parallelism configuration options which affect how the model is converted to TensorRT-LLM format, specifically if/how the model is partitioned for deployment to multiple GPUs.",
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "pipeline": {
+                          "oneOf": [
+                            {
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "tensor": {
+                          "oneOf": [
+                            {
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            { "type": "null" }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    },
+                    { "type": "null" }
+                  ]
+                }
+              },
+              "type": "object"
+            },
+            { "type": "null" }
+          ]
+        }
+      },
+      "required": [ "name" ],
+      "type": "object"
+    },
+    "triton": {
+      "description": "Configuration options for Triton Server.",
+      "properties": {
+        "image": {
+          "description": "Configuration options related to the container image for Triton Server.",
+          "properties": {
+            "pullSecrets": {
+              "description": "Optional list of pull secrets to be used when downloading the Triton Server container image.",
+              "oneOf": [
+                {
+                  "items": [
+                    {
+                      "type": "object"
+                    }
+                  ],
+                  "type": "array"
+                },
+                { "type": "null" }
+              ]
+            },
+            "name": {
+              "description": "Name of the container image containing the version of Triton Server to be used.",
+              "type": "string"
+            }
+          },
+          "required": [ "name" ],
+          "type": "object"
+        },
+        "resources": {
+          "description": "Configuration options managing the resources assigned to individual Triton Server instances. ",
+          "oneOf": [
+            {
+              "properties": {
+                "cpu": {
+                  "description": "Number of logical CPU cores reserved for, and assigned to each instance of Triton Server.",
+                  "oneOf": [
+                    {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^\\d+m$",
+                      "type": "string"
+                    },
+                    { "type": "null" }
+                  ]
+                },
+                "memory": {
+                  "description": "Amount of CPU-visible system memory allocated to, and reserved for each instance of Triton Server.",
+                  "oneOf": [
+                    {
+                      "pattern": "^\\d+[GKMgkm]i$",
+                      "type": "string"
+                    },
+                    { "type": "null" }
+                  ]
+                }
+              },
+              "type": "object"
+            },
+            { "type": "null" }
+          ]
+        }
+      },
+      "required": [ "image" ],
+      "type": "object"
+    },
+    "autoscaling": {
+      "description": "Configuration options for automatic scaling of Triton Server deployments.",
+      "oneOf": [
+        {
+          "properties": {
+            "enable": {
+              "description": "Determines if autoscaling is enabled for deployment or not.",
+              "oneOf": [
+                { "type": "boolean" },
+                { "type": "null" }
+              ]
+            },
+            "metric": {
+              "description": "Metric used to determine autoscaling decisions.",
+              "oneOf": [
+                {
+                  "properties": {
+                    "name": {
+                      "description": "Name of the metric monitored.",
+                      "oneOf": [
+                        { "type": "string" },
+                        { "type": "null" }
+                      ]
+                    },
+                    "value": {
+                      "description": "Threshold or targeted value used to determine the number of replicas concurrently deployed."
+                    }
+                  },
+                  "type": "object"
+                },
+                { "type": "null" }
+              ]
+            },
+            "replicas": {
+              "description": "Controls the number of Triton Server replicas are deployed.",
+              "oneOf": [
+                {
+                  "properties": {
+                    "maximum": {
+                      "description": "Upper bound of the number of Triton Server replicas deployed concurrently.",
+                      "oneOf": [
+                        {
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        { "type": "null" }
+                      ]
+                    },
+                    "minimum": {
+                      "description": "Lower bound of the number of Triton Server replicas deployed concurrently.",
+                      "oneOf": [
+                        {
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        { "type": "null" }
+                      ]
+                    }
+                  },
+                  "type": "object"
+                },
+                { "type": "null" }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        { "type": "null" }
+      ]
+    },
+    "logging": {
+      "description": "Configuration options related to how various components generate logs.",
+      "oneOf": [
+        {
+          "properties": {
+            "initialization": {
+              "description": "Logging configuration options specific to the initialization container.",
+              "oneOf": [
+                {
+                  "properties": {
+                    "verbose": {
+                      "description": "When `true` the model download and generation of TRT engine and plan use verbose logging; otherwise standard logging is used.",
+                      "oneOf": [
+                        { "type": "boolean" },
+                        { "type": "null" }
+                      ]
+                    }
+                  },
+                  "type": "object"
+                },
+                { "type": "null" }
+              ]
+            },
+            "tritonServer": {
+              "description": "Logging configuration options specific to Triton Server.",
+              "oneOf": [
+                {
+                  "properties": {
+                    "useIso8601": {
+                      "description": "When `true` Triton Server logs are formatted using the ISO8601 standard; otherwise Triton's default format will be used. ",
+                      "oneOf": [
+                        { "type": "boolean" },
+                        { "type": "null" }
+                      ]
+                    },
+                    "verbose": {
+                      "description": "When `true` Triton Server uses verbose logging; otherwise standard logging is used.",
+                      "oneOf": [
+                        { "type": "boolean" },
+                        { "type": "null" }
+                      ]
+                    }
+                  },
+                  "type": "object"
+                },
+                { "type": "null" }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        { "type": "null" }
+      ]
+    },
+    "kubernetes": {
+      "description": "Configurations option related to the Kubernetes objects created by the chart.",
+      "oneOf": [
+        {
+          "properties": {
+            "hostRootPath": {
+              "description": "Root file-system path used when mounting content to the underlying host.",
+              "oneOf": [
+                { "type": "string" },
+                { "type": "null" }
+              ]
+            },
+            "labels": {
+              "description": "Optional set of labels to be applied to created Kubernetes objects.",
+              "oneOf": [
+                { "type": "object" },
+                { "type": "null" }
+              ]
+            },
+            "noService": {
+              "description": "When `false`, a service will not be created when the chart is installed; otherwise a service will be created.",
+              "oneOf": [
+                { "type": "boolean" },
+                { "type": "null" }
+              ]
+            },
+            "tolerations": {
+              "description": "Tolerations applied to every pod deployed as part of this deployment.",
+              "oneOf": [
+                {
+                  "items": [
+                    {
+                      "description": "Toleration applied to every pod deployed as part of this deployment.",
+                      "type": "object"
+                    },
+                    { "type": "null" }
+                  ],
+                  "type": "array"
+                },
+                { "type": "null" }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        { "type": "null" }
+      ]
+    }
+  },
+  "required": [
+    "gpu",
+    "model",
+    "triton"
+  ]
+}

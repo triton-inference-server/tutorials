@@ -1,0 +1,51 @@
+# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
+#
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-gpt2
+spec:
+  selector:
+    matchLabels:
+      app: client-gpt2
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: client-gpt2
+        app.kubernetes.io/component: client
+    spec:
+      containers:
+      - name: client
+        command:
+        - python3
+        - ./client.py
+        env:
+        - name: TRTLLM_MODEL_NAME
+          value: gpt2
+        - name: TRTLLM_TRITON_URL
+          value: gpt2
+        - name: TRTLLM_MAX_TOKENS
+          value: "256"
+        # - name: TRTLLM_DEBUG
+        #   value: debug
+        image: nvcr.io/nvstaging/nvaie/jwyman:trtllm-client-0520.1
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 1000m
+            ephemeral-storage: 1Gi
+            memory: 1Gi
+          requests:
+            cpu: 500m
+            ephemeral-storage: 1Gi
+            memory: 1Gi
+      imagePullSecrets:
+      - name: ngc-container-pull
+      restartPolicy: Always

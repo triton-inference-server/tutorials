@@ -1,0 +1,304 @@
+# Copyright (c) 2024, NVIDIA CORPORATION. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{- $hostRootPath := "/triton" }}
+{{- $image_name := "" }}
+{{- with $.Values.triton }}
+{{-   with .image }}
+{{-     $image_name = required "Property '.triton.image.name' is required." .name }}
+{{-   else }}
+{{-     fail "Property '.triton.image' is required." }}
+{{-   end }}
+{{- else }}
+{{-   fail "Property '.triton' is required" }}
+{{- end }}
+{{- $model_name := "" }}
+{{- $model_dt := "float16" }}
+{{- $model_pp := 1 }}
+{{- $model_tp := 1 }}
+{{- with $.Values.kubernetes }}
+{{-   with .hostRootPath }}
+{{-     $hostRootPath = . }}
+{{-   end }}
+{{- end }}
+{{- with $.Values.model }}
+{{-   $model_name = required "Property '.model.name' is required." .name }}
+{{-   with .tensorrtLlm }}
+{{-     with .dataType }}
+{{-       $model_dt = . }}
+{{-     end }}
+{{-     with .parallelism }}
+{{-       with .pipeline }}
+{{-         $model_pp = (int .) }}
+{{-       end }}
+{{-       with .tensor }}
+{{-         $model_tp = (int .) }}
+{{-       end }}
+{{-     end }}
+{{-   end }}
+{{- else }}
+{{-   fail "Property '.model' is required." }}
+{{- end }}
+{{- $model_lower := lower $model_name }}
+{{- $model_upper := upper $model_name }}
+{{- $model_gpus := mul $model_pp $model_tp }}
+{{- $triton_cpu := 4 }}
+{{- if lt $triton_cpu $model_gpus }}
+{{-   $triton_cpu = $model_gpus }}
+{{- end }}
+{{- $triton_memory := printf "%dGi" (mul $triton_cpu 8) }}
+{{- with $.Values.triton }}
+{{-   with .image }}
+{{-     with .name }}
+{{-       $image_name = . }}
+{{-     end }}
+{{-   end }}
+{{-   with .resources }}
+{{-     with .cpu }}
+{{-       $triton_cpu = (int .) }}
+{{-     end }}
+{{-     with .memory }}
+{{-       $triton_memory = . }}
+{{-     end }}
+{{-   end }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $.Release.Name }}
+  labels:
+    app: {{ $.Release.Name }}
+{{- with $.Values.kubernetes }}
+{{-   with .labels }}
+{{      toYaml . | indent 4 }}
+{{-   end }}
+{{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ $.Release.Name }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ $.Release.Name }}
+        app.kubernetes.io/component: server
+{{- with $.Values.kubernetes }}
+{{-   with .labels }}
+{{      toYaml . | indent 8 }}
+{{-   end }}
+{{- end }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu
+                operator: Exists
+{{- with $.Values.gpu }}
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+{{    toYaml . | indent 16 }}
+{{- else }}
+{{-   fail "Property '.gpu' is required." }}
+{{- end }}
+      containers:
+      - name: triton
+        command:
+        - python3
+        - ./server.py
+        - exec
+        - --engine=trtllm
+        - --dt={{ $model_dt }}
+        - --pp={{ $model_pp }}
+        - --tp={{ $model_tp }}
+{{- with $.Values.logging }}
+{{-   with .tritonServer }}
+{{-     if .useIso8601 }}
+        - --iso8601
+{{-     end }}
+{{-     if .verbose }}
+        - --verbose
+{{-     end }}
+{{-   end }}
+{{- end }}
+        env:
+        - name: ENGINE_DEST_PATH
+          value: /var/run/engines
+        - name: HF_HOME
+          value: /var/run/cache
+{{- with $.Values.logging }}
+{{-   with .tritonServer }}
+{{-     if .verbose }}
+        - name: NCCL_DEBUG
+          value: INFO
+{{-     end }}
+{{-   end }}
+{{- end }}
+        image: {{ $image_name }}
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 15
+          httpGet:
+            path: /v2/health/live
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 2
+          successThreshold: 1
+        ports:
+        - containerPort: 8000
+          name: http
+        - containerPort: 8001
+          name: grpc
+        - containerPort: 8002
+          name: metrics
+        readinessProbe:
+          failureThreshold: 15
+          httpGet:
+            path: /v2/health/ready
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 2
+          successThreshold: 1
+        resources:
+          limits:
+            cpu: {{ $triton_cpu }}
+            ephemeral-storage: 1Gi
+            memory: {{ $triton_memory }}
+            nvidia.com/gpu: {{ $model_gpus }}
+          requests:
+            cpu: {{ $triton_cpu }}
+            ephemeral-storage: 1Gi
+            memory: {{ $triton_memory }}
+            nvidia.com/gpu: {{ $model_gpus }}
+        volumeMounts:
+        - mountPath: /var/run/engines
+          name: engine-repository
+          readOnly: false
+        - mountPath: /var/run/models
+          name: model-repository
+          readOnly: true
+        - mountPath: /var/run/cache
+          name: transformers-cache
+          readOnly: false
+{{- with $.Values.triton }}
+{{-   with .image }}
+{{-     with .pullSecrets }}
+      imagePullSecrets:
+{{        toYaml . | indent 6 }}
+{{-     end }}
+{{-   end }}
+{{- end }}
+      initContainers:
+      - name: init
+        command:
+        - python3
+        - ./server.py
+        - init
+        - --model={{ $model_lower }}
+        - --engine=trtllm
+        - --dt={{ $model_dt }}
+        - --pp={{ $model_pp }}
+        - --tp={{ $model_tp }}
+{{- with $.Values.logging }}
+{{-   with .initialization }}
+{{-     if .verbose }}
+        - --verbose
+{{-     end }}
+{{-   end }}
+{{- end }}
+        env:
+        - name: ENGINE_DEST_PATH
+          value: /var/run/engines
+        - name: HF_HOME
+          value: /var/run/cache
+        - name: HF_HUB_DISABLE_PROGRESS_BARS
+          value: "1"
+        - name: HF_HUB_DISABLE_TELEMETRY
+          value: "1"
+        - name: HF_HUB_VERBOSITY
+          value: info
+        - name: NO_COLOR
+          value: "1"
+        - name: TERM
+          value: none
+{{- with $.Values.logging }}
+{{-   with .initialization }}
+{{-     if .verbose }}
+        - name: TRITON_CLI_VERBOSE
+          value: "1"
+{{-     end }}
+{{-   end }}
+{{- end }}
+        image: {{ $image_name }}
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: {{ $triton_cpu }}
+            ephemeral-storage: 96Gi
+            nvidia.com/gpu: {{ $model_gpus }}
+          requests:
+            cpu: {{ $triton_cpu }}
+            ephemeral-storage: 96Gi
+            nvidia.com/gpu: {{ $model_gpus }}
+        volumeMounts:
+        - mountPath: /var/run/engines
+          name: engine-repository
+          readOnly: false
+        - mountPath: /var/run/models
+          name: model-repository
+          readOnly: false
+        - mountPath: /var/run/cache
+          name: transformers-cache
+          readOnly: false
+{{- with $.Values.model }}
+{{-   if .pullSecret }}
+        - mountPath: /var/run/secrets/hugging_face
+          name: hf-secret
+          readOnly: true
+{{-   end }}
+{{- end }}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Exists
+{{- with $.Values.kubernetes }}
+{{-   with .tolerations }}
+{{      toYaml . | indent 6 }}
+{{-   end }}
+{{- end }}
+      volumes:
+      - name: engine-repository
+        hostPath:
+          path: {{ printf "%s/models/%s/%dx%d/engines" $hostRootPath $model_lower (int $model_pp) (int $model_tp) }}
+          type: DirectoryOrCreate
+      - name: model-repository
+        hostPath:
+          path: {{ printf "%s/models/%s/%dx%d/models" $hostRootPath $model_lower (int $model_pp) (int $model_tp) }}
+          type: DirectoryOrCreate
+{{- with $.Values.model }}
+{{-   with .pullSecret }}
+      - name: hf-secret
+        secret:
+          secretName: {{ . }}
+{{-   end }}
+{{- end }}
+      - name: transformers-cache
+        hostPath:
+          path: {{ $hostRootPath }}/huggingface
+          type: DirectoryOrCreate
