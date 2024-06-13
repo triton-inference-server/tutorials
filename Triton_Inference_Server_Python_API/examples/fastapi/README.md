@@ -26,7 +26,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-# Triton Inference Server Open AI Compatible Server 
+# Triton Inference Server Open AI Compatible Server
 
 Using the Triton In-Process Python API you can integrat triton server
 based models into any Python framework including FastAPI with an
@@ -34,7 +34,7 @@ OpenAI compatible interface.
 
 This directory contains a FastAPI based Triton Inference Server
 supporing `llama-3-8b-instruct` with both the vLLM and TRT-LLM
-backends. 
+backends.
 
 The front end application was generated using a trimmed version of the
 OpenAI OpenAPI [specification](api-spec/openai_trimmed.yml) and the
@@ -118,7 +118,7 @@ curl -X 'POST' \
     "stream": false,
     "stop": "string",
     "frequency_penalty": 0.0
-    }' | jq . 
+    }' | jq .
 ```
 
 #### Chat Completions `/v1/chat/completions`
@@ -165,7 +165,7 @@ curl -s http://localhost:8000/v1/models | jq .
 curl -s http://localhost:8000/v1/models/llama-3-8b-instruct | jq .
 ```
 
-## Comparison to vllm 
+## Comparison to vllm
 
 The vLLM container can also be used to run the vLLM FastAPI Server
 
@@ -185,7 +185,7 @@ Note: the following command requires the 24.05 pre-release version of genai-perf
 Preliminary results show performance is on par with vLLM with concurrency 2
 
 ```
-genai-perf -m meta-llama/Meta-Llama-3-8B-Instruct --endpoint v1/chat/completions --endpoint-type chat --service-kind openai -u http://localhost:8000 --num-prompts 100 --synthetic-input-tokens-mean 1024 --synthetic-input-tokens-stddev 50 --concurrency 2 --measurement-interval 40000 --extra-inputs max_tokens:512 --extra-input ignore_eos:true -- -v --max-threads=256 
+genai-perf -m meta-llama/Meta-Llama-3-8B-Instruct --endpoint v1/chat/completions --endpoint-type chat --service-kind openai -u http://localhost:8000 --num-prompts 100 --synthetic-input-tokens-mean 1024 --synthetic-input-tokens-stddev 50 --concurrency 2 --measurement-interval 40000 --extra-inputs max_tokens:512 --extra-input ignore_eos:true -- -v --max-threads=256
 erval 40000 --extra-inputs max_tokens:512 --extra-input ignore_eos:true -- -v --max-threads=256
 ```
 
@@ -195,5 +195,5 @@ erval 40000 --extra-inputs max_tokens:512 --extra-input ignore_eos:true -- -v --
 * Max tokens is not processed by trt-llm backend correctly
 * Usage information is not populated
 * `finish_reason` is currently always set to `stop`
-* Limited performance testing has been done 
+* Limited performance testing has been done
 * Using genai-perf to test streaming requires changes to genai-perf SSE handling
