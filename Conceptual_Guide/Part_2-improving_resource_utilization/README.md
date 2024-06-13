@@ -39,12 +39,12 @@ Part-1 of this series introduced the mechanisms to set up a Triton Inference Ser
 Dynamic batching, in reference to the Triton Inference Server, refers to the functionality which allows the combining of one or more inference requests into a single batch (which has to be created dynamically) to maximize throughput.
 
 Dynamic batching can be enabled and configured on per model basis by specifying selections in the model's `config.pbtxt`. Dynamic Batching can be enabled with its default settings by adding the following to the `config.pbtxt` file:
-```
+```text proto
 dynamic_batching { }
 ```
 While Triton batches these incoming requests without any delay, users can choose to allocate a limited delay for the scheduler to collect more inference requests to be used by the dynamic batcher.
 
-```
+```text proto
 dynamic_batching {
     max_queue_delay_microseconds: 100
 }
@@ -65,7 +65,7 @@ As observed from the above, the use of Dynamic Batching can lead to improvements
 
 The Triton Inference Server can spin up multiple instances of the same model, which can process queries in parallel. Triton can spawn instances on the same device (GPU), or a different device on the same node as per the user's specifications. This customizability is especially useful when considering ensembles that have models with different throughputs. Multiple copies of heavier models can be spawned on a separate GPU to allow for more parallel processing. This is enabled via the use of `instance groups` option in a model's configuration.
 
-```
+```text proto
 instance_group [
   {
     count: 2
@@ -90,13 +90,13 @@ This section showcases the use of dynamic batching and concurrent model executio
 ### Getting access to the model
 
 Let's use the `text recognition` used in part 1. We do need to make some minor changes in the model, namely making the 0th axes of the model have dynamic shape to enable batching. Step 1, download the Text Recognition model weights. Use the NGC PyTorch container as the environment for the following.
-```
+```bash
 docker run -it --gpus all -v ${PWD}:/scratch nvcr.io/nvidia/pytorch:<yy.mm>-py3
 cd /scratch
 wget https://www.dropbox.com/sh/j3xmli4di1zuv3s/AABzCC1KGbIRe2wRwa3diWKwa/None-ResNet-None-CTC.pth
 ```
 Export the models as `.onnx` using the file in the `utils` folder. This file is adapted from [Baek et. al. 2019](https://github.com/clovaai/deep-text-recognition-benchmark).
-```
+```python
 import torch
 from utils.model import STRModel
 
@@ -116,7 +116,7 @@ torch.onnx.export(model, trace_input, "str.onnx", verbose=True, dynamic_axes={'i
 ### Launching the server
 
 As discussed in `Part 1`, a model repository is a filesystem based repository of models and configuration schema used by the Triton Inference Server (refer to `Part 1` for a more detailed explanation for model repositories). For this example, the model repository structure would need to be set up in the following manner:
-```
+```text
 model_repository
 |
 |-- text_recognition
@@ -128,7 +128,7 @@ model_repository
 ```
 This repository is a subset from the previous example. The key difference in this set up is the use of `instance_group`(s) and `dynamic_batching` in the model configuration. The additions are as follows:
 
-```
+```text proto
 instance_group [
     {
       count: 2
@@ -142,7 +142,7 @@ With `instance_group` users can primarily tweak two things. First, the number of
 Adding `dynamic_batching {}` will enable the use of dynamic batches. Users can also add `preferred_batch_size` and `max_queue_delay_microseconds` in the body of dynamic batching to manage more efficient batching per their use case. Explore the [model configuration](https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md#model-configuration) documentation for more information.
 
 With the model repository set up, the Triton Inference Server can be launched.
-```
+```bash
 docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:yy.mm-py3 bash
 
 tritonserver --model-repository=/models
@@ -151,11 +151,11 @@ tritonserver --model-repository=/models
 ### Measuring Performance
 
 Having made some improvements to the model's serving capabilities by enabling `dynamic batching` and the use of `multiple model instances`, the next step is to measure the impact of these features. To that end, the Triton Inference Server comes packaged with the [Performance Analyzer](https://github.com/triton-inference-server/client/blob/main/src/c++/perf_analyzer/README.md) which is a tool specifically designed to measure performance for Triton Inference Servers. For ease of use, it is recommended that users run this inside the same container used to run client code in Part 1 of this series.
-```
+```bash
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:yy.mm-py3-sdk bash
 ```
 On a third terminal, it is advisable to monitor the GPU Utilization to see if the deployment is saturating GPU resources.
-```
+```bash
 watch -n0.1 nvidia-smi
 ```
 
@@ -163,7 +163,7 @@ To measure the performance gain, let's run performance analyzer on the following
 
 * **No Dynamic Batching, single model instance**: This configuration will be the baseline measurement. To set up the Triton Server in this configuration, do not add `instance_group` or `dynamic_batching` in `config.pbtxt` and make sure to include `--gpus=1` in the `docker run` command to set up the server.
 
-```
+```bash
 # perf_analyzer -m <model name> -b <batch size> --shape <input layer>:<input shape> --concurrency-range <lower number of request>:<higher number of request>:<step>
 
 # Query
@@ -198,7 +198,7 @@ Request concurrency: 16
 ```
 
 * **Just Dynamic Batching**: To set up the Triton Server in this configuration, add `dynamic_batching` in `config.pbtxt`.
-```
+```bash
 # Query
 perf_analyzer -m text_recognition -b 2 --shape input.1:1,32,100 --concurrency-range 2:16:2 --percentile=95
 
@@ -233,7 +233,7 @@ As each of the requests had a batch size (of 2), while the maximum batch size of
 
 * **Dynamic Batching with multiple model instances**: To set up the Triton Server in this configuration, add `instance_group` in `config.pbtxt` and make sure to include `--gpus=1` and make sure to include `--gpus=1` in the `docker run` command to set up the server. Include `dynamic_batching` per instructions of the previous section in the model configuration. A point to note is that peak GPU utilization on the GPU shot up to 74% (A100 in this case) while just using a single model instance with dynamic batching. Adding one more instance will definitely improve performance but linear perf scaling will not be achieved in this case.
 
-```
+```bash
 # Query
 perf_analyzer -m text_recognition -b 2 --shape input.1:1,32,100 --concurrency-range 2:16:2 --percentile=95
 
