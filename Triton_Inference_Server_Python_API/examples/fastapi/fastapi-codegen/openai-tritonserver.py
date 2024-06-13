@@ -165,21 +165,21 @@ def create_trtllm_inference_request(
     inputs["text_input"] = [[prompt]]
     inputs["stream"] = [[request.stream]]
     if request.max_tokens:
-        inputs["max_tokens"] = [[numpy.int32(request.max_tokens)]]
+        inputs["max_tokens"] = numpy.int32([[request.max_tokens]])
     if request.stop:
         if isinstance(request.stop, str):
             request.stop = [request.stop]
         inputs["stop_words"] = [request.stop]
     if request.top_p:
-        inputs["top_p"] = [[numpy.float32(request.top_p)]]
+        inputs["top_p"] = numpy.float32([[request.top_p]])
     if request.frequency_penalty:
-        inputs["frequency_penalty"] = [[numpy.float32(request.frequency_penalty)]]
+        inputs["frequency_penalty"] = numpy.float32([[request.frequency_penalty]])
     if request.presence_penalty:
-        inputs["presence_penalty":] = [[numpy.int32(request.presence_penalty)]]
+        inputs["presence_penalty":] = numpy.int32([[request.presence_penalty]])
     if request.seed:
-        inputs["random_seed"] = [[numpy.uint64(request.seed)]]
+        inputs["random_seed"] = numpy.uint64([[request.seed]])
     if request.temperature:
-        inputs["temperature"] = [[numpy.float32(request.temperature)]]
+        inputs["temperature"] = numpy.float32([[request.temperature]])
 
     return model.create_request(inputs=inputs)
 
