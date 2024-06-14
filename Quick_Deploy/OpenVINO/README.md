@@ -62,7 +62,7 @@ Note: This directory structure is how the Triton Inference Server can read the c
 
 ### 4. Run the Triton Inference Server
 ```
-docker run --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 -v /path/to/model_repository:/models nvcr.io/nvidia/tritonserver:24.04-py3 tritonserver --model-repository=/models 
+docker run --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:24.04-py3 tritonserver --model-repository=/models 
 ```
 
 ### 5. Download the Triton Client code `client.py` from GitHub to a place you want to run the Triton Client from.
@@ -150,7 +150,7 @@ Note: This directory structure is how the Triton Inference Server can read the c
 
 ### 4. Run the Triton Inference Server
 ```
-docker run --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 -v /path/to/model_repository:/models nvcr.io/nvidia/tritonserver:24.04-py3 tritonserver --model-repository=/models 
+docker run --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:24.04-py3 tritonserver --model-repository=/models 
 ```
 
 ### 5. In another terminal, download the Triton Client code `client.py` from GitHub to the place you want to run the Triton Client from.
@@ -160,6 +160,10 @@ wget https://raw.githubusercontent.com/triton-inference-server/tutorials/main/Qu
 
 In the `client.py` file, you’ll need to update the model input and output names to match those expected by the backend as the model is slightly different from the one in the Triton tutorial. For example, change the original input name used in the PyTorch model (input__0) to the name used by the OpenVINO backend (x).
 
+| Old Value   | New Value |
+| :-------------: | :-------------: |
+| input__0 |x |
+| output__0 |x.45 |
 
 ### 6. Run the Triton Client in the same location as the `client.py` file, install dependencies, and query the server.
 ```
@@ -245,7 +249,7 @@ Note: This directory structure is how the Triton Inference Server can read the c
 
 ### 4. Run the Triton Inference Server
 ```
-docker run --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 -v /path/to/model_repository:/models nvcr.io/nvidia/tritonserver:24.04-py3 tritonserver --model-repository=/models 
+docker run --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:24.04-py3 tritonserver --model-repository=/models 
 ```
 
 ### 5. In another terminal, download the Triton Client code `client.py` from GitHub to the place you want to run the Triton Client from.
