@@ -181,7 +181,6 @@ class TritonPythonModel:
         -------
         - pb_utils.InferenceResponse: The response object containing the generated text and additional metadata.
         """
-        response = None
         llm_request = pb_utils.InferenceRequest(
             model_name="tensorrt_llm",
             requested_output_names=["output_ids", "sequence_length"],
@@ -236,6 +235,7 @@ class TritonPythonModel:
                     ]
                 )
                 return response
+        return None
 
     def execute(self, requests):
         for request in requests:
