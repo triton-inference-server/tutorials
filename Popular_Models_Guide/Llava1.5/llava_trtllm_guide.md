@@ -172,7 +172,7 @@ Use the [launch_triton_server.py](https://github.com/triton-inference-server/ten
 ```bash
 export TRT_ENGINE_LOCATION="/engines/llava1.5/visual_encoder.engine"
 export HF_LOCATION=/llava-1.5-7b-hf
-python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=<world size of the engine> --model_repo=/opt/tritonserver/inflight_batcher_llm
+python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=<world size of the engine> --model_repo=/tutorials/Popular_Models_Guide/Llava1.5/model_repository
 ```
 > You should expect the following response:
 > ```
@@ -199,7 +199,8 @@ docker run --rm -it --net host --shm-size=2g \
     -v /path/to/tutorials:/tutorials
     nvcr.io/nvidia/tritonserver:<xx.yy>-py3-sdk
 
-python3 python multi_modal_client.py --prompt "Describe the picture." --image_url "http://images.cocodataset.org/test2017/000000155781.jpg" --max-tokens=15
+python3 multi_modal_client.py --prompt "Describe the picture." --image_url "http://i
+mages.cocodataset.org/test2017/000000155781.jpg" --max-tokens=15
 ```
 > You should expect the following response:
 > ```
