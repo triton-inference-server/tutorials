@@ -31,8 +31,6 @@ from functools import partial
 
 import numpy as np
 import tritonclient.grpc as grpcclient
-from PIL import Image
-from transformers import AutoProcessor
 from tritonclient.utils import *
 
 warnings.filterwarnings("ignore")
@@ -134,9 +132,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     user_data = UserData()
-    input_image = "image"
-    input_prompt = "prompt"
-    output_name = "features"
 
     input_text = "USER: <image>\nQuestion:" + args.prompt + " Answer:"
     image_url = np.array([args.image_url.encode("utf-8")], dtype=np.object_)
@@ -168,7 +163,7 @@ if __name__ == "__main__":
 
     with grpcclient.InferenceServerClient(url="localhost:8001") as client:
         client.start_stream(partial(callback, user_data))
-        req = client.async_stream_infer(
+        client.async_stream_infer(
             args.model_name,
             inputs,
             outputs=outputs,
