@@ -1,5 +1,6 @@
 import json
 from collections import deque
+from datetime import datetime
 
 import numpy as np
 from confluent_kafka.serialization import StringSerializer
@@ -43,20 +44,11 @@ class KafkaProducer:
             producer.poll(0.0)
             try:
                 if self.message_queue.__len__() > 0:
-                    message = self.message_queue.pop()
-                    out = dict()
-                    for output, value in message.outputs.items():
-                        out[output] = np.from_dlpack(value)
-                    json_message = message.__dict__
-                    json_message["outputs"] = out
-                    json_message["model"] = json_message["model"].__dict__
-                    json_message["model"].pop("_server", None)
-                    del message
-
                     producer.produce(
                         topic=self.topics,
+                        key=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f"),
                         value=self.serializer(
-                            json.dumps(json_message, cls=NumpyEncoder)
+                            json.dumps(self.message_queue.pop(), cls=NumpyEncoder)
                         ),
                         on_delivery=delivery_report,
                     )

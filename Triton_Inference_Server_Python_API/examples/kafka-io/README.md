@@ -100,10 +100,18 @@ OpenJDK 64-Bit Server VM (build 17.0.10+7-Ubuntu-122.04.1, mixed mode, sharing)
 Start the pipeline in the background using the following command once you have logged into the triton container
 
 ```bash
-nohup python tritonserver_deployment.py --consumer_config="{\"bootstrap.servers\": \"localhost:9092\", \"security.protocol\": \"PLAINTEXT\"}" --producer_config="{\"bootstrap.servers\": \"localhost:9092\", \"security.protocol\": \"PLAINTEXT\"}" --consumer_topics="inference-input" --producer_topic="inference-output" --model_repository="./models" &
+export CONSUMER_CONFIGS='{"bootstrap.servers": "localhost:9092", "security.protocol": "PLAINTEXT", "group.id": "triton-server-kafka-consumer"}'
+export PRODUCER_CONFIGS='{"bootstrap.servers": "localhost:9092", "security.protocol": "PLAINTEXT"}'
+export CONSUMER_TOPICS='inference-input'
+export PRODUCER_TOPIC='inference-output'
+export MODEL_INPUT_NAME='TEXT'
+export MODEL_NAME='tokenizer'
+export MODEL_REPOSITORY='./models'
+
+nohup serve run tritonserver_deployment:entrypoint &
 ```
 
-*Note: In the above command we have used Consumer and Producer to have OIDC based authentication with the Kafka brokers, these settings can be changed to meet the Kafka connection requirements based on your infrastructure.*
+*Note: In the above invocation, we are using default of 1 thread for kafka consumer, however, if you need to increase the concurrency, please set the environment variable `KAFKA_CONSUMER_MAX_WORKER_THREADS` to the desired value and restart the server. This should start the server with new concurrency of the consumer to increase the throughput of the deployment*
 
 ## Send Requests to Deployment
 

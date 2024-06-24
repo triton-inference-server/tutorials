@@ -3,6 +3,8 @@ confluent_kafka
 gcn-kafka
 jsonschema
 pandas
+ray
+ray[serve]
 torch
 transformers
 tritonclient
