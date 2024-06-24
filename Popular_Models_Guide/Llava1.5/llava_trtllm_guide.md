@@ -132,7 +132,7 @@ trtllm-build --checkpoint_dir ${UNIFIED_CKPT_PATH} \
             --max_output_len 512 \
             --max_multimodal_len 576 # 1 (max_batch_size) * 576 (num_visual_features)
 
-python /tensorrtllm_backend/tensorrt_llm/examples/multimodal/build_visual_engine.py --model_path ${HF_LLAVA_MODEL} --model_type llava --output_dir ${ENGINE_DIR}/llava1.5
+python /tensorrtllm_backend/tensorrt_llm/examples/multimodal/build_visual_engine.py --model_path ${HF_LLAVA_MODEL} --model_type llava --output_dir ${ENGINE_DIR}
 ```
 
 
@@ -171,7 +171,7 @@ python3 ${FILL_TEMPLATE_SCRIPT} -i /tutorials/Popular_Models_Guide/Llava1.5/mode
 Use the [launch_triton_server.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/release/0.5.0/scripts/launch_triton_server.py) script. This launches multiple instances of `tritonserver` with MPI.
 ```bash
 export TRT_ENGINE_LOCATION="/engines/llava1.5/visual_encoder.engine"
-export HF_LOCATION=/llava-1.5-7b-hf
+export HF_LOCATION="/llava-1.5-7b-hf"
 python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=<world size of the engine> --model_repo=/tutorials/Popular_Models_Guide/Llava1.5/model_repository
 ```
 > You should expect the following response:
@@ -199,8 +199,8 @@ docker run --rm -it --net host --shm-size=2g \
     -v /path/to/tutorials:/tutorials
     nvcr.io/nvidia/tritonserver:<xx.yy>-py3-sdk
 
-python3 multi_modal_client.py --prompt "Describe the picture." --image_url "http://i
-mages.cocodataset.org/test2017/000000155781.jpg" --max-tokens=15
+CLIENT_SCRIPT=/tutorials/Popular_Models_Guide/Llava1.5/multi_modal_client.py
+python3 ${CLIENT_SCRIPT} --prompt "Describe the picture." --image_url "http://images.cocodataset.org/test2017/000000155781.jpg" --max-tokens=15
 ```
 > You should expect the following response:
 > ```
