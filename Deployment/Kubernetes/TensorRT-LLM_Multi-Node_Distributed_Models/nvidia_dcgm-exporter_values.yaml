@@ -1,0 +1,107 @@
+# Copyright (c) 2024, NVIDIA CORPORATION. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# All values are defaults unless specified otherwise.
+
+image:
+  repository: nvcr.io/nvidia/k8s/dcgm-exporter
+  pullPolicy: IfNotPresent
+  tag: 3.3.5-3.4.1-ubuntu22.04
+
+arguments:
+ # Reduces the delay between GPU metrics collection passed to 1 second.
+- --collect-interval=1000
+- --collectors=/etc/dcgm-exporter/dcp-metrics-included.csv
+ # Required. Enables Kubernetes specific metric collection features.
+- --kubernetes=true
+
+serviceAccount:
+  create: true
+  annotations: { }
+  name:
+
+rollingUpdate:
+  maxUnavailable: 1
+  maxSurge: 0
+
+podLabels: { }
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9400"
+  # Required by Prometheus Operator for proper metrics collection.
+  release: prometheus
+podSecurityContext: { }
+
+securityContext:
+  # Enables advanced GPU metrics features. Optional.
+  privileged: true
+  runAsNonRoot: false
+  runAsUser: 0
+  capabilities:
+    add: [ "SYS_ADMIN" ]
+
+service:
+  enable: true
+  type: ClusterIP
+  port: 9400
+  address: ":9400"
+  annotations:
+    prometheus.io/port: "9400"
+    prometheus.io/scrape: "true"
+    release: prometheus
+
+resources:
+  # Sets proper resource utilization limits, and enables Kubernetes to manage the pod's resource consumption.
+  # All contains should have these.
+  limits:
+    cpu: 2
+    memory: 1Gi
+  # Sets proper resource requirements, and enables Kubernetes to account for the pod's resource consumption.
+  # All contains should have these.
+  requests:
+    cpu: 1
+    memory: 1Gi
+
+serviceMonitor:
+  enabled: true
+  # Reduces the delay between metric collection passes.
+  interval: 1s
+  honorLabels: false
+  additionalLabels:
+    # Useful for helping Prometheus identify metrics collectors.
+    monitoring: prometheus
+    # Required by Prometheus to identify metrics collectors.
+    release: prometheus
+
+nodeSelector:
+  # Ensures that DCGM Exporter process is only deployed to nodes with GPUs.
+  nvidia.com/gpu: present
+
+tolerations:
+# Enables the DCGM Exporter pods to be deployed to nodes with GPUs.
+- key: nvidia.com/gpu
+  operator: Exists
+  effect: NoSchedule
+
+affinity:
+  nodeAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    nodeSelectorTerms:
+    - matchExpressions:
+      # Ensures that DCGM Exporter process is only deployed to nodes with GPUs.
+      - key: nvidia.com/gpu
+        operator: Exists
+
+kubeletPath: "/var/lib/kubelet/pod-resources"

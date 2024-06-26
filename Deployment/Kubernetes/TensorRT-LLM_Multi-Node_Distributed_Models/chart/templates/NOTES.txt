@@ -1,0 +1,48 @@
+{{- $create_account := true }}
+{{- $create_job := true }}
+{{- $create_service := true }}
+{{- with $.Values.model }}
+{{-   if .skipConversion }}
+{{-     $create_job = false }}
+{{-   end }}
+{{- end }}
+{{- with $.Values.kubernetes }}
+{{-   if .noService }}
+{{-     $create_service = false }}
+{{-   end }}
+{{-   if .serviceAccount}}
+{{-     $create_account = false }}
+{{-   end }}
+{{- end }}
+
+{{ $.Chart.Name }} ({{ $.Chart.Version }}) installation complete.
+
+Release Name: {{ $.Release.Name }}
+Namespace: {{ $.Release.Namespace }}
+Deployment Name: {{ $.Release.Name }}
+{{- if $create_job }}
+Conversion Job: {{ $.Release.Name }}
+{{- end }}
+{{- if $create_service }}
+Service Name: {{ $.Release.Name }}
+{{- end }}
+{{- if $create_account }}
+ServiceAccount Name: {{ $.Release.Name }}
+{{- end }}
+
+Helpful commands:
+
+  $ helm status --namespace={{ $.Release.Namespace }} {{ $.Release.Name }}
+  $ helm get --namespace={{ $.Release.Namespace }} all {{ $.Release.Name }}
+  $ kubectl get --namespace={{ $.Release.Namespace }} --selector='app={{ $.Release.Name }}' deployments
+{{- if $create_job -}}
+,jobs
+{{- end -}}
+,pods
+{{- if $create_service -}}
+,services
+{{- end -}}
+,podmonitors
+{{- if $create_account -}}
+,serviceAccounts
+{{- end -}}
