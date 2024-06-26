@@ -21,6 +21,7 @@ The table below contains some popular models that are supported in our tutorials
 | [Llama-2-7B](https://huggingface.co/meta-llama/Llama-2-7b-hf/tree/main) |[TensorRT-LLM Tutorial](Popular_Models_Guide/Llama2/trtllm_guide.md) |
 | [Persimmon-8B](https://www.adept.ai/blog/persimmon-8b) | [HuggingFace Transformers Tutorial](https://github.com/triton-inference-server/tutorials/tree/main/Quick_Deploy/HuggingFaceTransformers)  |
 [Falcon-7B](https://huggingface.co/tiiuae/falcon-7b) |[HuggingFace Transformers Tutorial](https://github.com/triton-inference-server/tutorials/tree/main/Quick_Deploy/HuggingFaceTransformers)   |
+[LLaVA-v1.5-7B](https://huggingface.co/llava-hf/llava-1.5-7b-hf) | [TensorRT-LLM Tutorial](Popular_Models_Guide/Llava1.5/llava_trtllm_guide.md)
 
 **Note:**
 This is not an exhausitive list of what Triton supports, just what is included in the tutorials.

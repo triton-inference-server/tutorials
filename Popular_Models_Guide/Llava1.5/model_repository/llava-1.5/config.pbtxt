@@ -1,0 +1,83 @@
+model_transaction_policy {
+    decoupled: True
+}
+
+input [
+    {
+        name: "prompt"
+        data_type: TYPE_STRING
+        dims: [ 1 ]
+    },
+    {
+        name: "image"
+        data_type: TYPE_STRING
+        dims: [ -1 ]
+    },
+    {
+        name: "max_tokens"
+        data_type: TYPE_INT32
+        dims: [ 1 ]
+        optional: true
+    },
+    {
+        name: "temperature"
+        data_type: TYPE_FP32
+        dims: [ 1 ]
+        optional: true
+    },
+    {
+        name: "top_k"
+        data_type: TYPE_INT32
+        dims: [ 1 ]
+        optional: true
+    },
+    {
+        name: "frequency_penalty"
+        data_type: TYPE_FP32
+        dims: [ 1 ]
+        optional: true
+    },
+    {
+        name: "seed"
+        data_type: TYPE_UINT64
+        dims: [ 1 ]
+        optional: true
+    }
+]
+
+output [
+    {
+        name: "text"
+        data_type: TYPE_STRING
+        dims: [ 1 ]
+    },
+    {
+        name: "finish_reason"
+        data_type: TYPE_STRING
+        dims: [ 1 ]
+    },
+    {
+        name: "prompt_tokens"
+        data_type: TYPE_INT32
+        dims: [ 1 ]
+    },
+    {
+        name: "completion_tokens"
+        data_type: TYPE_INT32
+        dims: [ 1 ]
+    },
+    {
+        name: "total_tokens"
+        data_type: TYPE_INT32
+        dims: [ 1 ]
+    }
+]
+
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  }
+]
