@@ -77,7 +77,7 @@ instance_group [
 
 Let's take the previous example and discuss the effect of adding multiple models for parallel execution. In this example, instead of having a single model process five queries, two models are spawned. ![Multiple Model Instances](./img/multi_instance.PNG)
 
-For a "no dynamic batching" case, as there are model models to execute, the queries are distributed equally. Users can also add [priorities](https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md#priority) to prioritize or de-prioritize any specific instance group.
+For a "no dynamic batching" case, as there are two models to execute, the queries are distributed equally. Users can also add [priorities](https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md#priority) to prioritize or de-prioritize any specific instance group.
 
 When considering the case of multiple instances with dynamic batches enabled, the following happens. Owing to the availability of another instance, query `B` which arrives with some delay can be executed using the second instance. With some delay allocated, instance 1 gets filled and launched by time `T = X/2` and since queries `D` and `E` stack up to fill up to the maximum batch size, the second model can start inference without any delay.
 
