@@ -28,7 +28,7 @@
 
 # Deploying ONNX, PyTorch and TensorFlow Models with the OpenVINO Backend
 
-This README demonstrates how to deploy simple ONNX, PyTorch and TensorFlow models on Triton Inference Server using the OpenVINO backend. 
+This README demonstrates how to deploy simple ONNX, PyTorch and TensorFlow models on Triton Inference Server using the [OpenVINO backend](https://github.com/triton-inference-server/openvino_backend). 
 
 
 ## Deploying an ONNX Model
