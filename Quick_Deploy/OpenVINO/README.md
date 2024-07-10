@@ -71,6 +71,7 @@ wget https://raw.githubusercontent.com/triton-inference-server/tutorials/main/Qu
 ```
 
 ### 6. Run the Triton Client in the same location as the `client.py` file, install dependencies, and query the server
+Building a client requires three basic points. First, we setup a connection with the Triton Inference Server. Second, we specify the names of the input and output layer(s) of our model. And last, we send an inference request to the Triton Inference Server.
 ```
 docker run -it --rm --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:24.04-py3-sdk bash 
 ```
@@ -167,6 +168,7 @@ In the `client.py` file, you’ll need to update the model input and output name
 | output__0 |x.45 |
 
 ### 6. Run the Triton Client in the same location as the `client.py` file, install dependencies, and query the server.
+Building a client requires three basic points. First, we setup a connection with the Triton Inference Server. Second, we specify the names of the input and output layer(s) of our model. And last, we send an inference request to the Triton Inference Server.
 ```
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:24.04-py3-sdk bash 
 ```
@@ -259,6 +261,7 @@ wget https://raw.githubusercontent.com/triton-inference-server/tutorials/main/Qu
 ```
 
 ### 6. Run the Triton Client in the same location as the `client.py` file, install dependencies, and query the server.
+Building a client requires three basic points. First, we setup a connection with the Triton Inference Server. Second, we specify the names of the input and output layer(s) of our model. And last, we send an inference request to the Triton Inference Server.
 ```
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:24.04-py3-sdk bash 
 ```
