@@ -84,6 +84,7 @@ python3 client.py
 ```
 ['11.549026:92' '11.232335:14' '7.528014:95' '6.923391:17' '6.576575:88'] 
 ```
+The output format here is `<confidence_score>:<classification_index>`. To learn how to map these to the label names and more, refer to our [documentation](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_classification.md). The client code above is available in `client.py`.
 
 ## Deploying a PyTorch Model
 ### 1. Download and prepare the PyTorch model.
@@ -179,8 +180,8 @@ python3 client.py
 ```
 [b'6.354599:14' b'4.292510:92' b'3.886345:90' b'3.333909:136' b'3.096908:15']
 ```
+The output format here is `<confidence_score>:<classification_index>`. To learn how to map these to the label names and more, refer to our [documentation](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_classification.md). The client code above is available in `client.py`.
 
-Note: OpenVINO also has an integration into TorchServe, which enables serving PyTorch models without conversion to OpenVINO IR format. See code samples here.
 
 ## Deploying a TensorFlow Model
 ### 1. Download and prepare the TensorFlow model.
@@ -284,3 +285,4 @@ python3 client.py
 
  b'0.000001:627' b'0.000001:933' b'0.000000:661' b'0.000000:148']
 ```
+The output format here is `<confidence_score>:<classification_index>`. To learn how to map these to the label names and more, refer to our [documentation](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_classification.md). The client code above is available in `client.py`.
