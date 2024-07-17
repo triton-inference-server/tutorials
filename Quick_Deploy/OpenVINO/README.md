@@ -212,7 +212,7 @@ Run `convert.py`
 python3 convert.py 
 ```
 
-To convert your TensorFlow model, refer to Converting a TensorFlow Model
+To convert your TensorFlow model, refer to [Converting a TensorFlow Model](https://docs.openvino.ai/2024/openvino-workflow/model-preparation/convert-model-tensorflow.html)
 
 ### 2. Create a new file named `config.pbtxt`
 ```pbtxt
