@@ -47,20 +47,10 @@ In this Kafka I/O pipeline we deploy a pre-processing stage of tokenization base
 1. [Docker](https://docs.docker.com/engine/install/)
 
 ### Starting docker container
-Once you have the docker service up and running, `ssh` into the container by executing the following command
-```bash
-docker run --rm -it --entrypoint bash nvcr.io/nvidia/tritonserver:24.03-py3
-```
-
-Alternatively, if you have already downloaded the git repository into your local system, you can mount the folder to the docker image using the below command
+Once you have the docker service up and running, launch a container by executing the following command:
 
 ```bash
-docker run --rm -it -v <path>/<to>/tutorials/Triton_Inference_Server_Python_API/examples/kafka-io/:/opt/tritonserver/kafka-io --entrypoint bash nvcr.io/nvidia/tritonserver:24.03-py3
-```
-
-Once you have successfully logged into the docker container, execute
-```bash
-cd /opt/tritonserver/kafka-io
+docker run --rm -it --gpus all -v <path>/<to>/tutorials/Triton_Inference_Server_Python_API/examples/kafka-io/:/opt/tritonserver/kafka-io -w /opt/tritonserver/kafka-io  --entrypoint bash nvcr.io/nvidia/tritonserver:24.03-py3
 ```
 
 ### Clone Repository
