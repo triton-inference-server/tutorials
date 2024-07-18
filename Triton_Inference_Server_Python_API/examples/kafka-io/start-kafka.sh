@@ -28,4 +28,4 @@ echo "Successfully created topics.\nInput topic: inference-input\nOutput topic: 
 
 echo "Topic description:"
 bin/kafka-topics.sh --describe --topic inference-input --bootstrap-server localhost:9092
-bin/kafka-topics.sh --describe --topic inference-outpu --bootstrap-server localhost:9092
+bin/kafka-topics.sh --describe --topic inference-output --bootstrap-server localhost:9092
