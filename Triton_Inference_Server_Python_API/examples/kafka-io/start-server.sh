@@ -10,3 +10,4 @@ export MODEL_NAME='tokenizer'
 export MODEL_REPOSITORY='./models'
 
 nohup serve run tritonserver_deployment:entrypoint &
+tail -f nohup.out

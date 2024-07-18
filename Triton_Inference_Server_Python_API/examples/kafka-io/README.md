@@ -50,7 +50,7 @@ In this Kafka I/O pipeline we deploy a pre-processing stage of tokenization base
 Once you have the docker service up and running, launch a container by executing the following command:
 
 ```bash
-docker run --rm -it --gpus all -v <path>/<to>/tutorials/Triton_Inference_Server_Python_API/examples/kafka-io/:/opt/tritonserver/kafka-io -w /opt/tritonserver/kafka-io  --entrypoint bash nvcr.io/nvidia/tritonserver:24.03-py3
+docker run --rm -it --gpus all -v <path>/<to>/tutorials/Triton_Inference_Server_Python_API/examples/kafka-io/:/opt/tritonserver/kafka-io -w /opt/tritonserver/kafka-io  --entrypoint bash nvcr.io/nvidia/tritonserver:24.06-py3
 ```
 
 ### Clone Repository
