@@ -1,8 +1,14 @@
 #!/bin/sh
+export DEBIAN_FRONTEND=noninteractive
 
 wget https://dlcdn.apache.org/kafka/3.7.0/kafka_2.13-3.7.0.tgz
 tar -xzf kafka_2.13-3.7.0.tgz
 cd kafka_2.13-3.7.0
+
+echo "Setting up JAVA 17"
+apt-get update -q -y
+apt-get upgrade -q -y
+apt install -q -y openjdk-17-jdk openjdk-17-jre
 
 echo "Configuring brokers to localhost for kafka server"
 sed -i -e 's/#listeners=PLAINTEXT:\/\/:9092/listeners=PLAINTEXT:\/\/localhost:9092/g' config/server.properties

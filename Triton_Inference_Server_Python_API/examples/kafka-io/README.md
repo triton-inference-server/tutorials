@@ -43,16 +43,39 @@ deployment based on Kafka I/O that uses threads for each of server, consumer and
 
 In this Kafka I/O pipeline we deploy a pre-processing stage of tokenization based on `transformers` tokenization module and can be extended to any type of models as needed.
 
+### Pre-requisite
+1. [Docker](https://docs.docker.com/engine/install/)
+
+### Starting docker container
+Once you have the docker service up and running, `ssh` into the container by executing the following command
+```bash
+docker run --rm -it --entrypoint bash nvcr.io/nvidia/tritonserver:24.03-py3
+```
+
+Alternatively, if you have already downloaded the git repository into your local system, you can mount the folder to the docker image using the below command
+
+```bash
+docker run --rm -it -v <path>/<to>/tutorials/Triton_Inference_Server_Python_API/examples/kafka-io/:/opt/tritonserver/kafka-io --entrypoint bash nvcr.io/nvidia/tritonserver:24.03-py3
+```
+
+Once you have successfully logged into the docker container, execute
+```bash
+cd /opt/tritonserver/kafka-io
+```
 
 ### Clone Repository
+
 ```bash
 git clone https://github.com/triton-inference-server/tutorials.git
 cd tutorials/Triton_Inference_Server_Python_API/examples/kafka-io
 ```
 
+*Note: Skip this step if you have mounted the git repository from local directory to the docker container*
+
+
 ### Install dependencies
 
-Please note the following command will take many minutes depending on
+Please note that installation times may vary depending on
 your hardware configuration and network connection.
 
 
@@ -66,8 +89,8 @@ If triton server is not already installed, install the dependency by using the f
 pip install /opt/tritonserver/python/tritonserver-2.44.0-py3-none-any.whl
 ```
 
-In order to run kafka server, we need to download and start the kafka service, execute the below script that starts the kafka service in the background by doing the following:
-1. Download kafka
+Next run the provided `start-kafka.sh` script that will perform the following actions:
+1. Download kafka and it's dependencies
 2. Start Kafka service by starting Zookeeper and Kafka brokers
 3. Create 2 new topics with names `inference-input` as input queue and `inference-output` to store the inference results
 
@@ -76,39 +99,17 @@ chmod +x start-kafka.sh
 ./start-kafka.sh
 ```
 
-In case, you see any issues starting the server, make sure the system has java installed. If there is no java installed, please follow the instructions below to install java.
-
-```bash
-apt-get update
-apt-get upgrade
-apt install openjdk-17-jdk openjdk-17-jre
-```
-
-Once successfully installed, you should see an output similar to the output shown below
-
-```bash
-java --version
-openjdk 17.0.10 2024-01-16
-OpenJDK Runtime Environment (build 17.0.10+7-Ubuntu-122.04.1)
-OpenJDK 64-Bit Server VM (build 17.0.10+7-Ubuntu-122.04.1, mixed mode, sharing)
-```
-
 ## Starting the pipeline
 
 ### Start the inference pipeline
 
-Start the pipeline in the background using the following command once you have logged into the triton container
+Run the provided `start-server.sh` script that will perform the following actions:
+1. Export Kafka Producer and Consumer configs, topic names for input and output topics, model name and repositories.
+2. Start the server.
 
 ```bash
-export CONSUMER_CONFIGS='{"bootstrap.servers": "localhost:9092", "security.protocol": "PLAINTEXT", "group.id": "triton-server-kafka-consumer"}'
-export PRODUCER_CONFIGS='{"bootstrap.servers": "localhost:9092", "security.protocol": "PLAINTEXT"}'
-export CONSUMER_TOPICS='inference-input'
-export PRODUCER_TOPIC='inference-output'
-export MODEL_INPUT_NAME='TEXT'
-export MODEL_NAME='tokenizer'
-export MODEL_REPOSITORY='./models'
-
-nohup serve run tritonserver_deployment:entrypoint &
+chmod +x start-server.sh
+./start-server.sh
 ```
 
 *Note: In the above invocation, we are using default of 1 thread for kafka consumer, however, if you need to increase the concurrency, please set the environment variable `KAFKA_CONSUMER_MAX_WORKER_THREADS` to the desired value and restart the server. This should start the server with new concurrency of the consumer to increase the throughput of the deployment*
