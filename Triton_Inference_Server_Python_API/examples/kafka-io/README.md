@@ -102,6 +102,12 @@ chmod +x start-server.sh
 ./start-server.sh
 ```
 
+When your console outputs something similar to:
+```bash
+2024-07-18 21:55:38,254 INFO api.py:609 -- Deployed app 'default' successfully.
+```
+It means that the server has started successfully. You can press `Ctrl+C` and proceed to the next steps.
+
 *Note: In the above invocation, we are using default of 1 thread for kafka consumer, however, if you need to increase the concurrency, please set the environment variable `KAFKA_CONSUMER_MAX_WORKER_THREADS` to the desired value and restart the server. This should start the server with new concurrency of the consumer to increase the throughput of the deployment*
 
 ## Send Requests to Deployment
