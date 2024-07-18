@@ -41,7 +41,6 @@ class KafkaConsumer:
                     continue
                 if msg.error():
                     print(msg.error())
-                    # continue
                     if msg.error().code() == KafkaError._PARTITION_EOF:
                         print(
                             f"End of partition has been reached {msg.topic()}/{msg.partition()}"
