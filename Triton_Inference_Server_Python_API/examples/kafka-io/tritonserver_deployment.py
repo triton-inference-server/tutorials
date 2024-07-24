@@ -1,4 +1,3 @@
-import base64
 import json
 import os
 import threading
@@ -7,13 +6,9 @@ from pprint import pprint
 from typing import List
 
 import certifi
-import click
 import numpy as np
-import ray
 import tritonserver
-from confluent_kafka import KafkaError, KafkaException
 from fastapi import FastAPI, Request
-from gcn_kafka import Consumer, Producer
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 from tritonserver._c.triton_bindings import TRITONSERVER_DataType
@@ -169,7 +164,6 @@ class TritonKafkaEndpoint:
             json_message["outputs"] = out
             json_message["model"] = json_message["model"].__dict__
             json_message["model"].pop("_server", None)
-            del message
             result.append(json.dumps(json_message, cls=NumpyEncoder))
         return {"result": result}
 
