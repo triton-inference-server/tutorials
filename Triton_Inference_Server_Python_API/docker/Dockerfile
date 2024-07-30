@@ -25,10 +25,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ARG BASE_IMAGE=nvcr.io/nvidia/tritonserver
-ARG BASE_IMAGE_TAG=24.05-py3
+ARG BASE_IMAGE_TAG=24.06-py3
 ARG FRAMEWORK=DIFFUSION
-ARG GENAI_PERF_TAG=r24.05
-ARG TRITON_CLI_TAG="0.0.6"
 
 FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as triton-python-api
 
@@ -55,7 +53,7 @@ RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
 
 RUN pip3 install --force-reinstall --upgrade /tmp/tritonserver-2.46.0.dev0-py3-none-any.whl[all]
 
-ARG TRITON_CLI_TAG="nnshah1-default-echo"
+ARG TRITON_CLI_TAG="0.0.8"
 
 RUN pip install git+https://github.com/triton-inference-server/triton_cli.git@${TRITON_CLI_TAG}
 

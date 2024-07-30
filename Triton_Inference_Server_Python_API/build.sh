@@ -39,12 +39,12 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
 # Base Images
 BASE_IMAGE_DEFAULT=nvcr.io/nvidia/tritonserver
-BASE_IMAGE_TAG_IDENTITY=24.05-py3
-BASE_IMAGE_TAG_DIFFUSION=24.05-py3
-BASE_IMAGE_TAG_TRT_LLM=24.05-trtllm-python-py3
-BASE_IMAGE_TAG_VLLM=24.05-vllm-python-py3
+BASE_IMAGE_TAG_IDENTITY=24.06-py3
+BASE_IMAGE_TAG_DIFFUSION=24.06-py3
+BASE_IMAGE_TAG_TRT_LLM=24.06-trtllm-python-py3
+BASE_IMAGE_TAG_VLLM=24.06-vllm-python-py3
 BASE_IMAGE_PYTORCH=nvcr.io/nvidia/pytorch
-BASE_IMAGE_TAG_PYTORCH=24.05-py3
+BASE_IMAGE_TAG_PYTORCH=24.06-py3
 
 get_options() {
     while :; do
@@ -151,7 +151,7 @@ get_options() {
     fi
 
     if [ -z "$TAG" ]; then
-        TAG="triton-python-api:r24.05"
+        TAG="triton-python-api:r24.06"
 
 	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
 	    TAG+="-trt-llm"
@@ -208,7 +208,7 @@ get_options "$@"
 
 if [[ $FRAMEWORK == DIFFUSION ]]; then
     BASE_IMAGE="tritonserver"
-    BASE_IMAGE_TAG="r24.05-diffusion"
+    BASE_IMAGE_TAG="r24.06-diffusion"
 fi
 
 # BUILD RUN TIME IMAGE
