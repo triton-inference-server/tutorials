@@ -177,7 +177,7 @@ and [perf_best_practices](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/
 # preprocessing
 TOKENIZER_DIR=/Llama-2-7b-hf/
 TOKENIZER_TYPE=auto
-DECOUPLED_MODE=false
+DECOUPLED_MODE=true
 MODEL_FOLDER=/opt/tritonserver/inflight_batcher_llm
 MAX_BATCH_SIZE=4
 INSTANCE_COUNT=1
