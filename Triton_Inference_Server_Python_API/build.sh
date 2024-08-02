@@ -29,8 +29,8 @@ TAG=
 RUN_PREFIX=
 BUILD_MODELS=
 
-# Frameworks
-declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3 ["VLLM"]=4 ["PYTORCH"]=5)
+# Frameworksx
+declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3 ["VLLM"]=4)
 DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
@@ -43,8 +43,6 @@ BASE_IMAGE_TAG_IDENTITY=24.06-py3
 BASE_IMAGE_TAG_DIFFUSION=24.06-py3
 BASE_IMAGE_TAG_TRT_LLM=24.06-trtllm-python-py3
 BASE_IMAGE_TAG_VLLM=24.06-vllm-python-py3
-BASE_IMAGE_PYTORCH=nvcr.io/nvidia/pytorch
-BASE_IMAGE_TAG_PYTORCH=24.06-py3
 
 get_options() {
     while :; do
@@ -163,11 +161,6 @@ get_options() {
 
 	if [[ $FRAMEWORK == "VLLM" ]]; then
 	    TAG+="-vllm"
-	fi
-
-	if [[ $FRAMEWORK == "PYTORCH" ]]; then
-	    TAG+="-pytorch"
-	    DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile.pytorch
 	fi
 
     fi

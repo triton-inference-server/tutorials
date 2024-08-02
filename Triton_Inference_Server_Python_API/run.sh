@@ -29,7 +29,7 @@ TAG=
 RUN_PREFIX=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3 ["VLLM"]=4 ["PYTORCH"]=5)
+declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3 ["VLLM"]=4)
 DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
@@ -39,7 +39,6 @@ IMAGE=
 IMAGE_TAG_DIFFUSERS=diffusion
 IMAGE_TAG_TRT_LLM=trt-llm
 IMAGE_TAG_VLLM=vllm
-IMAGE_TAG_PYTORCH=pytorch
 
 get_options() {
     while :; do
@@ -116,9 +115,6 @@ get_options() {
 	    IMAGE+="-vllm"
 	fi
 
-	if [[ $FRAMEWORK == "PYTORCH" ]]; then
-	    IMAGE+="-pytorch"
-	fi
     fi
 
 }
