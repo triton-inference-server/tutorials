@@ -33,7 +33,7 @@ from openai_protocol_types import (
 )
 from transformers import AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast
 from transformers_utils.tokenizer import get_tokenizer
-from triton_cli.constants import SUPPORTED_BACKENDS
+SUPPORTED_BACKENDS = ["vllm", "tensorrtllm"]
 from triton_cli.parser import KNOWN_MODEL_SOURCES as KNOWN_MODELS
 
 TIMEOUT_KEEP_ALIVE = 5  # seconds
