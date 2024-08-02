@@ -53,7 +53,7 @@ repos:
   - id: codespell
     additional_dependencies: [tomli]
     args: ["--toml", "pyproject.toml"]
-    exclude: (?x)^(.*stemmer.*|.*stop_words.*|^CHANGELOG.md$)
+    exclude: (?x)^(.*stemmer.*|.*stop_words.*|^CHANGELOG.md$)||^Triton_Inference_Server_Python_API/examples/fastapi/api-spec/openai.yml$
 # More details about these pre-commit hooks here:
 # https://pre-commit.com/hooks.html
 - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -65,7 +65,7 @@ repos:
   - id: check-json
   - id: check-toml
   - id: check-yaml
-    exclude: ^Deployment/Kubernetes/[^/]+/chart/templates/.+$
+    exclude: ^Deployment/Kubernetes/[^/]+/chart/templates/.+$|^Triton_Inference_Server_Python_API/examples/fastapi/api-spec/openai.yml$
   - id: check-shebang-scripts-are-executable
   - id: end-of-file-fixer
     types_or: [c, c++, cuda, proto, textproto, java, python]
