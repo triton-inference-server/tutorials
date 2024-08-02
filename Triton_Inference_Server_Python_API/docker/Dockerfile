@@ -40,8 +40,6 @@ COPY ./deps/requirements_vllm.txt /tmp/requirements_vllm.txt
 
 COPY ./deps/requirements_python_repl.txt /tmp/requirements_python_repl.txt
 
-COPY ./deps/tritonserver-2.46.0.dev0-py3-none-any.whl /tmp/tritonserver-2.46.0.dev0-py3-none-any.whl
-
 RUN pip install --timeout=2000 -r /tmp/requirements.txt
 
 # Finish pyright install
@@ -50,8 +48,6 @@ RUN pyright --help
 
 RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
     "tritonserver-*.whl" | xargs -I {} pip3 install --force-reinstall --upgrade {}[all]
-
-RUN pip3 install --force-reinstall --upgrade /tmp/tritonserver-2.46.0.dev0-py3-none-any.whl[all]
 
 ARG TRITON_CLI_TAG="0.0.8"
 
