@@ -11,3 +11,9 @@
 **/*engine*
 **/*pytorch_model*
 **/*.pth*
+**/*.pt
+**/*.models/*
+**/*.model-store/*
+**/*.model.*/*
+**/*.cache/*
+**/*.libtorch_model_store/*

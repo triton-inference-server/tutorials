@@ -30,7 +30,7 @@ RUN_PREFIX=
 BUILD_MODELS=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
+declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3 ["VLLM"]=4)
 DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
@@ -38,10 +38,11 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
 
 # Base Images
-BASE_IMAGE=nvcr.io/nvidia/tritonserver
-BASE_IMAGE_TAG_IDENTITY=24.01-py3
-BASE_IMAGE_TAG_DIFFUSION=24.01-py3
-BASE_IMAGE_TAG_TRT_LLM=24.01-trtllm-python-py3
+BASE_IMAGE_DEFAULT=nvcr.io/nvidia/tritonserver
+BASE_IMAGE_TAG_IDENTITY=24.06-py3
+BASE_IMAGE_TAG_DIFFUSION=24.06-py3
+BASE_IMAGE_TAG_TRT_LLM=24.06-trtllm-python-py3
+BASE_IMAGE_TAG_VLLM=24.06-vllm-python-py3
 
 get_options() {
     while :; do
@@ -61,7 +62,7 @@ get_options() {
 	--build-models)
 	    BUILD_MODELS=TRUE
             ;;
-        --base)
+        --base-image)
             if [ "$2" ]; then
                 BASE_IMAGE=$2
                 shift
@@ -135,10 +136,20 @@ get_options() {
 	    BASE_IMAGE_TAG=BASE_IMAGE_TAG_${FRAMEWORK}
 	    BASE_IMAGE_TAG=${!BASE_IMAGE_TAG}
 	fi
+
+	if [ -z $BASE_IMAGE ]; then
+	    BASE_IMAGE=BASE_IMAGE_${FRAMEWORK}
+	    BASE_IMAGE=${!BASE_IMAGE}
+	fi
+
+	if [ -z $BASE_IMAGE ]; then
+	    BASE_IMAGE=${BASE_IMAGE_DEFAULT}
+	fi
+
     fi
 
     if [ -z "$TAG" ]; then
-        TAG="triton-python-api:r24.01"
+        TAG="triton-python-api:r24.06"
 
 	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
 	    TAG+="-trt-llm"
@@ -146,6 +157,10 @@ get_options() {
 
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
 	    TAG+="-diffusion"
+	fi
+
+	if [[ $FRAMEWORK == "VLLM" ]]; then
+	    TAG+="-vllm"
 	fi
 
     fi
@@ -186,7 +201,7 @@ get_options "$@"
 
 if [[ $FRAMEWORK == DIFFUSION ]]; then
     BASE_IMAGE="tritonserver"
-    BASE_IMAGE_TAG="r24.01-diffusion"
+    BASE_IMAGE_TAG="r24.06-diffusion"
 fi
 
 # BUILD RUN TIME IMAGE
@@ -208,7 +223,7 @@ if [[ $FRAMEWORK == DIFFUSION ]]; then
 	set -x
     fi
     $RUN_PREFIX mkdir -p backend/diffusion
-    $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --framework diffusion --tag tritonserver:r24.01-diffusion
+    $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --framework diffusion --tag $BASE_IMAGE:$BASE_IMAGE_TAG $NO_CACHE
     $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/backend/diffusion/model.py backend/diffusion/model.py
     $RUN_PREFIX mkdir -p diffusion-models/stable_diffusion_1_5/1
     $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/config.pbtxt  diffusion-models/stable_diffusion_1_5/config.pbtxt
@@ -231,17 +246,6 @@ $RUN_PREFIX docker build -f $DOCKERFILE $BUILD_OPTIONS $BUILD_ARGS -t $TAG $SOUR
 { set +x; } 2>/dev/null
 
 
-if [[ $FRAMEWORK == TRT_LLM ]]; then
-    if [ -z "$RUN_PREFIX" ]; then
-	set -x
-    fi
-
-    $RUN_PREFIX docker build -f $SOURCE_DIR/docker/Dockerfile.trt-llm-engine-builder  $BUILD_OPTIONS $BUILD_ARGS -t trt-llm-engine-builder  $SOURCE_DIR $NO_CACHE
-
-    { set +x; } 2>/dev/null
-
-fi;
-
 if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 
     if [[ $FRAMEWORK == DIFFUSION ]]; then
@@ -249,7 +253,7 @@ if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 	    set -x
 	fi
 
-	$RUN_PREFIX docker run --rm -it -v $PWD:/workspace $TAG /bin/bash -c "/workspace/scripts/stable_diffusion/build_models.sh --model stable_diffusion_1_5"
+	$RUN_PREFIX docker run --gpus all --rm -it -v $PWD:/workspace $TAG /bin/bash -c "/workspace/scripts/stable_diffusion/build_models.sh --model stable_diffusion_1_5"
 
 	{ set +x; } 2>/dev/null
     fi
