@@ -264,7 +264,7 @@ steps. The following script do a minimized configuration to run tritonserver,
 but if you want optimal performance or custom parameters, read details in
 [documentation](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md)
 and [perf_best_practices](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/performance/perf-best-practices.md):
-
+Note: `TRITON_BACKEND` has two possible options: `tensorrtllm` and `python`. If `TRITON_BACKEND=python`, the python backend will deploy `model.py`.
 ```bash
 # preprocessing
 TOKENIZER_DIR=/Llama-2-7b-hf/
@@ -339,7 +339,10 @@ curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "What
 > ```
 
 ### Evaluating performance with Gen-AI Perf
-Run the following command within the docker container:
+Gen-AI Perf is a command line tool for measuring the throughput and latency of generative AI models as served through an inference server.
+You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/client/src/c%2B%2B/perf_analyzer/genai-perf/README.html).
+
+To use Gen-AI Perf, run the following command in the same Triton docker container:
 ```bash
 genai-perf \
   -m ensemble \
