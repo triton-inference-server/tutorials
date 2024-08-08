@@ -338,7 +338,7 @@ curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "What
 > {"context_logits":0.0,...,"text_output":"What is ML?\nML is a branch of AI that allows computers to learn from data, identify patterns, and make predictions. It is a powerful tool that can be used in a variety of industries, including healthcare, finance, and transportation."}
 > ```
 
-### Running Gen-AI Perf
+### Evaluating performance with Gen-AI Perf
 Run the following command within the docker container:
 ```bash
 genai-perf \
