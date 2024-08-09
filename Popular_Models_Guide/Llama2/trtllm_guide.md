@@ -264,7 +264,7 @@ steps. The following script do a minimized configuration to run tritonserver,
 but if you want optimal performance or custom parameters, read details in
 [documentation](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md)
 and [perf_best_practices](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/performance/perf-best-practices.md):
-Note: `TRITON_BACKEND` has two possible options: `tensorrtllm` and `python`. If `TRITON_BACKEND=python`, the python backend will deploy `model.py`.
+Note: `TRITON_BACKEND` has two possible options: `tensorrtllm` and `python`. If `TRITON_BACKEND=python`, the python backend will deploy [`model.py`](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/all_models/inflight_batcher_llm/tensorrt_llm/1/model.py).
 ```bash
 # preprocessing
 TOKENIZER_DIR=/Llama-2-7b-hf/
