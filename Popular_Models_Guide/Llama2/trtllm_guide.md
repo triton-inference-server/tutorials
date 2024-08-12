@@ -264,22 +264,24 @@ steps. The following script do a minimized configuration to run tritonserver,
 but if you want optimal performance or custom parameters, read details in
 [documentation](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md)
 and [perf_best_practices](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/performance/perf-best-practices.md):
-
+Note: `TRITON_BACKEND` has two possible options: `tensorrtllm` and `python`. If `TRITON_BACKEND=python`, the python backend will deploy [`model.py`](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/all_models/inflight_batcher_llm/tensorrt_llm/1/model.py).
 ```bash
 # preprocessing
 TOKENIZER_DIR=/Llama-2-7b-hf/
 TOKENIZER_TYPE=auto
+ENGINE_DIR=/engines
 DECOUPLED_MODE=false
 MODEL_FOLDER=/opt/tritonserver/inflight_batcher_llm
 MAX_BATCH_SIZE=4
 INSTANCE_COUNT=1
 MAX_QUEUE_DELAY_MS=10000
+TRITON_BACKEND=tensorrtllm
 FILL_TEMPLATE_SCRIPT=/tensorrtllm_backend/tools/fill_template.py
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/preprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},preprocessing_instance_count:${INSTANCE_COUNT}
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/postprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},postprocessing_instance_count:${INSTANCE_COUNT}
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm_bls/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},bls_instance_count:${INSTANCE_COUNT}
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/ensemble/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE}
-python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},engine_dir:${ENGINE_DIR},max_queue_delay_microseconds:${MAX_QUEUE_DELAY_MS},batching_strategy:inflight_fused_batching
+python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt triton_backend:${TRITON_BACKEND},triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},engine_dir:${ENGINE_DIR},max_queue_delay_microseconds:${MAX_QUEUE_DELAY_MS},batching_strategy:inflight_fused_batching
 ```
 
 3.  Launch Tritonserver
@@ -335,6 +337,46 @@ curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "What
 > ```
 > {"context_logits":0.0,...,"text_output":"What is ML?\nML is a branch of AI that allows computers to learn from data, identify patterns, and make predictions. It is a powerful tool that can be used in a variety of industries, including healthcare, finance, and transportation."}
 > ```
+
+### Evaluating performance with Gen-AI Perf
+Gen-AI Perf is a command line tool for measuring the throughput and latency of generative AI models as served through an inference server.
+You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/client/src/c%2B%2B/perf_analyzer/genai-perf/README.html).
+
+To use Gen-AI Perf, run the following command in the same Triton docker container:
+```bash
+genai-perf \
+  -m ensemble \
+  --service-kind triton \
+  --backend tensorrtllm \
+  --num-prompts 100 \
+  --random-seed 123 \
+  --synthetic-input-tokens-mean 200 \
+  --synthetic-input-tokens-stddev 0 \
+  --output-tokens-mean 100 \
+  --output-tokens-stddev 0 \
+  --output-tokens-mean-deterministic \
+  --tokenizer hf-internal-testing/llama-tokenizer \
+  --concurrency 1 \
+  --measurement-interval 4000 \
+  --profile-export-file my_profile_export.json \
+  --url localhost:8001
+```
+You should expect an output that looks like this:
+```
+                                                  LLM Metrics
+┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┓
+┃              Statistic ┃      avg ┃      min ┃      max ┃      p99 ┃      p90 ┃      p75 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━┩
+│   Request latency (ms) │ 1,630.23 │ 1,616.37 │ 1,644.65 │ 1,644.05 │ 1,638.70 │ 1,635.64 │
+│ Output sequence length │   300.00 │   300.00 │   300.00 │   300.00 │   300.00 │   300.00 │
+│  Input sequence length │   200.00 │   200.00 │   200.00 │   200.00 │   200.00 │   200.00 │
+└────────────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
+Output token throughput (per sec): 184.02
+Request throughput (per sec): 0.61
+2024-08-08 19:45 [INFO] genai_perf.export_data.json_exporter:56 - Generating artifacts/ensemble-triton-tensorrtllm-concurrency1/profile_export_genai_perf.json
+2024-08-08 19:45 [INFO] genai_perf.export_data.csv_exporter:69 - Generating artifacts/ensemble-triton-tensorrtllm-concurrency1/profile_export_genai_perf.csv
+```
+
 
 ## References
 
