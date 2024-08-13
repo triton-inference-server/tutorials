@@ -25,13 +25,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ARG BASE_IMAGE=nvcr.io/nvidia/tritonserver
-ARG BASE_IMAGE_TAG=24.01-py3
+ARG BASE_IMAGE_TAG=24.07-py3
 
 FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as tritonserver-stable-diffusion
 
-RUN pip install --pre --upgrade --extra-index-url https://pypi.nvidia.com tensorrt==9.2.0.post12.dev5
+RUN pip install --pre --upgrade --extra-index-url https://pypi.nvidia.com tensorrt==10.2.0.post1
 
-RUN git clone https://github.com/NVIDIA/TensorRT.git -b release/9.2 --single-branch /tmp/TensorRT
+RUN git clone https://github.com/NVIDIA/TensorRT.git -b release/10.2 --single-branch /tmp/TensorRT
 
 RUN pip3 install -r /tmp/TensorRT/demo/Diffusion/requirements.txt
 
