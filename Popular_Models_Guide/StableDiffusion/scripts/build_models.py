@@ -43,6 +43,10 @@ if __name__ == "__main__":
     server = tritonserver.Server(
         model_repository=args.model_repository,
         model_control_mode=tritonserver.ModelControlMode.EXPLICIT,
+        log_verbose=True,
+        log_info=True,
+        log_warn=True,
+        log_error=True,
     )
 
     server.start(wait_until_ready=True)
