@@ -1,0 +1,22 @@
+input [
+  {
+    name: "image"
+    data_type: TYPE_FP16
+    dims: [ -1, 3, 336, 336 ]
+  }
+]
+output [
+  {
+    name: "features"
+    data_type: TYPE_FP16
+    dims: [ 576 , -1]
+  }
+]
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  }
+]

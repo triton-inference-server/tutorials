@@ -1,0 +1,10 @@
+click==8.1.7
+confluent_kafka==2.5.0
+gcn-kafka==0.3.3
+jsonschema==4.23.0
+pandas==2.2.2
+ray==2.32.0
+ray[serve]==2.32.0
+torch==2.3.1
+transformers==4.42.4
+tritonclient==2.47.0

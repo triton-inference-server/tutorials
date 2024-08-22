@@ -39,4 +39,4 @@ Conceptual guides have been designed as an onboarding experience to Triton Infer
 * [Part 4: Accelerating Models](Part_4-inference_acceleration/): Another path towards achieving higher throughput is to accelerate the underlying models. This guide covers SDKs and tools which can be used to accelerate the models.
 * [Part 5: Building Model Ensembles](./Part_5-Model_Ensembles/): Models are rarely used standalone. This guide will cover "how to build a deep learning inference pipeline?"
 * [Part 6: Using the BLS API to build complex pipelines](Part_6-building_complex_pipelines/): Often times there are scenarios where the pipeline requires control flows. Learn how to work with complex pipelines with models deployed on different backends.
-
+* [Part 7: Iterative Scheduling Tutorial](./Part_7-iterative_scheduling): Shows how to use the Triton Iterative Scheduler with a GPT2 model using HuggingFace Transformers.

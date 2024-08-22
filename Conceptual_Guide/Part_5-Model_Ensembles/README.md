@@ -316,7 +316,7 @@ ensemble_scheduling {
 We'll again be launching Triton using docker containers. This time, we'll start an interactive session within the container instead of directly launching the triton server.
 
 ```bash
-docker run --gpus=all -it --shm-size=256m --rm  \
+docker run --gpus=all -it --shm-size=1G --rm  \
   -p8000:8000 -p8001:8001 -p8002:8002 \
   -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models \
   nvcr.io/nvidia/tritonserver:22.12-py3

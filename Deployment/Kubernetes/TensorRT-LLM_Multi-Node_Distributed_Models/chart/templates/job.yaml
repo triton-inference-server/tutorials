@@ -1,0 +1,227 @@
+# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
+#
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+{{- $skip_conversion := false }}
+{{- with $.Values.model }}
+{{-   with .skipConversion }}
+{{-     $skip_conversion = . }}
+{{-   end }}
+{{- end }}
+{{- if not $skip_conversion }}
+{{-   $hostRootPath := "/triton" }}
+{{-   $image_name := "" }}
+{{-   with $.Values.triton }}
+{{-     with .image }}
+{{-       $image_name = required "Property '.triton.image.name' is required." .name }}
+{{-     else }}
+{{-       fail "Property '.triton.image' is required." }}
+{{-     end }}
+{{-   else }}
+{{-    fail "Property '.triton' is required" }}
+{{-   end }}
+{{-   $model_name := "" }}
+{{-   $model_dt := "float16" }}
+{{-   $model_pp := 1 }}
+{{-   $model_tp := 1 }}
+{{-   with $.Values.kubernetes }}
+{{-     with .hostRootPath }}
+{{-       $hostRootPath = . }}
+{{-     end }}
+{{-   end }}
+{{-   with $.Values.model }}
+{{-     $model_name = required "Property '.model.name' is required." .name }}
+{{-     with .tensorrtLlm }}
+{{-       with .dataType }}
+{{-         $model_dt = . }}
+{{-       end }}
+{{-       with .parallelism }}
+{{-         with .pipeline }}
+{{-           $model_pp = (int .) }}
+{{-         end }}
+{{-         with .tensor }}
+{{-           $model_tp = (int .) }}
+{{-         end }}
+{{-       end }}
+{{-     end }}
+{{-   else }}
+{{-     fail "Property '.model' is required." }}
+{{-   end }}
+{{-   $model_lower := lower $model_name }}
+{{-   $model_upper := upper $model_name }}
+{{-   $pod_count := mul $model_pp $model_tp }}
+{{-   $model_cpu := 4 }}
+{{-   $model_gpu := 1 }}
+{{-   $model_memory := "32Gi" }}
+{{-   with $.Values.triton }}
+{{-     with .image }}
+{{-       with .name }}
+{{-         $image_name = . }}
+{{-       end }}
+{{-     end }}
+{{-   end }}
+{{-   with $.Values.model }}
+{{-     with .tensorrtLlm }}
+{{-       with .conversion }}
+{{-         with .cpu }}
+{{-           $model_cpu = . }}
+{{-         end }}
+{{-         with .gpu }}
+{{-           $model_gpu = (int .) }}
+{{-         end}}
+{{-         with .memory }}
+{{-           $model_memory = . }}
+{{-         end }}
+{{-       end }}
+{{-     end }}
+{{-   end }}
+{{-   $engine_path := printf "/var/run/models/%s/%dx%d/engine" $model_lower (int $model_pp) (int $model_tp) }}
+{{-   $model_path := printf "/var/run/models/%s/%dx%d/model" $model_lower (int $model_pp) (int $model_tp) }}
+{{-   $hf_verbosity := "error" }}
+{{-   with $.Values.logging }}
+{{-     with .initialization }}
+{{-       if .verbose }}
+{{-         $hf_verbosity = "info" }}
+{{-       end }}
+{{-     end }}
+{{-   end }}
+{{-   $service_account := $.Release.Name }}
+{{-   with $.Values.kubernetes }}
+{{-     with .serviceAccount }}
+{{-       $service_account = . }}
+{{-     end }}
+{{-   end }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: {{ $.Release.Name }}
+{{-   with $.Values.kubernetes }}
+{{-     with .labels }}
+{{        toYaml . | indent 4 }}
+{{-     end }}
+{{-   end }}
+  name: {{ $.Release.Name }}
+spec:
+  backoffLimit: 4
+  template:
+    metadata:
+      labels:
+        app: {{ $.Release.Name }}-converter
+{{-   with $.Values.kubernetes }}
+{{-     with .labels }}
+{{        toYaml . | indent 8 }}
+{{-     end }}
+{{-   end }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu
+                operator: Exists
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - {{ required "Property '.gpu' is required." $.Values.gpu }}
+      containers:
+      - name: converter
+        command:
+        - python3
+        - ./server.py
+        - convert
+        - --model={{ $model_lower }}
+        - --dt={{ $model_dt }}
+        - --pp={{ $model_pp }}
+        - --tp={{ $model_tp }}
+        - --multinode
+{{-   with $.Values.logging }}
+{{-     with .initialization }}
+{{-       if .verbose }}
+        - --verbose
+{{-       end }}
+{{-     end }}
+{{-   end }}
+        env:
+        - name: ENGINE_DEST_PATH
+          value: {{ $engine_path }}
+        - name: HF_HOME
+          value: /var/run/models/hugging_face
+        - name: HF_HUB_VERBOSITY
+          value: {{ $hf_verbosity }}
+        - name: MODEL_DEST_PATH
+          value: {{ $model_path }}
+{{-   with $.Values.logging }}
+{{-     with .initialization }}
+{{-       if .verbose }}
+        - name: NCCL_DEBUG
+          value: INFO
+{{-       end }}
+{{-     end }}
+{{-   end }}
+        image: {{ $image_name }}
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: {{ $model_cpu }}
+            ephemeral-storage: 32Gi
+            memory: {{ $model_memory }}
+            nvidia.com/gpu: {{ $model_gpu }}
+          requests:
+            cpu: {{ $model_cpu }}
+            ephemeral-storage: 32Gi
+            memory: {{ $model_memory }}
+            nvidia.com/gpu: {{ $model_gpu }}
+        securityContext:
+          readOnlyRootFilesystem: false
+          runAsGroup: 0
+          runAsUser: 0
+        volumeMounts:
+{{-   with $.Values.model }}
+{{-     if .pullSecret }}
+        - mountPath: /var/run/secrets/hugging_face
+          name: hf-secret
+          readOnly: true
+{{-     end }}
+{{-   end }}
+        - mountPath: /var/run/models
+          name: model-repository
+          readOnly: false
+{{-   with $.Values.triton }}
+{{-     with .image }}
+{{-       with .pullSecrets }}
+      imagePullSecrets:
+{{          toYaml . | indent 6 }}
+{{-       end }}
+{{-     end }}
+{{-   end }}
+      restartPolicy: Never
+      serviceAccountName: {{ $service_account }}
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Exists
+{{-   with $.Values.kubernetes }}
+{{-     with .tolerations }}
+{{        toYaml . | indent 6 }}
+{{-     end }}
+{{-   end }}
+      volumes:
+{{-   with $.Values.model }}
+{{-     with .pullSecret }}
+      - name: hf-secret
+        secret:
+          secretName: {{ . }}
+{{-     end }}
+{{-   end }}
+      - name: model-repository
+        persistentVolumeClaim:
+          claimName: {{ $.Values.model.persistentVolumeClaim }}
+          readOnly: false
+{{- end }}
