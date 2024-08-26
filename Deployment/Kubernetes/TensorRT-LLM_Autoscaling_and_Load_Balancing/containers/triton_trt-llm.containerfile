@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG BASE_CONTAINER_IMAGE=nvcr.io/nvidia/tritonserver:24.04-trtllm-python-py3
+ARG BASE_CONTAINER_IMAGE=gitlab-master.nvidia.com:5005/dl/dgx/tritonserver:24.07-trtllm-python-py3-stage
 ARG ENGINE_DEST_PATH=/var/run/engines
 ARG HF_HOME=/var/run/cache
 
@@ -42,7 +42,7 @@ RUN pip --verbose install \
     --no-cache-dir \
     --no-color \
     --no-input \
-    git+https://github.com/triton-inference-server/triton_cli.git@jwyman/aslb-mn
+    git+https://github.com/triton-inference-server/triton_cli.git@ibhosale/aslb-mn
 
 # Copy the server script.
 COPY server.py .
