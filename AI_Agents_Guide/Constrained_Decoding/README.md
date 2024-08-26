@@ -107,55 +107,103 @@ docker run --rm -it --net host --shm-size=2g \
 ```
 ### Example 1
 
+For fine-tuned model we can enable JSON mode by simply composing a system prompt
+as:
+
+```
+You are a helpful assistant that answers in JSON.
+```
+Please, refer to [`client.py`](./artifacts/client.py) for full `prompt`
+composition logic.
+
 ```bash
-python3 client.py --prompt "Give me information about Harry Potter and the Order of Phoenix" -o 200
+python3 artifacts/client.py --prompt "Give me information about Harry Potter and the Order of Phoenix" -o 200
 ```
 You should expect the following response:
 
-> ```
-> ...
->assistant
->{
->  "title": "Harry Potter and the Order of Phoenix",
->  "book_number": 5,
->  "author": "J.K. Rowling",
->  "series": "Harry Potter",
->  "publication_date": "June 21, 2003",
->  "page_count": 766,
->  "publisher": "Arthur A. Levine Books",
->  "genre": [
->    "Fantasy",
->    "Adventure",
->    "Young Adult"
->  ],
->  "awards": [
->    {
->      "award_name": "British Book Award",
->      "category": "Children's Book of the Year",
->      "year": 2004
->    }
->  ],
->  "plot_summary": "Harry Potter and the Order of Phoenix is the fifth book in the Harry Potter series. In this installment, Harry returns to Hogwarts School of Witchcraft and Wizardry for his fifth year. The Ministry of Magic is in denial about the return of Lord Voldemort, and Harry finds himself battling against the
->
-> ``
+ ```
+ ...
+assistant
+{
+  "title": "Harry Potter and the Order of Phoenix",
+  "book_number": 5,
+  "author": "J.K. Rowling",
+  "series": "Harry Potter",
+  "publication_date": "June 21, 2003",
+  "page_count": 766,
+  "publisher": "Arthur A. Levine Books",
+  "genre": [
+    "Fantasy",
+    "Adventure",
+    "Young Adult"
+  ],
+  "awards": [
+    {
+      "award_name": "British Book Award",
+      "category": "Children's Book of the Year",
+      "year": 2004
+    }
+  ],
+  "plot_summary": "Harry Potter and the Order of Phoenix is the fifth book in the Harry Potter series. In this installment, Harry returns to Hogwarts School of Witchcraft and Wizardry for his fifth year. The Ministry of Magic is in denial about the return of Lord Voldemort, and Harry finds himself battling against the
+
+```
 
 ### Example 2
 
+Optionally, we can also restrict an output to a specific schema. For example,
+in [`client.py`](./artifacts/client.py) we use a `pydentic` library to define the
+following answer format:
+
+```python
+from pydantic import BaseModel
+
+class AnswerFormat(BaseModel):
+    title: str
+    year: int
+    director: str
+    producer: str
+    plot: str
+
+...
+
+prompt += "Here's the json schema you must adhere to:\n<schema>\n{schema}\n</schema>".format(
+                schema=AnswerFormat.model_json_schema())
+
+```
+
 ```bash
-python3 client.py --prompt "Give me information about Harry Potter and the Order of Phoenix" -o 200 --use-schema
+python3 artifacts/client.py --prompt "Give me information about Harry Potter and the Order of Phoenix" -o 200 --use-schema
 ```
 You should expect the following response:
 
-> ```
-> ...
->assistant
->{
->  "title": "Harry Potter and the Order of Phoenix",
->  "year": 2007,
->  "director": "David Yates",
->  "producer": "David Heyman",
->  "plot": "Harry Potter and his friends must protect Hogwarts from a threat when the Ministry of Magic is taken over by Lord Voldemort's followers."
->}
->
->
-> ``
+```
+ ...
+assistant
+{
+  "title": "Harry Potter and the Order of Phoenix",
+  "year": 2007,
+  "director": "David Yates",
+  "producer": "David Heyman",
+  "plot": "Harry Potter and his friends must protect Hogwarts from a threat when the Ministry of Magic is taken over by Lord Voldemort's followers."
+}
+
+```
+
+## Enforcig Output Format via External Libraries
+
+```diff
+...
+
+executor_config = self.get_executor_config(model_config)
++ tokenizer_dir = model_config['parameters']['tokenizer_dir']['string_value']
++ logits_lmfe_processor_answer_format = LMFELogitsProcessor(tokenizer_dir, AnswerFormat.model_json_schema())
++ executor_config.logits_post_processor_map = {
++            str(LMFELogitsProcessor.PROCESSOR_NAME"): logits_lmfe_processor_answer_format
++           }
+self.executor = trtllm.Executor(gpt_model_path,
+                                trtllm.ModelType.DECODER_ONLY,
+                                executor_config)
+...
+```
+
+
