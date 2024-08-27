@@ -179,6 +179,7 @@ prompt += "Here's the json schema you must adhere to:\n<schema>\n{schema}\n</sch
                 schema=AnswerFormat.model_json_schema())
 
 ```
+Let's try it out:
 
 ```bash
 python3 /tutorials/AI_Agents_Guide/Constrained_Decoding/artifacts/client.py --prompt "Give me information about Harry Potter and the Order of Phoenix" -o 200 --use-system-prompt --use-schema
