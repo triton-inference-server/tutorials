@@ -86,7 +86,10 @@ class OutlinesLogitsProcessor:
         seq_id = hash(tuple(ids[0]))
         # If the prefix token IDs have changed we assume that we are dealing with a new
         # sample and reset the FSM state
-        if ids[0][: len(self._prefix)] != self._prefix:
+        if (
+            ids[0][: len(self._prefix)] != self._prefix
+            or len(ids[0][len(self._prefix) :]) == 0
+        ):
             self._fsm_state = defaultdict(int)
             self._prefix = ids[0]
             seq_id = hash(tuple([]))

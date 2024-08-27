@@ -102,7 +102,7 @@ First, let's start Triton SDK container:
 # Using the SDK container as an example
 docker run --rm -it --net host --shm-size=2g \
     --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
-    -v /path/to/tensorrtllm_backend/inflight_batcher_llm/client:/tensorrtllm_client \
+    -v /path/to/tutorials:/tutorials \
     -v /path/to/Hermes-2-Pro-Llama-3-8B/repo:/Hermes-2-Pro-Llama-3-8B \
     nvcr.io/nvidia/tritonserver:<xx.yy>-py3-sdk
 ```
@@ -126,7 +126,7 @@ Please, refer to [`client.py`](./artifacts/client.py) for full `prompt`
 composition logic.
 
 ```bash
-python3 artifacts/client.py --prompt "Give me information about Harry Potter and the Order of Phoenix" -o 200 --use-system-prompt
+python3 /tutorials/AI_Agents_Guide/Constrained_Decoding/artifacts/client.py --prompt "Give me information about Harry Potter and the Order of Phoenix" -o 200 --use-system-prompt
 ```
 You should expect the following response:
 
@@ -181,7 +181,7 @@ prompt += "Here's the json schema you must adhere to:\n<schema>\n{schema}\n</sch
 ```
 
 ```bash
-python3 artifacts/client.py --prompt "Give me information about Harry Potter and the Order of Phoenix" -o 200 --use-system-prompt --use-schema
+python3 /tutorials/AI_Agents_Guide/Constrained_Decoding/artifacts/client.py --prompt "Give me information about Harry Potter and the Order of Phoenix" -o 200 --use-system-prompt --use-schema
 ```
 You should expect the following response:
 
@@ -503,7 +503,7 @@ First, let's start Triton SDK container:
 # Using the SDK container as an example
 docker run --rm -it --net host --shm-size=2g \
     --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
-    -v /path/to/tensorrtllm_backend/inflight_batcher_llm/client:/tensorrtllm_client \
+    -v /path/to/tutorials/:/tutorials \
     -v /path/to/tutorials/repo:/tutorials \
     nvcr.io/nvidia/tritonserver:<xx.yy>-py3-sdk
 ```
@@ -519,7 +519,7 @@ pip install pydantic
 
 Let's first send a standard request, without enforcing the JSON answer format:
 ```bash
-python3 artifacts/client.py --prompt "Who is Harry Potter?" -o 100
+python3 /tutorials/AI_Agents_Guide/Constrained_Decoding/artifacts/client.py --prompt "Who is Harry Potter?" -o 100
 ```
 
 You should expect the following response:
@@ -531,7 +531,7 @@ Who is Harry Potter? Harry Potter is a fictional character in a series of fantas
 Now, let's specify `logits_post_processor_name`  in our request:
 
 ```bash
-python3 artifacts/client.py --prompt "Who is Harry Potter?" -o 100 --logits-post-processor-name "lmfe"
+python3 /tutorials/AI_Agents_Guide/Constrained_Decoding/artifacts/client.py --prompt "Who is Harry Potter?" -o 100 --logits-post-processor-name "lmfe"
 ```
 
 This time, the expected response looks like:
@@ -576,4 +576,125 @@ curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "Who 
 This time, the expected response looks like:
 ```bash
 {"context_logits":0.0,...,"text_output":"Who is Harry Potter?  \t\t\t\n\t\t{\n\t\t\t\"name\": \"Harry Potter\",\n\t\t\t\"occupation\": \"Wizard\",\n\t\t\t\"house\": \"Gryffindor\",\n\t\t\t\"wand\": {\n\t\t\t\t\"wood\": \"Holly\",\n\t\t\t\t\"core\": \"Phoenix feather\",\n\t\t\t\t\"length\": 11\n\t\t\t},\n\t\t\t\"blood_status\": \"Pure-blood\",\n\t\t\t\"alive\": \"Yes\"\n\t\t}\n\n\t\t\n\n\n\n\t\t\n"}
+```
+
+### Outlines
+
+To use Outlines, make sure
+`inflight_batcher_llm/tensorrt_llm/1/model.py` contains the following changes:
+
+```diff
+...
+import tensorrt_llm.bindings.executor as trtllm
+
++ from lib.utils import OutlinesLogitsProcessor, AnswerFormat
+
+...
+
+class TritonPythonModel:
+    """Your Python model must use the same class name. Every Python model
+    that is created must have "TritonPythonModel" as the class name.
+    """
+    ...
+
+    def get_executor_config(self, model_config):
++       tokenizer_dir = model_config['parameters']['tokenizer_dir']['string_value']
++       logits_lmfe_processor = OutlinesLogitsProcessor(tokenizer_dir, AnswerFormat.model_json_schema())
+        kwargs = {
+            "max_beam_width":
+            get_parameter(model_config, "max_beam_width", int),
+            "scheduler_config":
+            self.get_scheduler_config(model_config),
+            "kv_cache_config":
+            self.get_kv_cache_config(model_config),
+            "enable_chunked_context":
+            get_parameter(model_config, "enable_chunked_context", bool),
+            "normalize_log_probs":
+            get_parameter(model_config, "normalize_log_probs", bool),
+            "batching_type":
+            convert_batching_type(get_parameter(model_config,
+                                                "gpt_model_type")),
+            "parallel_config":
+            self.get_parallel_config(model_config),
+            "peft_cache_config":
+            self.get_peft_cache_config(model_config),
+            "decoding_config":
+            self.get_decoding_config(model_config),
++            "logits_post_processor_map":{
++                OutlinesLogitsProcessor.PROCESSOR_NAME: logits_lmfe_processor
++            }
+        }
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
+        return trtllm.ExecutorConfig(**kwargs)
+...
+```
+
+#### Send an inference request
+
+First, let's start Triton SDK container:
+```bash
+# Using the SDK container as an example
+docker run --rm -it --net host --shm-size=2g \
+    --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
+    -v /path/to/tutorials/:/tutorials \
+    -v /path/to/tutorials/repo:/tutorials \
+    nvcr.io/nvidia/tritonserver:<xx.yy>-py3-sdk
+```
+
+The provided client script uses `pydantic` library, which we do not ship with
+the sdk container. Make sure to install it, before proceeding:
+
+```bash
+pip install pydantic
+```
+
+##### Option 1. Use provided [client script](./artifacts/client.py)
+
+Let's first send a standard request, without enforcing the JSON answer format:
+```bash
+python3 /tutorials/AI_Agents_Guide/Constrained_Decoding/artifacts/client.py --prompt "Who is Harry Potter?" -o 100
+```
+
+You should expect the following response:
+
+```bash
+Who is Harry Potter? Harry Potter is a fictional character in a series of fantasy novels written by British author J.K. Rowling. The novels chronicle the lives of a young wizard, Harry Potter, and his friends Hermione Granger and Ron Weasley, all of whom are students at Hogwarts School of Witchcraft and Wizardry. The main story arc concerns Harry's struggle against Lord Voldemort, a dark wizard who intends to become immortal, overthrow the wizard governing body known as the Ministry of Magic and subjugate all wizards and
+```
+
+Now, let's specify `logits_post_processor_name`  in our request:
+
+```bash
+python3 /tutorials/AI_Agents_Guide/Constrained_Decoding/artifacts/client.py --prompt "Who is Harry Potter?" -o 100 --logits-post-processor-name "outlines"
+```
+
+This time, the expected response looks like:
+```bash
+Who is Harry Potter?{ "name": "Harry Potter","house": "Gryffindor","blood_status": "Pure-blood","occupation": "Wizards","alive": "No","wand": {"wood": "Holly","core": "Phoenix feather","length": 11 }}
+```
+As we can see, the schema, defined in [`utils.py`](./artifacts/utils.py) is
+respected. Note, LM Format Enforcer lets LLM to control the order of generated
+fields, thus re-ordering of fields is allowed.
+
+##### Option 2. Use [generate endpoint](https://github.com/triton-inference-server/tensorrtllm_backend/tree/release/0.5.0#query-the-server-with-the-triton-generate-endpoint).
+
+Let's first send a standard request, without enforcing the JSON answer format:
+```bash
+curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "Who is Harry Potter?", "max_tokens": 100, "bad_words": "", "stop_words": "", "pad_id": 2, "end_id": 2}'
+```
+
+You should expect the following response:
+
+```bash
+{"context_logits":0.0,...,"text_output":"Who is Harry Potter? Harry Potter is a fictional character in a series of fantasy novels written by British author J.K. Rowling. The novels chronicle the lives of a young wizard, Harry Potter, and his friends Hermione Granger and Ron Weasley, all of whom are students at Hogwarts School of Witchcraft and Wizardry. The main story arc concerns Harry's struggle against Lord Voldemort, a dark wizard who intends to become immortal, overthrow the wizard governing body known as the Ministry of Magic and subjugate all wizards and"}
+```
+
+Now, let's specify `logits_post_processor_name`  in our request:
+
+```bash
+curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "Who is Harry Potter?", "max_tokens": 100, "bad_words": "", "stop_words": "", "pad_id": 2, "end_id": 2, "logits_post_processor_name": "outlines"}'
+```
+
+This time, the expected response looks like:
+```bash
+{"context_logits":0.0,...,"text_output":"Who is Harry Potter?{ \"name\": \"Harry Potter\",\"house\": \"Gryffindor\",\"blood_status\": \"Pure-blood\",\"occupation\": \"Wizards\",\"alive\": \"No\",\"wand\": {\"wood\": \"Holly\",\"core\": \"Phoenix feather\",\"length\": 11 }}"}
 ```
