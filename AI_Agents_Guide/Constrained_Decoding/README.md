@@ -36,16 +36,17 @@ expensive to achieve solely through fine-tuning.
 ## Table of Contents
 
 - [Introduction to Constrained Decoding](#introduction-to-constrained-decoding)
+- [Prerequisite: Hermes-2-Pro-Llama-3-8B](#prerequisite-hermes-2-pro-llama-3-8b)
 - [Structured Generation via Prompt Engineering](#structured-generation-via-prompt-engineering)
+    * [Example 1](#example-1)
+    * [Example 2](#example-2)
 - [Enforcig Output Format via External Libraries](#enforcig-output-format-via-external-libraries)
+    * [Pre-requisite: Common set-up](#pre-requisite-common-set-up)
+        + [Logits Post-Processor](#logits-post-processor)
+        + [Tokenizer](#tokenizer)
+        + [Repository set up](#repository-set-up)
     * [LM Format Enforcer](#lm-format-enforcer)
     * [Outlines](#outlines)
-
-## Pre-requisites
-
-In this tutorial we'll use the [Hermes-2-Pro-Llama-3-8B.](https://huggingface.co/NousResearch/Hermes-2-Pro-Llama-3-8B)
-Please, follow the [Deploying Hermes-2-Pro-Llama-3-8B Model with Triton Inference Server](../../Popular_Models_Guide/Hermes-2-Pro-Llama-3-8B/README.md)
-tutorial to prepare the set up, needed for this tutorial.
 
 ## Introduction to Constrained Decoding
 
@@ -92,8 +93,9 @@ in your workflow.
 ## Prerequisite: Hermes-2-Pro-Llama-3-8B
 
 Before proceeding, please make sure that you've successfully deployed
-Hermes-2-Pro-Llama-3-8B model with Triton Inference Server and
-TensorRT-LLM backend following [these steps](../../Popular_Models_Guide/Hermes-2-Pro-Llama-3-8B/README.md)
+[Hermes-2-Pro-Llama-3-8B.](https://huggingface.co/NousResearch/Hermes-2-Pro-Llama-3-8B)
+model with Triton Inference Server and TensorRT-LLM backend
+following [these steps.](../../Popular_Models_Guide/Hermes-2-Pro-Llama-3-8B/README.md)
 
 ## Structured Generation via Prompt Engineering
 
