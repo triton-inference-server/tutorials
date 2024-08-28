@@ -202,7 +202,7 @@ First, let's start Triton SDK container:
 docker run --rm -it --net host --shm-size=2g \
     --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
     -v /path/to/tensorrtllm_backend/inflight_batcher_llm/client:/tensorrtllm_client \
-    -v /path/to/Hermes-2-Pro-Llama-3-8B/repo:/Llama-2-7b-hf \
+    -v /path/to/Hermes-2-Pro-Llama-3-8B/repo:/Hermes-2-Pro-Llama-3-8B \
     nvcr.io/nvidia/tritonserver:<xx.yy>-py3-sdk
 ```
 
