@@ -355,7 +355,7 @@ genai-perf \
   --output-tokens-mean 100 \
   --output-tokens-stddev 0 \
   --output-tokens-mean-deterministic \
-  --tokenizer hf-internal-testing/llama-tokenizer \
+  --tokenizer /Llama-2-7b-hf/ \
   --concurrency 1 \
   --measurement-interval 4000 \
   --profile-export-file my_profile_export.json \
