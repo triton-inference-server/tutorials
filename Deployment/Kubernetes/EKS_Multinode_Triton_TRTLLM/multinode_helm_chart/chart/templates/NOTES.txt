@@ -1,0 +1,25 @@
+{{ $.Chart.Name }} ({{ $.Chart.Version }}) installation complete.
+
+Release Name: {{ $.Release.Name }}
+Namespace: {{ $.Release.Namespace }}
+Deployment Name: {{ $.Release.Name }}
+{{- if not $.Values.kubernetes.noService }}
+Service Name: {{ $.Release.Name }}
+{{- end }}
+{{- if $.Values.kubernetes.serviceAccount }}
+ServiceAccount Name: {{ $.Release.Name }}
+{{- end }}
+
+Helpful commands:
+
+  $ helm status --namespace={{ $.Release.Namespace }} {{ $.Release.Name }}
+  $ helm get --namespace={{ $.Release.Namespace }} all {{ $.Release.Name }}
+  $ kubectl get --namespace={{ $.Release.Namespace }} --selector='app={{ $.Release.Name }}' deployments
+,pods
+{{- if not $.Values.kubernetes.noService -}}
+,services
+{{- end -}}
+,podmonitors
+{{- if $.Values.kubernetes.serviceAccount -}}
+,serviceAccounts
+{{- end -}}
