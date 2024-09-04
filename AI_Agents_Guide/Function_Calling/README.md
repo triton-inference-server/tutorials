@@ -37,8 +37,11 @@ significantly expanding their capabilities and practical applications.
 ## Table of Contents
 
 - [What is Function Calling?](#what-is-function-calling)
-- [Prerequisite: Hermes-2-Pro-Llama-3-8B](#prerequisite-hermes-2-pro-llama-3-8b)
-- [Function Calling via Prompt Engineering](#function-calling-via-prompt-engineering)
+- [Tutorial Overview](#tutorial-overview)
+    + [ Prerequisite: Hermes-2-Pro-Llama-3-8B](#prerequisite-hermes-2-pro-llama-3-8b)
+- [Function Definitions](#function-definitions)
+- [Prompt Engineering](#prompt-engineering)
+- [Combining Everything Together](#combining-everything-together)
 
 ## What is Function Calling?
 
@@ -75,7 +78,7 @@ following [these steps.](../../Popular_Models_Guide/Hermes-2-Pro-Llama-3-8B/READ
 > Make sure that the `tutorials` folder is mounted to `/tutorials`, when you
 > start the docker container.
 
-## Function definitions
+## Function Definitions
 
 We'll define three functions for our stock reporting agent:
     1. `get_current_stock_price`
@@ -156,7 +159,7 @@ By leveraging prompt engineering, you can enhance the LLM's ability
 to perform complex tasks and integrate function calls seamlessly into
 its responses, thereby maximizing its utility in various applications.
 
-## Combining everything together
+## Combining Everything Together
 
 First, let's start Triton SDK container:
 ```bash
