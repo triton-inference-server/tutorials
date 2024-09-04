@@ -163,7 +163,7 @@ MODEL_FOLDER=/opt/tritonserver/inflight_batcher_llm
 MAX_BATCH_SIZE=4
 INSTANCE_COUNT=1
 MAX_QUEUE_DELAY_MS=10000
-TRTLLM_BACKEND=tensorrtllm
+TRTLLM_BACKEND=python
 FILL_TEMPLATE_SCRIPT=/tensorrtllm_backend/tools/fill_template.py
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/preprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},preprocessing_instance_count:${INSTANCE_COUNT}
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/postprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},postprocessing_instance_count:${INSTANCE_COUNT}
