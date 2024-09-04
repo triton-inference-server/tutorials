@@ -345,6 +345,7 @@ You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/
 To use Gen-AI Perf, run the following command in the same Triton docker container:
 ```bash
 genai-perf \
+  profile \
   -m ensemble \
   --service-kind triton \
   --backend tensorrtllm \
