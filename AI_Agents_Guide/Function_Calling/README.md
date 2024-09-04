@@ -26,8 +26,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-
-# Function Calling
+# Function Calling with Triton Inference Server
 
 This tutorial focuses on function calling, a common approach to easily connect
 large language models (LLMs) to external tools. This method empowers AI agents
@@ -38,10 +37,13 @@ significantly expanding their capabilities and practical applications.
 
 - [What is Function Calling?](#what-is-function-calling)
 - [Tutorial Overview](#tutorial-overview)
-    + [ Prerequisite: Hermes-2-Pro-Llama-3-8B](#prerequisite-hermes-2-pro-llama-3-8b)
+    + [Prerequisite: Hermes-2-Pro-Llama-3-8B](#prerequisite-hermes-2-pro-llama-3-8b)
 - [Function Definitions](#function-definitions)
 - [Prompt Engineering](#prompt-engineering)
 - [Combining Everything Together](#combining-everything-together)
+- [Further Optimizations](#further-optimizations)
+    + [Enforcing Output Format](#enforcing-output-format)
+    + [Parallel Tool Call](#parallel-tool-call)
 
 ## What is Function Calling?
 
