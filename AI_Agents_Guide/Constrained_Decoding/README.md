@@ -162,7 +162,7 @@ assistant
 ### Example 2
 
 Optionally, we can also restrict an output to a specific schema. For example,
-in [`client.py`](./artifacts/client.py) we use a `pydentic` library to define the
+in [`client.py`](./artifacts/client.py) we use a `pydantic` library to define the
 following answer format:
 
 ```python
@@ -279,7 +279,7 @@ self.executor = trtllm.Executor(model_path=...,
 ...
 ```
 
-Additionally, if you want to enable logits pos-processor for every request
+Additionally, if you want to enable logits post-processor for every request
 individually, you can do so via an additional `input` parameter.
 For example, in this tutorial we will add `logits_post_processor_name` in
 `inflight_batcher_llm/tensorrt_llm/config.pbtxt`:

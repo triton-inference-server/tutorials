@@ -25,9 +25,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import json
-import typing
 from collections import defaultdict
-from typing import DefaultDict, Dict
+from typing import DefaultDict, Dict, List
 
 import torch
 from lmformatenforcer import JsonSchemaParser, TokenEnforcer
@@ -102,7 +101,7 @@ class LMFELogitsProcessor:
         self,
         req_id: int,
         logits: torch.Tensor,
-        ids: typing.List[typing.List[int]],
+        ids: List[List[int]],
         stream_ptr: int,
     ):
         # Create a mask with negative infinity to block all tokens initially.
@@ -140,12 +139,10 @@ class OutlinesLogitsProcessor:
         self,
         req_id: int,
         logits: torch.Tensor,
-        ids: typing.List[typing.List[int]],
+        ids: List[List[int]],
         stream_ptr: int,
     ):
-        # Initialize the FSM state dictionary if the input_ids are empty,
-        # as this means that the input_ids are the first tokens of the sequence.
-        seq_id = hash(tuple(ids[0]))
+        seq_id = None
         # If the prefix token IDs have changed we assume that we are dealing
         # with a new sample and reset the FSM state
         if (
