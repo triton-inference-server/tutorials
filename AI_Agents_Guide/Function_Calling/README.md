@@ -232,3 +232,66 @@ RESPONSE: Rivian, with its current stock price of  <CURRENT STOCK PRICE>, <NEWS 
 > Use a pre-processing model to combine and format the user prompt with the
 > system prompt and available tools. Employ a post-processing model to manage
 > multiple calls to the deployed LLM as needed to reach the final answer.
+
+## Further Optimizations
+
+### Enforcing Output Format
+
+In this tutorial, we demonstrated how to enforce a specific output format
+using prompt engineering. The desired structure is as follows:
+```python
+  {
+    "step" : <Step number>
+    "description": <Description of what the step does and its output>
+    "tool": <Tool to use>,
+    "arguments": {
+        <Parameters to pass to the tool as a valid dict>
+    }
+  }
+```
+However, there may be instances where the output deviates from this
+required schema. For example, consider the following prompt execution:
+
+```bash
+python3 client.py --prompt "How Rivian is doing?" -o 500 --verbose
+```
+This execution may fail with an invalid JSON format error. The verbose
+output will reveal that the final LLM response contained plain text
+instead of the expected JSON format:
+```
+{
+  "step": "3",
+  "description": <Description of what the step does and its output>
+  "tool": "final_answer",
+  "arguments": {
+    "final_response": <Final Response>
+  }
+}
+```
+Fortunately, this behavior can be controlled using constrained decoding,
+a technique that guides the model to generate outputs that meet specific
+formatting and content requirements.  We strongly recommend exploring our
+dedicated [tutorial](../Constrained_Decoding/README.md) on constrained decoding
+to gain deeper insights and enhance your ability to manage model outputs
+effectively.
+
+> [!TIP]
+> For optimal results, utilize the `FunctionCall` class defined in
+> [client_utils.py](./artifacts/client_utils.py) as the JSON schema
+> for your Logits Post-Processor. This approach ensures consistent
+> and properly formatted outputs, aligning with the structure we've
+> established throughout this tutorial.
+
+### Parallel Tool Call
+
+This tutorial focuses on a single turn forced call, the LLM is prompted
+to make a specific function call within a single interaction. This approach is
+useful when a precise action is needed immediately, ensuring that
+the function is executed as part of the current conversation.
+
+It is possible, that come of function calls can be executed simultaneously.
+This technique is beneficial for tasks that can be divided into independent
+operations, allowing for increased efficiency and reduced response time.
+
+We encourage our readers to take on the challenge of implementing
+parallel tool calls as a practical exercise.

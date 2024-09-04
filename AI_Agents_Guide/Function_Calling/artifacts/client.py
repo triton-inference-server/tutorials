@@ -230,8 +230,16 @@ if __name__ == "__main__":
             FLAGS.verbose,
         )
 
-        response = json.loads(output_text)
+        try:
+            response = json.loads(output_text)
+        except ValueError:
+            print("\n[ERROR] LLM responded with invalid JSON format!")
+            break
 
+        # Repeat the loop until `final_answer` tool is called, which indicates
+        # that the full response is ready and llm does not require any
+        # additional information. Additionally, if the loop has taken more
+        # than 50 steps, the script ends.
         if response["tool"] == "final_answer" or response["step"] == "50":
             if response["tool"] == "final_answer":
                 final_response = response["arguments"]["final_response"]
@@ -244,15 +252,17 @@ if __name__ == "__main__":
                 print("+++++++++++++++++++++++++++++++++++++\n\n")
             break
 
+        # Extract tool's name and arguments from the response
         function_name = response["tool"]
         function_args = response["arguments"]
         function_to_call = getattr(functions, function_name)
+        # Execute function call and store results in `function_response`
         function_response = function_to_call(*function_args.values())
 
         if FLAGS.verbose:
             print("=====================================")
             print(f"Executing function: {function_name}({function_args}) ")
-            print(f"Function response: {function_response}")
+            print(f"Function response: {str(function_response)}")
             print("=====================================")
 
         # Update prompt with the generated function call and results of that

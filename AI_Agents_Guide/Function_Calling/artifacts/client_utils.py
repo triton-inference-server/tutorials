@@ -419,7 +419,10 @@ def run_inference(
             else:
                 output_text = output[0].decode("utf-8")
                 if verbose:
-                    print(output, flush=True)
+                    print(
+                        str("\n[VERBOSE MODE] LLM's response:" + output_text),
+                        flush=True,
+                    )
 
             if return_context_logits_data is not None:
                 context_logits = result.as_numpy("context_logits")
