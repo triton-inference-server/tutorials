@@ -81,12 +81,9 @@ following [these steps.](../../Popular_Models_Guide/Hermes-2-Pro-Llama-3-8B/READ
 ## Function Definitions
 
 We'll define three functions for our stock reporting agent:
-    1. `get_current_stock_price`
-        * Retrieves the current stock price for a given symbol.
-    2. `get_company_news`
-        * Retrieves company news and press releases for a given stock symbol.
-    3. `final_answer`
-        * Used as a no-op and to indicate the final response.
+1. `get_current_stock_price`: Retrieves the current stock price for a given symbol.
+2. `get_company_news`: Retrieves company news and press releases for a given stock symbol.
+3. `final_answer`: Used as a no-op and to indicate the final response.
 
 Each function includes its name, description, and input parameter schema:
  ```python
