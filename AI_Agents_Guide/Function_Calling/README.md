@@ -44,6 +44,7 @@ significantly expanding their capabilities and practical applications.
 - [Further Optimizations](#further-optimizations)
     + [Enforcing Output Format](#enforcing-output-format)
     + [Parallel Tool Call](#parallel-tool-call)
+- [References](#references)
 
 ## What is Function Calling?
 
@@ -297,3 +298,7 @@ operations, allowing for increased efficiency and reduced response time.
 
 We encourage our readers to take on the challenge of implementing
 parallel tool calls as a practical exercise.
+
+## References
+
+Parts of this tutorial are based of [Hermes-Function-Calling](https://github.com/NousResearch/Hermes-Function-Calling).
