@@ -26,6 +26,7 @@
 import os
 import sys
 from functools import partial
+from pathlib import Path
 from typing import Dict
 
 import pandas as pd
@@ -35,7 +36,6 @@ from pydantic import BaseModel
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-import argparse
 import queue
 import sys
 
@@ -221,7 +221,7 @@ def format_yaml_prompt(prompt_schema: PromptSchema, variables: Dict) -> str:
 
 def process_prompt(
     user_prompt,
-    system_prompt_yml="./system_prompt_schema.yml",
+    system_prompt_yml=Path(__file__).parent.joinpath("./system_prompt_schema.yml"),
     tools=TOOLS,
     schema_json=FunctionCall.model_json_schema(),
 ):

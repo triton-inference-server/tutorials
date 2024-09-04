@@ -256,7 +256,7 @@ However, there may be instances where the output deviates from this
 required schema. For example, consider the following prompt execution:
 
 ```bash
-python3 client.py --prompt "How Rivian is doing?" -o 500 --verbose
+python3 /tutorials/AI_Agents_Guide/Function_Calling/artifacts/client.py --prompt "How Rivian is doing?" -o 500 --verbose
 ```
 This execution may fail with an invalid JSON format error. The verbose
 output will reveal that the final LLM response contained plain text
