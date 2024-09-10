@@ -29,15 +29,16 @@ TAG=
 RUN_PREFIX=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
+declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3 ["VLLM"]=4)
 DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 
-# Base Images
+# Images
 IMAGE=
 IMAGE_TAG_DIFFUSERS=diffusion
 IMAGE_TAG_TRT_LLM=trt-llm
+IMAGE_TAG_VLLM=vllm
 
 get_options() {
     while :; do
@@ -56,7 +57,7 @@ get_options() {
             ;;
         --image)
             if [ "$2" ]; then
-                BASE_IMAGE=$2
+                IMAGE=$2
                 shift
             else
                 error 'ERROR: "--base" requires an argument.'
@@ -100,7 +101,7 @@ get_options() {
     fi
 
     if [ -z "$IMAGE" ]; then
-        IMAGE="triton-python-api:r24.01"
+        IMAGE="triton-python-api:r24.06"
 
 	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
 	    IMAGE+="-trt-llm"
@@ -108,6 +109,10 @@ get_options() {
 
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
 	    IMAGE+="-diffusion"
+	fi
+
+	if [[ $FRAMEWORK == "VLLM" ]]; then
+	    IMAGE+="-vllm"
 	fi
 
     fi
@@ -137,7 +142,7 @@ fi
 
 $RUN_PREFIX mkdir -p backend/diffusion
 
-$RUN_PREFIX docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eGITHUB_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${SOURCE_DIR}:/workspace -v${SOURCE_DIR}/.cache/huggingface:/root/.cache/huggingface -w /workspace -v${SOURCE_DIR}/../Popular_Models_Guide/StableDiffusion/backend/diffusion:/opt/tritonserver/backends/diffusion $IMAGE
+$RUN_PREFIX docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eGITHUB_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${SOURCE_DIR}:/workspace -v${SOURCE_DIR}/.cache/huggingface:/root/.cache/huggingface -w /workspace -v${SOURCE_DIR}/backend/diffusion:/opt/tritonserver/backends/diffusion -v/tmp:/tmp $IMAGE
 
 { set +x; } 2>/dev/null
 
