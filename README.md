@@ -33,6 +33,7 @@ This repository contains the following resources:
 * [HuggingFace Guide](./HuggingFace/): The focus of this guide is to walk the user through different methods in which a HuggingFace model can be deployed using the Triton Inference Server.
 * [Feature Guides](./Feature_Guide/): This folder is meant to house Triton's feature-specific examples.
 * [Migration Guide](./Migration_Guide/migration_guide.md): Migrating from an existing solution to Triton Inference Server? Get an understanding of the general architecture that might best fit your use case.
+* [Agentic Workflow Guide](./AI_Agents_Guide/): This guide provides a set of tutorials designed to help you deploy AI agents efficiently using the Triton Inference Server.
 
 ## Navigating Triton Inference Server Resources
 
