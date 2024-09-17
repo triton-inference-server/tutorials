@@ -30,7 +30,7 @@ ftfy
 mypy
 pyright
 pytest
-ray[all]==2.9
+ray[all]==2.36.0
 scipy
 sphinx
 sphinx-markdown-builder

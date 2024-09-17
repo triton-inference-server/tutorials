@@ -39,23 +39,16 @@ RUN pip install --timeout=2000 -r /tmp/requirements.txt
 
 RUN pyright --help
 
-COPY ./deps/tritonserver-2.41.0.dev0-py3-none-any.whl /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl
-
 RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
     "tritonserver-*.whl" | xargs -I {} pip3 install --force-reinstall --upgrade {}[all]
 
-RUN pip3 show tritonserver 1>/dev/null || \
-    if [ $? != 0 ]; then \
-       pip3 install /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl[all] ;\
-    fi
-
 RUN ln -sf /bin/bash /bin/sh
 
-COPY . /workspace
+# COPY . /workspace
 
-ARG RUN_TESTS=FALSE
+# ARG RUN_TESTS=FALSE
 
-RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then cd /tmp && git clone -b r23.12-python-api https://github.com/triton-inference-server/core.git && cp -rf /tmp/core/python/test /workspace/deps/ ; fi
+# RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then cd /tmp && git clone -b r23.12-python-api https://github.com/triton-inference-server/core.git && cp -rf /tmp/core/python/test /workspace/deps/ ; fi
 
-RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then pytest /workspace/deps ; fi
+# RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then pytest /workspace/deps ; fi
 
