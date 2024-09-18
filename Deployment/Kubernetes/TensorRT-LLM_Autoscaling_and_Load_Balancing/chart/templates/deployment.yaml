@@ -257,7 +257,7 @@ spec:
         - mountPath: /var/run/models
           name: model-repository
         - mountPath: /dev/shm
-          name: dshm          
+          name: dshm
         - mountPath: /var/run/engines
           name: engine-repository
           readOnly: false
@@ -283,7 +283,7 @@ spec:
       - name: engine-repository
         hostPath:
           path: {{ printf "%s/models/%s/%dx%d/engines" $hostRootPath $model_lower (int $model_pp) (int $model_tp) }}
-          type: DirectoryOrCreate        
+          type: DirectoryOrCreate
       - name: model-repository
         persistentVolumeClaim:
           claimName: efs-claim-autoscaling-2
