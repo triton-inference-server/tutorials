@@ -56,11 +56,11 @@ def _print_heading(message):
 class BaseDeployment:
     def __init__(self):
         self._image_size = 512
-        self._model_id = "runwayml/stable-diffusion-v1-5"
-        from diffusers import StableDiffusionPipeline
+        self._model_id = "stabilityai/stable-diffusion-xl-base-1.0"
+        from diffusers import DiffusionPipeline
 
-        self._pipeline = StableDiffusionPipeline.from_pretrained(
-            self._model_id, revision="fp16", torch_dtype=torch.float16
+        self._pipeline = DiffusionPipeline.from_pretrained(
+            self._model_id, variant="fp16", torch_dtype=torch.float16
         )
         self._pipeline = self._pipeline.to("cuda")
 
@@ -104,10 +104,10 @@ class TritonDeployment:
         self._stable_diffusion = None
         self._test_model = None
 
-        if not self._triton_server.model("stable_diffusion_1_5").ready():
+        if not self._triton_server.model("stable_diffusion_xl").ready():
             try:
                 self._stable_diffusion = self._triton_server.load(
-                    "stable_diffusion_1_5"
+                    "stable_diffusion_xl"
                 )
 
                 if not self._stable_diffusion.ready():

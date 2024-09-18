@@ -138,7 +138,7 @@ get_options() {
     fi
 
     if [ -z "$TAG" ]; then
-        TAG="triton-python-api:r24.01"
+        TAG="triton-python-api:r24.08"
 
 	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
 	    TAG+="-trt-llm"
@@ -186,7 +186,7 @@ get_options "$@"
 
 if [[ $FRAMEWORK == DIFFUSION ]]; then
     BASE_IMAGE="tritonserver"
-    BASE_IMAGE_TAG="r24.01-diffusion"
+    BASE_IMAGE_TAG="r24.08-diffusion"
 fi
 
 # BUILD RUN TIME IMAGE
@@ -207,17 +207,17 @@ if [[ $FRAMEWORK == DIFFUSION ]]; then
     if [ -z "$RUN_PREFIX" ]; then
 	set -x
     fi
-    $RUN_PREFIX mkdir -p backend/diffusion
-    $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --framework diffusion --tag tritonserver:r24.01-diffusion
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/backend/diffusion/model.py backend/diffusion/model.py
-    $RUN_PREFIX mkdir -p diffusion-models/stable_diffusion_1_5/1
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/config.pbtxt  diffusion-models/stable_diffusion_1_5/config.pbtxt
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/1/.gitkeep  diffusion-models/stable_diffusion_1_5/1/.gitkeep
-    $RUN_PREFIX mkdir -p diffusion-models/stable_diffusion_xl/1
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_xl/config.pbtxt  diffusion-models/stable_diffusion_xl/config.pbtxt
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_xl/1/.gitkeep  diffusion-models/stable_diffusion_xl/1/.gitkeep
-    $RUN_PREFIX mkdir -p scripts/stable_diffusion
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/scripts/build_models* scripts/stable_diffusion/
+    $RUN_PREFIX mkdir -p ${SOURCE_DIR}/backend/diffusion
+    $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --framework diffusion --tag tritonserver:r24.08-diffusion
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/backend/diffusion/model.py ${SOURCE_DIR}/backend/diffusion/model.py
+    $RUN_PREFIX mkdir -p ${SOURCE_DIR}/diffusion-models/stable_diffusion_1_5/1
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/config.pbtxt  ${SOURCE_DIR}/diffusion-models/stable_diffusion_1_5/config.pbtxt
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/1/.gitkeep  ${SOURCE_DIR}/diffusion-models/stable_diffusion_1_5/1/.gitkeep
+    $RUN_PREFIX mkdir -p ${SOURCE_DIR}/diffusion-models/stable_diffusion_xl/1
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_xl/config.pbtxt  ${SOURCE_DIR}/diffusion-models/stable_diffusion_xl/config.pbtxt
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_xl/1/.gitkeep  ${SOURCE_DIR}/diffusion-models/stable_diffusion_xl/1/.gitkeep
+    $RUN_PREFIX mkdir -p ${SOURCE_DIR}/scripts/stable_diffusion
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/scripts/build_models* ${SOURCE_DIR}/scripts/stable_diffusion/
 
 fi
 
@@ -249,7 +249,7 @@ if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 	    set -x
 	fi
 
-	$RUN_PREFIX docker run --rm -it -v $PWD:/workspace $TAG /bin/bash -c "/workspace/scripts/stable_diffusion/build_models.sh --model stable_diffusion_1_5"
+	$RUN_PREFIX docker run --gpus all --rm -it -v $PWD:/workspace $TAG /bin/bash -c "/workspace/scripts/stable_diffusion/build_models.sh --model stable_diffusion_xl"
 
 	{ set +x; } 2>/dev/null
     fi
