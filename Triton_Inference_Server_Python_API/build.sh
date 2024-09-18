@@ -249,7 +249,7 @@ if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 	    set -x
 	fi
 
-	$RUN_PREFIX docker run --gpus all --rm -it -v $PWD:/workspace $TAG /bin/bash -c "/workspace/scripts/stable_diffusion/build_models.sh --model stable_diffusion_xl"
+	$RUN_PREFIX docker run --gpus all --rm -it -v $SOURCE_DIR:/workspace $TAG /bin/bash -c "/workspace/scripts/stable_diffusion/build_models.sh --model stable_diffusion_xl"
 
 	{ set +x; } 2>/dev/null
     fi
