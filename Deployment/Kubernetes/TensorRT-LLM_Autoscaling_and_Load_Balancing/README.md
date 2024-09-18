@@ -47,7 +47,7 @@ We'll cover the following topics:
   * [NFS Creation](#nfs-creation)
 * [Triton Preparation](#triton-preparation)
   * [Pod Initialization Script](#pod-initialization-script)
-  * [Model Preperation Steps](#model-preparation-steps)
+  * [Model Preparation Steps](#model-preparation-steps)
   * [Custom Container Image](#custom-container-image)
   * [Kubernetes Pull Secrets](#kubernetes-pull-secrets)
 * [Triton Deployment](#triton-deployment)
@@ -510,7 +510,7 @@ To build the TRT-LLM engine and set up Triton model repository inside the comput
     ```
 
     > [!Note]
-    > Be sure to substitute the correct values for `<PATH_TO_TOKENIZER>` and `<PATH_TO_ENGINES>` in the example above. Keep in mind that the tokenizer, the TRT-LLM engines, and the Triton model repository shoudl be in a shared file storage between your nodes. They're required to launch your model in Triton. For example, if using AWS EFS, the values for `<PATH_TO_TOKENIZER>` and `<PATH_TO_ENGINES>` should be respect to the actutal EFS mount path. This is determined by your persistent-volume claim and mount path in chart/templates/deployment.yaml. Make sure that your nodes are able to access these files.
+    > Be sure to substitute the correct values for `<PATH_TO_TOKENIZER>` and `<PATH_TO_ENGINES>` in the example above. Keep in mind that the tokenizer, the TRT-LLM engines, and the Triton model repository should be in a shared file storage between your nodes. They're required to launch your model in Triton. For example, if using AWS EFS, the values for `<PATH_TO_TOKENIZER>` and `<PATH_TO_ENGINES>` should be respect to the actutal EFS mount path. This is determined by your persistent-volume claim and mount path in chart/templates/deployment.yaml. Make sure that your nodes are able to access these files.
 
 4.  Delete the pod
 
