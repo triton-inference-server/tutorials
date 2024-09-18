@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG BASE_CONTAINER_IMAGE=nvcr.io/nvidia/tritonserver:24.07-trtllm-python-py3
+ARG BASE_CONTAINER_IMAGE=nvcr.io/nvidia/tritonserver:24.08-trtllm-python-py3
 ARG ENGINE_DEST_PATH=/var/run/engines
 ARG HF_HOME=/var/run/cache
 
