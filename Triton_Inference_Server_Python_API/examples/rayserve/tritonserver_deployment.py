@@ -51,20 +51,41 @@ def _print_heading(message):
     print("-" * len(message))
 
 
-@serve.deployment(ray_actor_options={"num_gpus": 1})
+@serve.deployment(
+    ray_actor_options={"num_gpus": 1},
+    max_ongoing_requests=1,
+    autoscaling_config={
+        "min_replicas": 1,
+        "max_replicas": 8,
+        "max_ongoing_requests": 1,
+        "target_ongoing_requests": 1,
+        "upscale_delay_s": 2,
+        "downscale_delay_s": 120,
+        "upscaling_factor": 1,
+        "downscaling_factor": 1,
+        "metrics_interval_s": 2,
+        "look_back_period_s": 4,
+    },
+)
 @serve.ingress(app)
 class BaseDeployment:
     def __init__(self, use_torch_compile=False):
         self._image_size = 1024
         self._model_id = "stabilityai/stable-diffusion-xl-base-1.0"
         from diffusers import DiffusionPipeline, AutoencoderKL
-        vae = AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)
+
+        vae = AutoencoderKL.from_pretrained(
+            "madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16
+        )
         self._pipeline = DiffusionPipeline.from_pretrained(
-            self._model_id, torch_dtype=torch.float16, variant="fp16",use_safetensors=True,vae=vae
+            self._model_id,
+            torch_dtype=torch.float16,
+            variant="fp16",
+            use_safetensors=True,
+            vae=vae,
         )
         self._pipeline = self._pipeline.to("cuda")
         if use_torch_compile:
-
             print("compiling")
             print(torch._dynamo.list_backends())
             self._pipeline.unet = torch.compile(
@@ -87,8 +108,22 @@ class BaseDeployment:
             if filename:
                 image_.save(filename)
 
-
-@serve.deployment(ray_actor_options={"num_gpus": 1})
+@serve.deployment(
+    ray_actor_options={"num_gpus": 1},
+    max_ongoing_requests=1,
+    autoscaling_config={
+        "min_replicas": 1,
+        "max_replicas": 8,
+        "max_ongoing_requests": 1,
+        "target_ongoing_requests": 1,
+        "upscale_delay_s": 2,
+        "downscale_delay_s": 120,
+        "upscaling_factor": 1,
+        "downscaling_factor": 1,
+        "metrics_interval_s": 2,
+        "look_back_period_s": 4,
+    },
+)
 @serve.ingress(app)
 class TritonDeployment:
     def __init__(self):
