@@ -209,6 +209,7 @@ if [[ $FRAMEWORK == DIFFUSION ]]; then
     fi
     $RUN_PREFIX mkdir -p ${SOURCE_DIR}/backend/diffusion
     $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --framework diffusion --tag tritonserver:r24.08-diffusion
+    $RUN_PREFIX docker run --rm -it -v ${SOURCE_DIR}:/workspace tritonserver:r24.08-diffusion /bin/bash -c "cp -rf /tmp/TensorRT/demo/Diffusion /workspace/backend/diffusion"
     $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/backend/diffusion/model.py ${SOURCE_DIR}/backend/diffusion/model.py
     $RUN_PREFIX mkdir -p ${SOURCE_DIR}/diffusion-models/stable_diffusion_1_5/1
     $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/config.pbtxt  ${SOURCE_DIR}/diffusion-models/stable_diffusion_1_5/config.pbtxt
@@ -249,7 +250,7 @@ if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 	    set -x
 	fi
 
-	$RUN_PREFIX docker run --gpus all --rm -it -v $SOURCE_DIR:/workspace $TAG /bin/bash -c "/workspace/scripts/stable_diffusion/build_models.sh --model stable_diffusion_xl"
+	$RUN_PREFIX docker run --gpus all --rm -it -v ${SOURCE_DIR}:/workspace $TAG /bin/bash -c "/workspace/scripts/stable_diffusion/build_models.sh --model stable_diffusion_xl"
 
 	{ set +x; } 2>/dev/null
     fi
