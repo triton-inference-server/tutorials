@@ -52,7 +52,7 @@ def client2_callback(display, event, result, error):
         event.set()
 
 
-def run_inferences(url, model_name, display, max_tokens):
+def run_inferences(url, model_name, display, max_tokens, framework):
     # Create clients
     client1 = grpcclient.InferenceServerClient(url)
     client2 = grpcclient.InferenceServerClient(url)
@@ -79,7 +79,12 @@ def run_inferences(url, model_name, display, max_tokens):
 
         # Setup the display initially with the prompts
         display.clear()
-        parameters = {"ignore_eos": True, "max_tokens": max_tokens}
+
+        if framework == "ort":
+            # Ignore EOS is not supported in onnxruntime-genai
+            parameters = {"max_tokens": max_tokens}
+        else:
+            parameters = {"ignore_eos": True, "max_tokens": max_tokens}
 
         client1.async_stream_infer(
             model_name=model_name,
@@ -108,7 +113,10 @@ if __name__ == "__main__":
     parser.add_argument("--url", type=str, default="localhost:8001")
     parser.add_argument("--model", type=str, default="simple-gpt2")
     parser.add_argument("--max-tokens", type=int, default=128)
+    parser.add_argument(
+        "--framework", type=str, default="huggingface", choices=["ort", "huggingface"]
+    )
     args = parser.parse_args()
     display = Display(args.max_tokens)
 
-    run_inferences(args.url, args.model, display, args.max_tokens)
+    run_inferences(args.url, args.model, display, args.max_tokens, args.framework)
