@@ -36,14 +36,6 @@ ENV HF_HOME ${HF_HOME}
 # Set the active working directory.
 WORKDIR /workspace
 
-# Install a custom version of Triton CLI that support Tensor parallelism and
-# the 70B version of Llama models.
-RUN pip --verbose install \
-    --no-cache-dir \
-    --no-color \
-    --no-input \
-    git+https://github.com/triton-inference-server/triton_cli.git@ibhosale/aslb-mn
-
 # Copy the server script.
 COPY server.py .
 
