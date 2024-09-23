@@ -1034,7 +1034,6 @@ Software versions featured in this document:
 
 * Triton Inference Server v2.45.0 (24.08-trtllm-python-py3)
 * TensorRT-LLM v0.9.0
-* Triton CLI v0.0.7
 * NVIDIA Device Plugin for Kubernetes v0.15.0
 * NVIDIA GPU Discovery Service for Kubernetes v0.8.2
 * NVIDIA DCGM Exporter v3.3.5
