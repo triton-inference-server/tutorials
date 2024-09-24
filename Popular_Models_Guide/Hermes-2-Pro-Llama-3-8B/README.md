@@ -174,6 +174,13 @@ python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt tri
 
 3.  Launch Tritonserver
 
+> [!NOTE]
+> This tutorial was prepared for serving a TensorRT-LLM model on a single GPU.
+> Thus, in the following command use `--world_size=1` if the engine was built
+> for a single GPU. Alternatively, if the engine requires multiple GPUs
+> make sure to specify the exact number of GPUs required by the engine
+> in `--world_size`.
+
 Use the [launch_triton_server.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/release/0.5.0/scripts/launch_triton_server.py) script. This launches multiple instances of `tritonserver` with MPI.
 ```bash
 python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=<world size of the engine> --model_repo=/opt/tritonserver/inflight_batcher_llm
