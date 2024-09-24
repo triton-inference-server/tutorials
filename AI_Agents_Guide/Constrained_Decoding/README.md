@@ -469,7 +469,7 @@ class TritonPythonModel:
 
     def get_executor_config(self, model_config):
 +       tokenizer_dir = model_config['parameters']['tokenizer_dir']['string_value']
-+       logits_lmfe_processor = LMFELogitsProcessor(tokenizer_dir, AnswerFormat.model_json_schema())
++       logits_processor = LMFELogitsProcessor(tokenizer_dir, AnswerFormat.model_json_schema())
         kwargs = {
             "max_beam_width":
             get_parameter(model_config, "max_beam_width", int),
@@ -491,7 +491,7 @@ class TritonPythonModel:
             "decoding_config":
             self.get_decoding_config(model_config),
 +            "logits_post_processor_map":{
-+                LMFELogitsProcessor.PROCESSOR_NAME: logits_lmfe_processor
++                LMFELogitsProcessor.PROCESSOR_NAME: logits_processor
 +            }
         }
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
@@ -602,7 +602,7 @@ class TritonPythonModel:
 
     def get_executor_config(self, model_config):
 +       tokenizer_dir = model_config['parameters']['tokenizer_dir']['string_value']
-+       logits_lmfe_processor = OutlinesLogitsProcessor(tokenizer_dir, AnswerFormat.model_json_schema())
++       logits_processor = OutlinesLogitsProcessor(tokenizer_dir, AnswerFormat.model_json_schema())
         kwargs = {
             "max_beam_width":
             get_parameter(model_config, "max_beam_width", int),
@@ -624,7 +624,7 @@ class TritonPythonModel:
             "decoding_config":
             self.get_decoding_config(model_config),
 +            "logits_post_processor_map":{
-+                OutlinesLogitsProcessor.PROCESSOR_NAME: logits_lmfe_processor
++                OutlinesLogitsProcessor.PROCESSOR_NAME: logits_processor
 +            }
         }
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
