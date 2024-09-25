@@ -193,12 +193,12 @@ class TritonDeployment:
                 image_.save(filename)
 
 
-def tritonserver_deployment(_args):
+def deployment(_args):
     return TritonDeployment.bind()
 
 
-def base_deployment(_args):
-    if "use_torch_compile" in _args:
+def baseline(_args):
+    if "use-torch-compile" in _args:
         return BaseDeployment.bind(use_torch_compile=True)
     else:
         return BaseDeployment.bind(use_torch_compile=False)
