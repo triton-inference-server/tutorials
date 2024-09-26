@@ -132,7 +132,7 @@ fi
 
 $RUN_PREFIX mkdir -p backend/diffusion
 
-$RUN_PREFIX docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eGITHUB_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${SOURCE_DIR}:/workspace -v${SOURCE_DIR}/.cache/huggingface:/root/.cache/huggingface -w /workspace -v${SOURCE_DIR}/backend/diffusion:/opt/tritonserver/backends/diffusion -v ${PWD}:/${PWD} -v/tmp:/tmp $IMAGE
+$RUN_PREFIX docker run --gpus all -it --rm --network host --shm-size=10G --ulimit memlock=-1 --ulimit stack=67108864 -eHF_TOKEN -eGITHUB_TOKEN -eAWS_DEFAULT_REGION -eAWS_ACCESS_KEY_ID -eAWS_SECRET_ACCESS_KEY -eS3_BUCKET_URL -v ${SOURCE_DIR}:/workspace -v${SOURCE_DIR}/.cache/huggingface:/root/.cache/huggingface -w /workspace -v${SOURCE_DIR}/backend/diffusion:/opt/tritonserver/backends/diffusion -v/tmp:/tmp $IMAGE
 
 { set +x; } 2>/dev/null
 
