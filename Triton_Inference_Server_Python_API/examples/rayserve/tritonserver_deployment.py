@@ -72,7 +72,7 @@ class BaseDeployment:
     def __init__(self, use_torch_compile=False):
         self._image_size = 1024
         self._model_id = "stabilityai/stable-diffusion-xl-base-1.0"
-        from diffusers import DiffusionPipeline, AutoencoderKL
+        from diffusers import AutoencoderKL, DiffusionPipeline
 
         vae = AutoencoderKL.from_pretrained(
             "madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16
@@ -107,6 +107,7 @@ class BaseDeployment:
             ).images[0]
             if filename:
                 image_.save(filename)
+
 
 @serve.deployment(
     ray_actor_options={"num_gpus": 1},

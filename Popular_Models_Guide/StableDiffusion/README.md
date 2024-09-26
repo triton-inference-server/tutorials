@@ -106,7 +106,7 @@ directory as `workspace`.
 > requires login in to huggingface and acceptance of terms and
 > conditions of use. Please set the environment varaible HF_TOKEN
 > accordingly.
-> 
+>
 
 ```bash
 ./scripts/build_models.sh --model stable_diffusion_1_5

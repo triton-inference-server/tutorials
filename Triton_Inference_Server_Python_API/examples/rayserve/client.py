@@ -52,7 +52,7 @@ def client(endpoint, request_count, prompt, save_image, index):
         request_start = time.time()
         requests.get(
             f"http://127.0.0.1:8000/{endpoint}?prompt={prompt_input}{filename_input}",
-            timeout=60,
+            timeout=300,
         )
         latencies.append(time.time() - request_start)
     print(
