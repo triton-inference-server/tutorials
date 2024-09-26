@@ -104,7 +104,7 @@ directory as `workspace`.
 > The model
 > [stable-diffusion-v1-5](https://huggingface.co/benjamin-paine/stable-diffusion-v1-5)
 > requires login in to huggingface and acceptance of terms and
-> conditions of use. Please set the environment varaible HF_TOKEN
+> conditions of use. Please set the environment variable HF_TOKEN
 > accordingly.
 >
 
