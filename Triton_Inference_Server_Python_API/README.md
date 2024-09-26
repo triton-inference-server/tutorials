@@ -54,14 +54,14 @@ https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
 ## Installation
 
 The tutorial and Python API package are designed to be installed and
-run within the `nvcr.io/nvidia/tritonserver:24.01-py3` docker image.
+run within the `nvcr.io/nvidia/tritonserver:24.08-py3` docker image.
 
 A set of convenience scripts are provided to create a docker image
-based on the `nvcr.io/nvidia/tritonserver:24.01-py3` image with the
+based on the `nvcr.io/nvidia/tritonserver:24.08-py3` image with the
 Python API installed plus additional dependencies required for the
 examples.
 
-### Triton Inference Server 24.01 + Python API
+### Triton Inference Server 24.08 + Python API
 
 #### Clone Repository
 ```bash
@@ -69,7 +69,7 @@ git clone https://github.com/triton-inference-server/tutorials.git
 cd tutorials/Triton_Inference_Server_Python_API
 ```
 
-#### Build `triton-python-api:r24.01` Image
+#### Build `triton-python-api:r24.08` Image
 ```bash
 ./build.sh
 ```
@@ -77,7 +77,7 @@ cd tutorials/Triton_Inference_Server_Python_API
 #### Supported Backends
 
 The built image includes all the backends shipped by default in the
-tritonserver `nvcr.io/nvidia/tritonserver:24.01-py3` container.
+tritonserver `nvcr.io/nvidia/tritonserver:24.08-py3` container.
 
 ```
 dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  tensorflow  tensorrt
@@ -95,7 +95,7 @@ different data types. The `identity` model copies provided inputs of
 
 ## Hello World
 
-### Start `triton-python-api:r24.01` Container
+### Start `triton-python-api:r24.08` Container
 
 The following command starts a container and volume mounts the current
 directory as `workspace`.
@@ -163,7 +163,7 @@ This example is based on the
 tutorial.
 
 
-#### Build `triton-python-api:r24.01-diffusion` Image and Stable Diffusion Models
+#### Build `triton-python-api:r24.08-diffusion` Image and Stable Diffusion Models
 
 Please note the following command will take many minutes depending on
 your hardware configuration and network connection.
@@ -175,7 +175,7 @@ your hardware configuration and network connection.
 #### Supported Backends
 
 The built image includes all the backends shipped by default in the
-tritonserver `nvcr.io/nvidia/tritonserver:24.01-py3` container.
+tritonserver `nvcr.io/nvidia/tritonserver:24.08-py3` container.
 
 ```
 dali  fil  identity  onnxruntime  openvino  python  pytorch  repeat  square  tensorflow  tensorrt
@@ -223,13 +223,13 @@ server.models()
 
 #### Example Output
 ```python
-{('stable_diffusion', 1): {'name': 'stable_diffusion', 'version': 1, 'state': 'READY'}, ('text_encoder', 1): {'name': 'text_encoder', 'version': 1, 'state': 'READY'}, ('vae', 1): {'name': 'vae', 'version': 1, 'state': 'READY'}}
+{('stable_diffusion_1_5', 1): {'name': 'stable_diffusion_1_5', 'version': 1, 'state': 'READY'}, ('stable_diffusion_xl', 1): {'name': 'stable_diffusion_xl', 'version': 1, 'state': 'READY'}}
 ```
 
 ### Send an Inference Request
 
 ```python
-model = server.model("stable_diffusion")
+model = server.model("stable_diffusion_xl")
 responses = model.infer(inputs={"prompt":[["butterfly in new york, realistic, 4k, photograph"]]})
 ```
 
