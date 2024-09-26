@@ -99,6 +99,15 @@ directory as `workspace`.
 
 ### Build Stable Diffusion v 1.5 Engine
 
+> [!Note]
+>
+> The model
+> [stable-diffusion-v1-5](https://huggingface.co/benjamin-paine/stable-diffusion-v1-5)
+> requires login in to huggingface and acceptance of terms and
+> conditions of use. Please set the environment varaible HF_TOKEN
+> accordingly.
+> 
+
 ```bash
 ./scripts/build_models.sh --model stable_diffusion_1_5
 ```
