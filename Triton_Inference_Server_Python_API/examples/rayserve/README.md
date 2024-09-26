@@ -71,10 +71,21 @@ directory as `workspace`.
 
 ```
 
-### Run Deployment
-```bash
+### Start Local Ray Cluster
+
+The following command starts a local Ray cluster. It also starts
+prometheus and grafana instances with default Ray and Ray Serve
+metrics and dashboards enabled.
+
+```
 cd examples/rayserve
-serve run tritonserver_deployment:tritonserver_deployment
+./start_ray.sh
+```
+
+### Run Deployment
+
+```bash
+serve run tritonserver_deployment:deployment
 ```
 
 ## Send Requests to Deployment
@@ -102,7 +113,7 @@ the prompt using stable diffusion, and saves the image to a file.
 
 #### Example Request
 ```
-curl --request GET "http://127.0.0.1:8000/generate?prompt=car,model-t,realistic,4k&filename=car_sample.jpg"
+curl --request GET "http://127.0.0.1:8000/generate?prompt=car,model-t,realistic,4k&filename=/workspace/examples/rayserve/car_sample.jpg"
 ```
 
 #### Example Output
