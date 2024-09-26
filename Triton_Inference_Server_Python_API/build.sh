@@ -30,7 +30,7 @@ RUN_PREFIX=
 BUILD_MODELS=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
+declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["IDENTITY"]=3)
 DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
@@ -41,7 +41,6 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 BASE_IMAGE=nvcr.io/nvidia/tritonserver
 BASE_IMAGE_TAG_IDENTITY=24.08-py3
 BASE_IMAGE_TAG_DIFFUSION=24.08-py3
-BASE_IMAGE_TAG_TRT_LLM=24.01-trtllm-python-py3
 
 get_options() {
     while :; do
@@ -140,10 +139,6 @@ get_options() {
     if [ -z "$TAG" ]; then
         TAG="triton-python-api:r24.08"
 
-	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
-	    TAG+="-trt-llm"
-	fi
-
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
 	    TAG+="-diffusion"
 	fi
@@ -231,17 +226,6 @@ $RUN_PREFIX docker build -f $DOCKERFILE $BUILD_OPTIONS $BUILD_ARGS -t $TAG $SOUR
 
 { set +x; } 2>/dev/null
 
-
-if [[ $FRAMEWORK == TRT_LLM ]]; then
-    if [ -z "$RUN_PREFIX" ]; then
-	set -x
-    fi
-
-    $RUN_PREFIX docker build -f $SOURCE_DIR/docker/Dockerfile.trt-llm-engine-builder  $BUILD_OPTIONS $BUILD_ARGS -t trt-llm-engine-builder  $SOURCE_DIR $NO_CACHE
-
-    { set +x; } 2>/dev/null
-
-fi;
 
 if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 
