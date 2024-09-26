@@ -25,37 +25,27 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ARG BASE_IMAGE=nvcr.io/nvidia/tritonserver
-ARG BASE_IMAGE_TAG=24.01-py3
+ARG BASE_IMAGE_TAG=24.08-py3
 
 FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} as triton-python-api
 
 RUN apt-get update; apt-get install -y gdb
 
-COPY ./deps/requirements.txt /tmp/requirements.txt
-
-RUN pip install --timeout=2000 -r /tmp/requirements.txt
+RUN --mount=type=bind,source=./deps/requirements.txt,target=/tmp/requirements.txt \
+    pip install --timeout=2000 --requirement /tmp/requirements.txt
 
 # Finish pyright install
 
 RUN pyright --help
 
-COPY ./deps/tritonserver-2.41.0.dev0-py3-none-any.whl /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl
-
 RUN find /opt/tritonserver/python -maxdepth 1 -type f -name \
-    "tritonserver-*.whl" | xargs -I {} pip3 install --force-reinstall --upgrade {}[all]
+    "tritonserver-*.whl" | xargs -I {} pip3 install --upgrade {}[all]
 
-RUN pip3 show tritonserver 1>/dev/null || \
-    if [ $? != 0 ]; then \
-       pip3 install /tmp/tritonserver-2.41.0.dev0-py3-none-any.whl[all] ;\
-    fi
+# grafana
+RUN apt-get install -y adduser libfontconfig1 musl && \
+    wget https://dl.grafana.com/enterprise/release/grafana-enterprise_11.2.0_amd64.deb && \
+    dpkg -i grafana-enterprise_11.2.0_amd64.deb && \
+    rm -rf grafana-enterprise_11.2.0_amd64.deb
 
 RUN ln -sf /bin/bash /bin/sh
-
-COPY . /workspace
-
-ARG RUN_TESTS=FALSE
-
-RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then cd /tmp && git clone -b r23.12-python-api https://github.com/triton-inference-server/core.git && cp -rf /tmp/core/python/test /workspace/deps/ ; fi
-
-RUN if [[ "$RUN_TESTS" == "TRUE" ]] ; then pytest /workspace/deps ; fi
 

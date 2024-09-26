@@ -29,7 +29,7 @@
 # Deploying Stable Diffusion Models with Triton and TensorRT
 
 This example demonstrates how to deploy Stable Diffusion models in
-Triton by leveraging the [TensorRT demo](https://github.com/NVIDIA/TensorRT/tree/release/9.2/demo/Diffusion)
+Triton by leveraging the [TensorRT demo](https://github.com/NVIDIA/TensorRT/tree/release/10.4/demo/Diffusion)
 pipeline and utilities.
 
 Using the TensorRT demo as a base this example contains a reusable
@@ -38,9 +38,9 @@ suitable for deploying multiple versions and configurations of
 Diffusion models.
 
 For more information on Stable Diffusion please visit
-[stable-diffusion-v1-5](https://huggingface.co/runwayml/stable-diffusion-v1-5),
-[stable-diffusion-xl](https://huggingface.co/docs/diffusers/en/using-diffusers/sdxl). For
-more information on the TensorRT implementation please see the [TensorRT demo](https://github.com/NVIDIA/TensorRT/tree/release/9.2/demo/Diffusion).
+[stable-diffusion-v1-5](https://huggingface.co/benjamin-paine/stable-diffusion-v1-5),
+[stable-diffusion-xl](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0). For
+more information on the TensorRT implementation please see the [TensorRT demo](https://github.com/NVIDIA/TensorRT/tree/release/10.4/demo/Diffusion).
 
 > [!Note]
 > This example is given as sample code and should be reviewed before use in production settings.
@@ -57,7 +57,7 @@ support matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/i
 ## Building the Triton Inference Server Image
 
 The example is designed based on the
-`nvcr.io/nvidia/tritonserver:24.01-py3` docker image and [TensorRT OSS v9.2.0](https://github.com/NVIDIA/TensorRT/releases/tag/v9.2.0).
+`nvcr.io/nvidia/tritonserver:24.08-py3` docker image and [TensorRT OSS v10.4](https://github.com/NVIDIA/TensorRT/releases/tag/v10.4).
 
 A set of convenience scripts are provided to create a docker image
 based on the `nvcr.io/nvidia/tritonserver:24.01-py3` image with the
@@ -98,6 +98,15 @@ directory as `workspace`.
 ```
 
 ### Build Stable Diffusion v 1.5 Engine
+
+> [!Note]
+>
+> The model
+> [stable-diffusion-v1-5](https://huggingface.co/benjamin-paine/stable-diffusion-v1-5)
+> requires login in to huggingface and acceptance of terms and
+> conditions of use. Please set the environment variable HF_TOKEN
+> accordingly.
+>
 
 ```bash
 ./scripts/build_models.sh --model stable_diffusion_1_5
@@ -285,27 +294,13 @@ python3 client.py --model stable_diffusion_xl --requests 10 --clients 10
 
 ## Known Issues and Limitations
 
-1. When shutting down the server, an invalid memory operation occurs:
-
-   > [!Note]
-   > This error is also seen in standalone applications outside of the Triton Inference Server
-   > and we believe this is due to an interaction between imported python modules. Further
-   > we haven't seen any issues related to this error and believe it can be safely
-   > ignored.
-
-
-   ```
-   free(): invalid pointer
-   ```
-
-
-2. The diffusion backend doesn't yet support using an optional refiner
+1. The diffusion backend doesn't yet support using an optional refiner
    model unlike the [demo][demo_reference] it's based on. See also
    [demo_txt2img_xl.py][demo_code]
 
 
-[demo_code]: https://github.com/NVIDIA/TensorRT/blob/release/9.2/demo/Diffusion/demo_txt2img_xl.py
+[demo_code]: https://github.com/NVIDIA/TensorRT/blob/release/10.4/demo/Diffusion/demo_txt2img_xl.py
 
 
-[demo_reference]: https://github.com/NVIDIA/TensorRT/tree/release/9.2/demo/Diffusion#text-to-image-using-sdxl-stable-diffusion-xl
+[demo_reference]: https://github.com/NVIDIA/TensorRT/tree/release/10.4/demo/Diffusion#generate-an-image-with-stable-diffusion-xl-guided-by-a-single-text-prompt
 

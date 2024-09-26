@@ -30,7 +30,7 @@ RUN_PREFIX=
 BUILD_MODELS=
 
 # Frameworks
-declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["TRT_LLM"]=2 ["IDENTITY"]=3)
+declare -A FRAMEWORKS=(["DIFFUSION"]=1 ["IDENTITY"]=3)
 DEFAULT_FRAMEWORK=IDENTITY
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
@@ -39,9 +39,8 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
 # Base Images
 BASE_IMAGE=nvcr.io/nvidia/tritonserver
-BASE_IMAGE_TAG_IDENTITY=24.01-py3
-BASE_IMAGE_TAG_DIFFUSION=24.01-py3
-BASE_IMAGE_TAG_TRT_LLM=24.01-trtllm-python-py3
+BASE_IMAGE_TAG_IDENTITY=24.08-py3
+BASE_IMAGE_TAG_DIFFUSION=24.08-py3
 
 get_options() {
     while :; do
@@ -138,11 +137,7 @@ get_options() {
     fi
 
     if [ -z "$TAG" ]; then
-        TAG="triton-python-api:r24.01"
-
-	if [[ $FRAMEWORK == "TRT_LLM" ]]; then
-	    TAG+="-trt-llm"
-	fi
+        TAG="triton-python-api:r24.08"
 
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
 	    TAG+="-diffusion"
@@ -186,7 +181,7 @@ get_options "$@"
 
 if [[ $FRAMEWORK == DIFFUSION ]]; then
     BASE_IMAGE="tritonserver"
-    BASE_IMAGE_TAG="r24.01-diffusion"
+    BASE_IMAGE_TAG="r24.08-diffusion"
 fi
 
 # BUILD RUN TIME IMAGE
@@ -207,17 +202,18 @@ if [[ $FRAMEWORK == DIFFUSION ]]; then
     if [ -z "$RUN_PREFIX" ]; then
 	set -x
     fi
-    $RUN_PREFIX mkdir -p backend/diffusion
-    $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --framework diffusion --tag tritonserver:r24.01-diffusion
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/backend/diffusion/model.py backend/diffusion/model.py
-    $RUN_PREFIX mkdir -p diffusion-models/stable_diffusion_1_5/1
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/config.pbtxt  diffusion-models/stable_diffusion_1_5/config.pbtxt
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/1/.gitkeep  diffusion-models/stable_diffusion_1_5/1/.gitkeep
-    $RUN_PREFIX mkdir -p diffusion-models/stable_diffusion_xl/1
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_xl/config.pbtxt  diffusion-models/stable_diffusion_xl/config.pbtxt
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_xl/1/.gitkeep  diffusion-models/stable_diffusion_xl/1/.gitkeep
-    $RUN_PREFIX mkdir -p scripts/stable_diffusion
-    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/scripts/build_models* scripts/stable_diffusion/
+    $RUN_PREFIX mkdir -p ${SOURCE_DIR}/backend/diffusion
+    $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --framework diffusion --tag tritonserver:r24.08-diffusion
+    $RUN_PREFIX docker run --rm -it -v ${SOURCE_DIR}:/workspace tritonserver:r24.08-diffusion /bin/bash -c "cp -rf /tmp/TensorRT/demo/Diffusion /workspace/backend/diffusion"
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/backend/diffusion/model.py ${SOURCE_DIR}/backend/diffusion/model.py
+    $RUN_PREFIX mkdir -p ${SOURCE_DIR}/diffusion-models/stable_diffusion_1_5/1
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/config.pbtxt  ${SOURCE_DIR}/diffusion-models/stable_diffusion_1_5/config.pbtxt
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/1/.gitkeep  ${SOURCE_DIR}/diffusion-models/stable_diffusion_1_5/1/.gitkeep
+    $RUN_PREFIX mkdir -p ${SOURCE_DIR}/diffusion-models/stable_diffusion_xl/1
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_xl/config.pbtxt  ${SOURCE_DIR}/diffusion-models/stable_diffusion_xl/config.pbtxt
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_xl/1/.gitkeep  ${SOURCE_DIR}/diffusion-models/stable_diffusion_xl/1/.gitkeep
+    $RUN_PREFIX mkdir -p ${SOURCE_DIR}/scripts/stable_diffusion
+    $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/scripts/build_models* ${SOURCE_DIR}/scripts/stable_diffusion/
 
 fi
 
@@ -231,17 +227,6 @@ $RUN_PREFIX docker build -f $DOCKERFILE $BUILD_OPTIONS $BUILD_ARGS -t $TAG $SOUR
 { set +x; } 2>/dev/null
 
 
-if [[ $FRAMEWORK == TRT_LLM ]]; then
-    if [ -z "$RUN_PREFIX" ]; then
-	set -x
-    fi
-
-    $RUN_PREFIX docker build -f $SOURCE_DIR/docker/Dockerfile.trt-llm-engine-builder  $BUILD_OPTIONS $BUILD_ARGS -t trt-llm-engine-builder  $SOURCE_DIR $NO_CACHE
-
-    { set +x; } 2>/dev/null
-
-fi;
-
 if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 
     if [[ $FRAMEWORK == DIFFUSION ]]; then
@@ -249,7 +234,7 @@ if [[ $FRAMEWORK == IDENTITY ]] || [[ $BUILD_MODELS == TRUE ]]; then
 	    set -x
 	fi
 
-	$RUN_PREFIX docker run --rm -it -v $PWD:/workspace $TAG /bin/bash -c "/workspace/scripts/stable_diffusion/build_models.sh --model stable_diffusion_1_5"
+	$RUN_PREFIX docker run --gpus all --rm -it -v ${SOURCE_DIR}:/workspace $TAG /bin/bash -c "/workspace/scripts/stable_diffusion/build_models.sh --model stable_diffusion_xl"
 
 	{ set +x; } 2>/dev/null
     fi

@@ -51,18 +51,50 @@ def _print_heading(message):
     print("-" * len(message))
 
 
-@serve.deployment(ray_actor_options={"num_gpus": 1})
+@serve.deployment(
+    ray_actor_options={"num_gpus": 1},
+    max_ongoing_requests=1,
+    autoscaling_config={
+        "min_replicas": 1,
+        "max_replicas": 8,
+        "max_ongoing_requests": 1,
+        "target_ongoing_requests": 1,
+        "upscale_delay_s": 2,
+        "downscale_delay_s": 120,
+        "upscaling_factor": 1,
+        "downscaling_factor": 1,
+        "metrics_interval_s": 2,
+        "look_back_period_s": 4,
+    },
+)
 @serve.ingress(app)
 class BaseDeployment:
-    def __init__(self):
-        self._image_size = 512
-        self._model_id = "runwayml/stable-diffusion-v1-5"
-        from diffusers import StableDiffusionPipeline
+    def __init__(self, use_torch_compile=False):
+        self._image_size = 1024
+        self._model_id = "stabilityai/stable-diffusion-xl-base-1.0"
+        from diffusers import AutoencoderKL, DiffusionPipeline
 
-        self._pipeline = StableDiffusionPipeline.from_pretrained(
-            self._model_id, revision="fp16", torch_dtype=torch.float16
+        vae = AutoencoderKL.from_pretrained(
+            "madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16
+        )
+        self._pipeline = DiffusionPipeline.from_pretrained(
+            self._model_id,
+            torch_dtype=torch.float16,
+            variant="fp16",
+            use_safetensors=True,
+            vae=vae,
         )
         self._pipeline = self._pipeline.to("cuda")
+        if use_torch_compile:
+            print("compiling")
+            print(torch._dynamo.list_backends())
+            self._pipeline.unet = torch.compile(
+                self._pipeline.unet,
+                fullgraph=True,
+                mode="reduce-overhead",
+                dynamic=False,
+            )
+        self.generate("temp")
 
     @app.get("/generate")
     def generate(self, prompt: str, filename: Optional[str] = None) -> None:
@@ -71,13 +103,28 @@ class BaseDeployment:
                 prompt,
                 height=self._image_size,
                 width=self._image_size,
-                num_inference_steps=50,
+                num_inference_steps=30,
             ).images[0]
             if filename:
                 image_.save(filename)
 
 
-@serve.deployment(ray_actor_options={"num_gpus": 1})
+@serve.deployment(
+    ray_actor_options={"num_gpus": 1},
+    max_ongoing_requests=1,
+    autoscaling_config={
+        "min_replicas": 1,
+        "max_replicas": 8,
+        "max_ongoing_requests": 1,
+        "target_ongoing_requests": 1,
+        "upscale_delay_s": 2,
+        "downscale_delay_s": 120,
+        "upscaling_factor": 1,
+        "downscaling_factor": 1,
+        "metrics_interval_s": 2,
+        "look_back_period_s": 4,
+    },
+)
 @serve.ingress(app)
 class TritonDeployment:
     def __init__(self):
@@ -104,11 +151,9 @@ class TritonDeployment:
         self._stable_diffusion = None
         self._test_model = None
 
-        if not self._triton_server.model("stable_diffusion_1_5").ready():
+        if not self._triton_server.model("stable_diffusion_xl").ready():
             try:
-                self._stable_diffusion = self._triton_server.load(
-                    "stable_diffusion_1_5"
-                )
+                self._stable_diffusion = self._triton_server.load("stable_diffusion_xl")
 
                 if not self._stable_diffusion.ready():
                     raise Exception("Model not ready")
@@ -120,6 +165,7 @@ class TritonDeployment:
                 return
         _print_heading("Models")
         pprint(self._triton_server.models())
+        self.generate("temp")
 
     @app.get("/identity")
     def test(self, string_input: str) -> str:
@@ -148,12 +194,15 @@ class TritonDeployment:
                 image_.save(filename)
 
 
-def tritonserver_deployment(_args):
+def deployment(_args):
     return TritonDeployment.bind()
 
 
-def base_deployment(_args):
-    return BaseDeployment.bind()
+def baseline(_args):
+    if "use-torch-compile" in _args:
+        return BaseDeployment.bind(use_torch_compile=True)
+    else:
+        return BaseDeployment.bind(use_torch_compile=False)
 
 
 if __name__ == "__main__":

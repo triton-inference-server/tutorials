@@ -1,3 +1,4 @@
+#!/bin/bash -e
 # Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,10 +25,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-accelerate
-diffusers==0.9.0
-torch
-torchaudio
-torchvision
-transformers
-transformers[onnxruntime]
+ip_address=$(hostname -I | awk '{print $1}')
+
+echo $ip_address
+
+mkdir -p /tmp/rayserve-demo; cd /tmp/rayserve-demo
+
+ray metrics launch-prometheus
+
+export RAY_GRAFANA_HOST=http://${ip_address}:3000
+
+ray start --head --dashboard-host 0.0.0.0 --metrics-export-port 8080 --disable-usage-stats
+
+/usr/share/grafana/bin/grafana-server --homepath /usr/share/grafana --config /tmp/ray/session_latest/metrics/grafana/grafana.ini web >grafana.stdout.log 2>&1 &
