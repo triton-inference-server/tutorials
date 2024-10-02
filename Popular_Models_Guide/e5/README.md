@@ -7,15 +7,28 @@
 mkdir -p model_repository/e5/1
 ```
 
+```bash
+docker run -it --rm --gpus all -v $(pwd):/workspace -v /tmp:/tmp nvcr.io/nvidia/pytorch:24.09-py3
+```
+
 ## Download and Export to ONNX
 ```bash
 pip install optimum[exporters] sentence_transformers
-optimum-cli export onnx --task sentence-similarity --model intfloat/e5-large-v2 model_repository/e5/1/model.onnx
+optimum-cli export onnx --task sentence-similarity --model intfloat/e5-large-v2 /tmp/e5_onnx --batch_size 64
+```
+
+## Compile TRT Engine
+```bash
+trtexec \
+    --onnx=/tmp/e5_onnx/model.onnx \
+    --saveEngine=/tmp/model_repository/e5/1/model.plan \
+    --minShapes=input_ids:1x1,attention_mask:1x1 \
+    --maxShapes=input_ids:64x512,attention_mask:64x512
 ```
 
 ## Deploy Triton
 ```bash
-docker run --gpus=1 --rm --net=host -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:24.09-py3 tritonserver --model-repository=/models
+docker run --gpus=1 --rm --net=host -v /tmp/model_repository:/models nvcr.io/nvidia/tritonserver:24.09-py3 tritonserver --model-repository=/models
 ```
 
 ## Send Request
