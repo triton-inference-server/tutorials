@@ -1,0 +1,60 @@
+
+# Copyright (c) 2024, NVIDIA CORPORATION. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# See values.yaml for reference values.
+
+gpu: NVIDIA-A10G
+# gpu: NVIDIA-A100-SXM4-40GB
+gpuPerNode: 4
+persistentVolumeClaim: efs-claim-2
+
+tensorrtLLM:
+  parallelism:
+    tensor: 4
+    pipeline: 2
+
+triton:
+  image:
+   name: 210086341041.dkr.ecr.us-west-2.amazonaws.com/triton_trtllm_multinode:24.08
+    # name: 354625738399.dkr.ecr.us-east-1.amazonaws.com/wenhant_triton_trtllm_multinode:24.07.3
+  resources:
+    cpu: 8
+    memory: 32Gi
+    efa: 1 # If you don't want to enable EFA, set this to 0.
+  # triton_model_repo_path: /var/run/models/mixtral_8x7b_tp8_ep2_moetp4/triton_model_repo
+  # triton_model_repo_path: /var/run/models/llama3_8b_tp2_pp4/triton_model_repo
+  # triton_model_repo_path: /var/run/models/triton_repo_mixtral_8x7b_tp4_moeep2_moetp2_pp2_v11_a10g/triton_model_repo
+  # triton_model_repo_path: /var/run/models/triton_repo_mixtral_8x7b_tp4_moetp4_pp2_v11_a10g/triton_model_repo
+  # triton_model_repo_path: /var/run/models/triton_repo_mixtral_8x7b_tp4_moeep4_pp2_v11_a10g/triton_model_repo
+  # triton_model_repo_path: /var/run/models/triton_repo_mixtral_8x7b_pp8_v11_a10g/triton_model_repo
+  # triton_model_repo_path: /var/run/models/triton_repo_mixtral_8x7b_tp8_v11_a10g/triton_model_repo
+  # triton_model_repo_path: /var/run/models/triton_repo_mixtral_8x7b_tp4_pp2_v11_a10g/triton_model_repo
+  triton_model_repo_path: /var/run/models/tensorrtllm_backend/triton_model_repo
+  # triton_model_repo_path: /var/run/models/triton_repo_mixtral_8x22b_tp16_v11_a100/triton_model_repo
+  enable_nsys: false # Note if you send lots of requests, nsys report can be very large.
+
+logging:
+  tritonServer:
+    verbose: true
+
+autoscaling:
+  enable: true
+  replicas:
+    maximum: 2
+    minimum: 1
+  metric:
+    name: triton:queue_compute:ratio
+    value: 1
+

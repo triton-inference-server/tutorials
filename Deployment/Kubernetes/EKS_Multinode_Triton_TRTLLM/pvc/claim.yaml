@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: efs-claim-2
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc-1
+  resources:
+    requests:
+      storage: 200Gi
