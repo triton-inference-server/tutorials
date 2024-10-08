@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: setup-ssh-efs
+  name: setup-ssh-nfs
   labels:
-    app: setup-ssh-efs
+    app: setup-ssh-nfs
 spec:
   containers:
   - name: triton

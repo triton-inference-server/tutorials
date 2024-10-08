@@ -248,7 +248,7 @@ try:
     if args.mode == "init":
         print("Hello, World!")
         exit(EXIT_SUCCESS)
-        
+
     elif args.mode == "exec":
         # Update the is_verbose flag with values passed in by options.
         is_verbose = is_verbose or args.verbose > 0

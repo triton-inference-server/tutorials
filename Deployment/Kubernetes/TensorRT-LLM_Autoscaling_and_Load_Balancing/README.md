@@ -356,7 +356,7 @@ Follow the steps to check if your EFS file system is working properly with your 
 
 #### 5. Create an PVC for the created EFS file system
 
-We have provided an example in here: [pvc](./pvc/). This folder contains three files: `pv.yaml`, `claim.yaml`, and `storageclass.yaml`. Make sure you modify the `pv.yaml` file and change the `volumeHandle` value to your own EFS file system ID.
+We have provided an example in here: [pvc_aws](./pvc_aws/). This folder contains three files: `pv_aws.yaml`, `claim_aws.yaml`, and `storageclass_aws.yaml`. Make sure you modify the `pv_aws.yaml` file and change the `volumeHandle` value to your own EFS file system ID.
 
 pv.yaml
 
@@ -436,9 +436,9 @@ persistentVolumeClaim:
 
 To build the TRT-LLM engine and set up Triton model repository inside the compute node use the following steps:
 
-1.  Modify the `setup_ssh_efs.yaml` file
+1.  Modify the `setup_ssh_nfs.yaml` file
 
-    We use the `setup_ssh_efs.yaml` file which does "sleep infinity" to set up ssh access inside the compute node along with EFS.
+    We use the `setup_ssh_nfs.yaml` file which does "sleep infinity" to set up ssh access inside the compute node along with EFS.
 
     Adjust the following values:
 
@@ -452,8 +452,8 @@ To build the TRT-LLM engine and set up Triton model repository inside the comput
 
     ```
     cd multinode_helm_chart/
-    kubectl apply -f setup_ssh_efs.yaml
-    kubectl exec -it setup-ssh-efs -- bash
+    kubectl apply -f setup_ssh_nfs.yaml
+    kubectl exec -it setup-ssh-nfs -- bash
     ```
 
     Clone the Triton TRT-LLM backend repository:
@@ -516,7 +516,7 @@ To build the TRT-LLM engine and set up Triton model repository inside the comput
 
     ```
     exit
-    kubectl delete -f setup_ssh_efs.yaml
+    kubectl delete -f setup_ssh_nfs.yaml
     ```
 
 #### Custom Container Image
@@ -984,7 +984,6 @@ There are two reasons:
     most straightforward solution.
 
     In order to make the best use of the initialization container I chose to use a custom [server.py](./containers/server.py)
-    script that made of the new [Triton CLI](https://github.com/triton-inference-server/triton_cli) tool.
 
 2.  Multi-GPU deployments require a rather specialized command line to run, and generating it using Helm chart scripting was
     not something I wanted to deal with.
