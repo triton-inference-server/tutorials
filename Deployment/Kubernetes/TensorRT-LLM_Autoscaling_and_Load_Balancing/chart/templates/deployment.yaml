@@ -286,7 +286,7 @@ spec:
           type: DirectoryOrCreate
       - name: model-repository
         persistentVolumeClaim:
-          claimName: efs-claim-autoscaling-2
+          claimName: nfs-claim-autoscaling-2
       - name: dshm
         emptyDir:
           medium: Memory

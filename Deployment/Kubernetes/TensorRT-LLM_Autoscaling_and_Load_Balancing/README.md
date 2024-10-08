@@ -414,7 +414,7 @@ kubectl apply -f pvc/
 
 ```
 persistentVolumeClaim:
-  claimName: efs-claim-autoscaling-2 (Edit your claimName)
+  claimName: nfs-claim-autoscaling-2 (Edit your claimName)
 ```
 
 ## Triton Preparation
