@@ -15,19 +15,19 @@ vpc:
     public:
       us-east-1a:
         id: $PLACEHOLDER_SUBNET_PUBLIC_1
-        
+
   clusterEndpoints:
     privateAccess: true
     publicAccess: true
-      
+
 cloudwatch:
   clusterLogging:
-    enableTypes: ["*"]  
+    enableTypes: ["*"]
 
 iam:
   withOIDC: true
 
-            
+
 managedNodeGroups:
   - name: cpu-node-group
     instanceType: c5.2xlarge
@@ -45,7 +45,7 @@ managedNodeGroups:
         albIngress: true
   - name: gpu-compute-node-group
     instanceType: p5.48xlarge
-    instancePrefix: trtllm-compute-node 
+    instancePrefix: trtllm-compute-node
     privateNetworking: true
     efaEnabled: true
     minSize: 0

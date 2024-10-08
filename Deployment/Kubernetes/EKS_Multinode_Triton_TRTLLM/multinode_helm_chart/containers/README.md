@@ -17,7 +17,7 @@
 
 # Container Generation
 
-The files in this folder are intended to be used to create the custom container image for multi-node Triton + TRT-LLM EKS deployment including installation of EFA componenets.
+The files in this folder are intended to be used to create the custom container image for multi-node Triton + TRT-LLM EKS deployment including installation of EFA components.
 
 Run the following command to create the container image.
 

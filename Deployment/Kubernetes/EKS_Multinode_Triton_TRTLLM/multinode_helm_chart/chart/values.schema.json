@@ -127,7 +127,7 @@
       },
       "required": [
         "image",
-        "triton_model_repo_path" 
+        "triton_model_repo_path"
       ],
       "type": "object"
     },

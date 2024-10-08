@@ -26,6 +26,7 @@ ERROR_CODE_USAGE = 253
 EXIT_SUCCESS = 0
 DELAY_BETWEEN_QUERIES = 2
 
+
 def die(exit_code: int):
     if exit_code is None:
         exit_code = ERROR_CODE_FATAL
@@ -36,10 +37,17 @@ def die(exit_code: int):
 
     exit(exit_code)
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", type=str, choices=["leader", "worker"])
-    parser.add_argument("--triton_model_repo_dir", type=str, default=None,required=True,help="Directory that contains Triton Model Repo to be served")
+    parser.add_argument(
+        "--triton_model_repo_dir",
+        type=str,
+        default=None,
+        required=True,
+        help="Directory that contains Triton Model Repo to be served",
+    )
     parser.add_argument("--pp", type=int, default=1, help="Pipeline parallelism.")
     parser.add_argument("--tp", type=int, default=1, help="Tensor parallelism.")
     parser.add_argument("--iso8601", action="count", default=0)
@@ -55,10 +63,18 @@ def parse_arguments():
         type=int,
         help="How many gpus are in each pod/node (We launch one pod per node). Only required in leader mode.",
     )
-    parser.add_argument("--stateful_set_group_key",type=str,default=None,help="Value of leaderworkerset.sigs.k8s.io/group-key, Leader uses this to gang schedule and its only needed in leader mode")
-    parser.add_argument("--enable_nsys", action="store_true", help="Enable Triton server profiling")
+    parser.add_argument(
+        "--stateful_set_group_key",
+        type=str,
+        default=None,
+        help="Value of leaderworkerset.sigs.k8s.io/group-key, Leader uses this to gang schedule and its only needed in leader mode",
+    )
+    parser.add_argument(
+        "--enable_nsys", action="store_true", help="Enable Triton server profiling"
+    )
 
     return parser.parse_args()
+
 
 def run_command(cmd_args: [str], omit_args: [int] = None):
     command = ""
@@ -75,9 +91,11 @@ def run_command(cmd_args: [str], omit_args: [int] = None):
 
     return subprocess.call(cmd_args, stderr=sys.stderr, stdout=sys.stdout)
 
+
 def signal_handler(sig, frame):
     write_output(f"Signal {sig} detected, quitting.")
     exit(EXIT_SUCCESS)
+
 
 def wait_for_workers(num_total_pod: int, args):
     if num_total_pod is None or num_total_pod <= 0:
@@ -131,14 +149,19 @@ def wait_for_workers(num_total_pod: int, args):
 
     return workers
 
+
 def write_output(message: str):
     print(message, file=sys.stdout, flush=True)
+
 
 def write_error(message: str):
     print(message, file=sys.stderr, flush=True)
 
+
 def do_leader(args):
-    write_output(f"Server is assuming each node has {args.gpu_per_node} GPUs. To change this, use --gpu_per_node")
+    write_output(
+        f"Server is assuming each node has {args.gpu_per_node} GPUs. To change this, use --gpu_per_node"
+    )
 
     world_size = args.tp * args.pp
 
@@ -152,9 +175,11 @@ def do_leader(args):
     workers = wait_for_workers(world_size / args.gpu_per_node, args)
 
     if len(workers) != (world_size / args.gpu_per_node):
-        write_error(f"fatal: {len(workers)} found, expected {world_size / args.gpu_per_node}.")
+        write_error(
+            f"fatal: {len(workers)} found, expected {world_size / args.gpu_per_node}."
+        )
         die(ERROR_EXIT_DELAY)
-    
+
     workers_with_mpi_slots = [worker + f":{args.gpu_per_node}" for worker in workers]
 
     if args.enable_nsys:
@@ -241,6 +266,7 @@ def do_leader(args):
 
     exit(result)
 
+
 def do_worker(args):
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
@@ -248,10 +274,13 @@ def do_worker(args):
     write_output("Worker paused awaiting SIGINT or SIGTERM.")
     signal.pause()
 
+
 def main():
     write_output("Reporting system information.")
     run_command(["whoami"])
-    run_command(["cgget", "-n", "--values-only", "--variable memory.limit_in_bytes", "/"])
+    run_command(
+        ["cgget", "-n", "--values-only", "--variable memory.limit_in_bytes", "/"]
+    )
     run_command(["nvidia-smi"])
 
     args = parse_arguments()
@@ -275,5 +304,6 @@ def main():
         write_error(f'       Supported values are "init" or "exec".')
         die(ERROR_CODE_USAGE)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

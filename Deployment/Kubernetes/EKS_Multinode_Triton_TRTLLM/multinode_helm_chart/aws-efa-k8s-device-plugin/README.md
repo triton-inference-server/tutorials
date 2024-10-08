@@ -19,7 +19,7 @@ helm install efa ./aws-efa-k8s-device-plugin -n kube-system
 
 # Configuration
 
-Paramter | Description | Default
+Parameter | Description | Default
 --- | --- | ---
 `image.repository` | EFA image repository | `602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-efa-k8s-device-plugin`
 `image.tag` | EFA image tag | `v0.5.3`
@@ -31,7 +31,7 @@ Paramter | Description | Default
 `nodeSelector` | Node labels for pod assignment | `{}`
 `tolerations` | Optional deployment tolerations | `[]`
 `additionalPodAnnotations` | Pod annotations to apply in addition to the default ones | `{}`
-`additionalPodLabels` | Pod labels to apply in addition to the defualt ones | `{}`
+`additionalPodLabels` | Pod labels to apply in addition to the default ones | `{}`
 `nameOverride` | Override the name of the chart | `""`
 `fullnameOverride` | Override the full name of the chart | `""`
 `imagePullSecrets` | Docker registry pull secret | `[]`
