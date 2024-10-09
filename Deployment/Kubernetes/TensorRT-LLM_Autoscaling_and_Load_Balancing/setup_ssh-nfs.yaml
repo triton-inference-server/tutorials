@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: setup-ssh-nfs
+  labels:
+    app: setup-ssh-nfs
+spec:
+  containers:
+  - name: triton
+    image: nvcr.io/nvidia/tritonserver:24.08-trtllm-python-py3
+    command: ["sleep", "infinity"]
+    resources:
+      limits:
+        nvidia.com/gpu: 4
+      requests:
+        nvidia.com/gpu: 4
+    volumeMounts:
+      - mountPath: /var/run/models
+        name: model-repository
+      - mountPath: /dev/shm
+        name: dshm
+  volumes:
+    - name: model-repository
+      persistentVolumeClaim:
+        claimName: nfs-claim-autoscaling-2
+    - name: dshm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 512Gi

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG BASE_CONTAINER_IMAGE=nvcr.io/nvidia/tritonserver:24.04-trtllm-python-py3
+ARG BASE_CONTAINER_IMAGE=nvcr.io/nvidia/tritonserver:24.08-trtllm-python-py3
 ARG ENGINE_DEST_PATH=/var/run/engines
 ARG HF_HOME=/var/run/cache
 
@@ -35,14 +35,6 @@ ENV HF_HOME ${HF_HOME}
 
 # Set the active working directory.
 WORKDIR /workspace
-
-# Install a custom version of Triton CLI that support Tensor parallelism and
-# the 70B version of Llama models.
-RUN pip --verbose install \
-    --no-cache-dir \
-    --no-color \
-    --no-input \
-    git+https://github.com/triton-inference-server/triton_cli.git@jwyman/aslb-mn
 
 # Copy the server script.
 COPY server.py .

@@ -44,9 +44,10 @@ We'll cover the following topics:
     * [NVIDIA Data Center GPU Manager (DCGM) Exporter](#nvidia-data-center-gpu-manager-dcgm-exporter)
     * [Connect DCGM and Triton Metrics to Prometheus](#connect-dcgm-and-triton-metrics-to-prometheus)
     * [Triton Metrics Prometheus Rule](#triton-metrics-prometheus-rule)
-  * [Hugging Face Authorization](#hugging-face-authorization)
+  * [NFS Creation](#nfs-creation)
 * [Triton Preparation](#triton-preparation)
-  * [Model Preparation Script](#model-preparation-script)
+  * [Pod Initialization Script](#pod-initialization-script)
+  * [Model Preparation Steps](#model-preparation-steps)
   * [Custom Container Image](#custom-container-image)
   * [Kubernetes Pull Secrets](#kubernetes-pull-secrets)
 * [Triton Deployment](#triton-deployment)
@@ -330,47 +331,95 @@ If absolute response times are a more important metric the `triton:request_durat
 `triton:compute_duration:average` metrics would more likely meet this requirement.
 
 
-### Hugging Face Authorization
+### NFS Creation
 
-In order to download models from Hugging Face, your pods will require an access token with the appropriate permission to
-download models from their servers.
+In order to download models from Hugging Face, create TRT-LLM models you need a NFS which your pods can access.
+We do not prescribe any particular NFS, for this demonstation we will use Amazon EFS (Elastic File System)
+To enable multiple pods deployed to multiple nodes to load shards of the same model so that they can used in coordination to serve inference request too large to loaded by a single GPU, we'll need a common, shared storage location. In Kubernetes, these common, shared storage locations are referred to as persistent volumes. Persistent volumes can be volume mapped in to any number of pods and then accessed by processes running inside of said pods as if they were part of the pod's file system. We will be using EFS as persistent volume.
 
-1.  If you do not already have a Hugging Face access token, you will need to created one.
-    To create a Hugging Face access token,
-    [follow their guide](https://huggingface.co/docs/hub/en/security-tokens).
+Additionally, we will need to create a persistent-volume claim which can use to assign the persistent volume to a pod.
+#### 1. Create an IAM role
 
-2.  Once you have a token, use the command below to persist the token as a secret named `hf-model-pull` in your cluster.
+Follow the steps to create an IAM role for your EFS file system: https://docs.aws.amazon.com/eks/latest/userguide/efs-csi.html#efs-create-iam-resources. This role will be used later when you install the EFS CSI Driver.
 
-    ```bash
-    kubectl create secret generic hf-model-pull '--from-literal=password=<access_token>'
-    ```
+#### 2. Install EFS CSI driver
 
-3.  To verify that your secret has been created, use the following command and inspect the output for your secret.
+Install the EFS CSI Driver through the Amazon EKS add-on in AWS console: https://docs.aws.amazon.com/eks/latest/userguide/efs-csi.html#efs-install-driver. Once it's done, check the Add-ons section in EKS console, you should see the driver is showing `Active` under Status.
 
-    ```bash
-    kubectl get secrets
-    ```
+#### 3. Create EFS file system
 
+Follow the steps to create an EFS file system: https://github.com/kubernetes-sigs/aws-efs-csi-driver/blob/master/docs/efs-create-filesystem.md. Make sure you mount subnets in the last step correctly. This will affect whether your nodes are able to access the created EFS file system.
+
+#### 4. Test NFS
+
+Follow the steps to check if your EFS file system is working properly with your nodes: https://github.com/kubernetes-sigs/aws-efs-csi-driver/tree/master/examples/kubernetes/multiple_pods. This test is going to mount your EFS file system on all of your available nodes and write a text file to the file system.
+
+#### 5. Create an PVC for the created EFS file system
+
+We have provided an example in here: [pvc_aws](./pvc_aws/). This folder contains three files: `pv_aws.yaml`, `claim_aws.yaml`, and `storageclass_aws.yaml`. Make sure you modify the `pv_aws.yaml` file and change the `volumeHandle` value to your own EFS file system ID.
+
+pv.yaml
+
+```
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: efs-pv
+spec:
+  capacity:
+    storage: 200Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: efs-sc
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: fs-0cf1f987d6f5af59c # Change to your own ID
+```
+
+claim.yaml
+
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: efs-claim
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 200Gi
+```
+
+storageclass.yaml
+
+```
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: efs-sc
+provisioner: efs.csi.aws.com
+```
+
+Run the below command to deploy:
+
+```
+kubectl apply -f pvc/
+```
+
+#### 6. Edit cliamName in deployment.yaml to point to your chart/templates/deployment.yaml
+
+```
+persistentVolumeClaim:
+  claimName: nfs-claim-autoscaling-2 (Edit your claimName)
+```
 
 ## Triton Preparation
 
-### Model Preparation Script
-
-This script will executed by every pod created for a model deployment as part of the pod's initialization phase
-(i.e. before Triton Server is started).
-
-The intention of this script to handle the acquisition of the model file from Hugging Face, the generation of the TensorRT
-engine and plan files, and the caching of said generated files.
-The script depends on the fact that the Kubernetes deployment scripts we'll be using rely on host storage (caching files on
-the nodes themselves).
-
-Specially, the model and engine directories will me mapped to folders on the host node and remapped to all subsequent
-pods deployed on the same node.
-This enables the generation script to detect that the plan and engine generation steps have been completed and not repeat work.
-
-When Triton Server is started, the same host folders will be mounted to its container and Triton will use the pre-generated
-model plan and engine files.
-This drastically reduces the time required for subsequent pod starts on the same node.
+### Pod Initialization Script
 
 1.  Create a Python file with the content below named `server.py`.
 
@@ -383,6 +432,93 @@ This drastically reduces the time required for subsequent pod starts on the same
     This could save significant time depending on the delta between the time to download the files instead of generating them
     (likely several seconds at least).
 
+### Model Preparation Steps:
+
+To build the TRT-LLM engine and set up Triton model repository inside the compute node use the following steps:
+
+1.  Modify the `setup_ssh_nfs.yaml` file
+
+    We use the `setup_ssh_nfs.yaml` file which does "sleep infinity" to set up ssh access inside the compute node along with EFS.
+
+    Adjust the following values:
+
+    - `image` : change image tag. Default is 24.08 which supports TRT-LLM v0.12.0
+    - `nvidia.com/gpu` : set to the number of GPUs per node in your cluster, adjust in both the limits and requests section
+    - `claimName` : set to your EFS pvc name
+
+2.  SSH into compute node and build TRT-LLM engine
+
+    Deploy the pod:
+
+    ```
+    cd multinode_helm_chart/
+    kubectl apply -f setup_ssh_nfs.yaml
+    kubectl exec -it setup-ssh-nfs -- bash
+    ```
+
+    Clone the Triton TRT-LLM backend repository:
+
+    ```
+    cd <EFS_mount_path>
+    git clone https://github.com/triton-inference-server/tensorrtllm_backend.git -b v0.12.0
+    cd tensorrtllm_backend
+    git lfs install
+    git submodule update --init --recursive
+    ```
+
+    Build a Llama3-8B engine with Tensor Parallelism=1, Pipeline Parallelism=1
+    ```
+    cd tensorrtllm_backend/tensorrt_llm/examples/llama
+
+    pip install -U "huggingface_hub[cli]"
+    huggingface-cli login
+    huggingface-cli download meta-llama/Meta-Llama-3-8B --local-dir ./Meta-Llama-3-8B --local-dir-use-symlinks False
+
+    python3 convert_checkpoint.py --model_dir ./Meta-Llama-3-8B \
+                                --output_dir ./converted_checkpoint \
+                                --dtype bfloat16 \
+                                --tp_size 1 \
+                                --pp_size 1 \
+                                --load_by_shard \
+                                --workers 1
+
+    trtllm-build --checkpoint_dir ./converted_checkpoint \
+                --output_dir ./output_engines \
+                --max_num_tokens 4096 \
+                --max_input_len 65536 \
+                --max_seq_len 131072 \
+                --max_batch_size 8 \
+                --use_paged_context_fmha enable \
+                --workers 1
+    ```
+
+3.  Prepare the Triton model repository
+
+    ```
+    cd <EFS_MOUNT_PATH>/tensorrtllm_backend
+    mkdir triton_model_repo
+
+    cp -r all_models/inflight_batcher_llm/ensemble triton_model_repo/
+    cp -r all_models/inflight_batcher_llm/preprocessing triton_model_repo/
+    cp -r all_models/inflight_batcher_llm/postprocessing triton_model_repo/
+    cp -r all_models/inflight_batcher_llm/tensorrt_llm triton_model_repo/
+
+    python3 tools/fill_template.py -i triton_model_repo/preprocessing/config.pbtxt tokenizer_dir:<PATH_TO_TOKENIZER>,tokenizer_type:llama,triton_max_batch_size:8,preprocessing_instance_count:1
+    python3 tools/fill_template.py -i triton_model_repo/tensorrt_llm/config.pbtxt triton_backend:tensorrtllm,triton_max_batch_size:8,decoupled_mode:True,max_beam_width:1,engine_dir:<PATH_TO_ENGINES>,enable_kv_cache_reuse:False,batching_strategy:inflight_batching,max_queue_delay_microseconds:0
+    python3 tools/fill_template.py -i triton_model_repo/postprocessing/config.pbtxt tokenizer_dir:<PATH_TO_TOKENIZER>,tokenizer_type:llama,triton_max_batch_size:8,postprocessing_instance_count:1
+    python3 tools/fill_template.py -i triton_model_repo/ensemble/config.pbtxt triton_max_batch_size:8
+    ```
+
+    > [!Note]
+    > Be sure to substitute the correct values for `<PATH_TO_TOKENIZER>` and `<PATH_TO_ENGINES>` in the example above. Keep in mind that the tokenizer, the TRT-LLM engines, and the Triton model repository should be in a shared file storage between your nodes. They're required to launch your model in Triton. For example, if using AWS EFS, the values for `<PATH_TO_TOKENIZER>` and `<PATH_TO_ENGINES>` should be respect to the actutal EFS mount path. This is determined by your persistent-volume claim and mount path in chart/templates/deployment.yaml. Make sure that your nodes are able to access these files.
+
+4.  Delete the pod
+
+    ```
+    exit
+    kubectl delete -f setup_ssh_nfs.yaml
+    ```
+
 #### Custom Container Image
 
 1.  Using the file below, we'll create a custom container image in the next step.
@@ -390,27 +526,16 @@ This drastically reduces the time required for subsequent pod starts on the same
     > [triton_trt-llm.containerfile](containers/triton_trt-llm.containerfile)
 
 2.  Run the following command to create a custom Triton Inference Server w/ all necessary tools to generate TensorRT-LLM
-    plan and engine files. In this example we'll use the tag `24.04` to match the date portion of `24.04-trtllm-python-py3`
+    plan and engine files. In this example we'll use the tag `24.08` to match the date portion of `24.08-trtllm-python-py3`
     from the base image.
 
     ```bash
     docker build \
       --file ./triton_trt-llm.containerfile \
       --rm \
-      --tag triton_trt-llm:24.04 \
+      --tag triton_trt-llm:24.08 \
       .
     ```
-
-    ##### Custom Version of Triton CLI
-
-    This custom Triton Server container image makes use of a custom version of the Triton CLI.
-    The relevant changes have been made available as a
-    [topic branch](https://github.com/triton-inference-server/triton_cli/tree/jwyman/aslb-mn) in the Triton CLI repository on
-    GitHub.
-    The changes in the branch can be
-    [inspected](https://github.com/triton-inference-server/triton_cli/compare/main...jwyman/aslb-mn) using the GitHub
-    interface, and primarily contain the addition of the ability to specify tensor parallelism when optimizing models for
-    TensorRT-LLM and enable support for additional models.
 
 3.  Upload the Container Image to a Cluster Visible Repository.
 
@@ -423,14 +548,14 @@ This drastically reduces the time required for subsequent pod starts on the same
 
         ```bash
         docker tag \
-          triton_trt-llm:24.04 \
-          nvcr.io/example/triton_trt-llm:24.04
+          triton_trt-llm:24.08 \
+          nvcr.io/example/triton_trt-llm:24.08
         ```
 
     2. Next, upload the container image to your repository.
 
         ```bash
-        docker push nvcr.io/example/triton_trt-llm:24.04
+        docker push nvcr.io/example/triton_trt-llm:24.08
         ```
 
 #### Kubernetes Pull Secrets
@@ -518,7 +643,6 @@ Deploying Triton Server with a model that fits on a single GPU is straightforwar
     * Model name.
     * Supported / available GPU(s).
     * Image pull secrets (if necessary).
-    * Hugging Face secret name.
 
     The provided sample Helm [chart](./chart/) include several example values files such as
     [llama-3-8b_values.yaml](chart/llama-3-8b-instruct_values.yaml).
@@ -851,25 +975,6 @@ Exporter.
 Taints and tolerations, optimized values for metrics collection, and the necessity of providing the correct URL to the
 deployed Prometheus server.
 
-#### Why Use the Triton CLI and Not Other Tools Provided by NVIDIA?
-
-I chose to use the new [Triton CLI](https://github.com/triton-inference-server/triton_cli) tool to optimize models for
-TensorRT-LLM instead of other available tools for a couple of reasons.
-
-Firstly, using the Triton CLI simplifies the conversion and optimization of models into a single command.
-
-Secondly, relying on the Triton CLI simplifies the creation of the container because all requirements were met with a single
-`pip install` command.
-
-##### Why Use a Custom Branch of Triton CLI Instead of an Official Release?
-
-I decided to use a custom [branch of Triton CLI](https://github.com/triton-inference-server/triton_cli/tree/jwyman/aslb-mn)
-because there are features this guide needed that were not present in any of the official releases available.
-The branch is not a Merge Request because the method used to add the needed features does not aligned with changes the
-maintainers have planned.
-Once we can achieve alignment, this guide will be updated to use an official release.
-
-
 ### Why Does the Chart Run a Python Script Instead of Triton Server Directly?
 
 There are two reasons:
@@ -879,7 +984,6 @@ There are two reasons:
     most straightforward solution.
 
     In order to make the best use of the initialization container I chose to use a custom [server.py](./containers/server.py)
-    script that made of the new [Triton CLI](https://github.com/triton-inference-server/triton_cli) tool.
 
 2.  Multi-GPU deployments require a rather specialized command line to run, and generating it using Helm chart scripting was
     not something I wanted to deal with.
@@ -889,27 +993,6 @@ There are two reasons:
 
 Because I'm not a Python developer, but I am learning!
 My background is in C/C++ with plenty of experience with shell scripting languages.
-
-
-### Why Use a Custom Triton Image?
-
-I decided to use a custom image for a few reasons.
-
-1.  Given the answer above and the use of Triton CLI and a custom Python script, the initialization container needed both
-    components pre-installed in it to avoid unnecessary use of ephemeral storage.
-
-    > [!Warning]
-    > Use of ephemeral storage can lead to pod eviction, and therefore should be avoided whenever possible.
-
-2.  Since the Triton + TRT-LLM image is already incredibly large, I wanted to avoid consuming additional host storage space
-    with yet another container image.
-
-    Additionally, the experience of a pod appearing to be stuck in the `Pending` state while it download a container prior to
-    the initialization container is easier to understand compared to a short `Pending` state before the initialization
-    container, followed by a much longer `Pending` state before the Triton Server can start.
-
-3.  I wanted a custom, constant environment variable set for `ENGINE_DEST_PATH` that could be used by both the initialization
-    and Triton Server containers.
 
 
 ### What is the `client/` Folder For?
@@ -948,9 +1031,8 @@ I encourage you to experiment with specialized load balancers to determine the b
 
 Software versions featured in this document:
 
-* Triton Inference Server v2.45.0 (24.04-trtllm-python-py3)
+* Triton Inference Server v2.45.0 (24.08-trtllm-python-py3)
 * TensorRT-LLM v0.9.0
-* Triton CLI v0.0.7
 * NVIDIA Device Plugin for Kubernetes v0.15.0
 * NVIDIA GPU Discovery Service for Kubernetes v0.8.2
 * NVIDIA DCGM Exporter v3.3.5

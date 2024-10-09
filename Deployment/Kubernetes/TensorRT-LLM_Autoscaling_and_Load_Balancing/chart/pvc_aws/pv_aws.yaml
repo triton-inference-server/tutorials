@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: efs-autoscaling-pv-2
+spec:
+  capacity:
+    storage: 200Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: efs-autoscaling-sc
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: fs-0c6ba87870e4be751

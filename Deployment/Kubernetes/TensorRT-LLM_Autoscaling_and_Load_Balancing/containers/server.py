@@ -23,7 +23,7 @@ import time
 # Any changes here must also be made there, and vice versa.
 CACHE_DIRECTORY = "/var/run/cache"
 HUGGING_FACE_TOKEN_PATH = "/var/run/secrets/hugging_face/password"
-MODEL_DIRECTORY = "/var/run/models"
+MODEL_DIRECTORY = "/var/run/models/tensorrtllm_backend/triton_model_repo"
 
 ERROR_EXIT_DELAY = 15
 ERROR_CODE_FATAL = 255
@@ -212,66 +212,6 @@ def execute_triton(args):
     exit(result)
 
 
-# ---
-
-
-def initialize_model(args):
-    if args.model is None or len(args.model) == 0:
-        die("Model name must be provided.")
-
-    hugging_face_authenticate(args)
-
-    engine_path = os.path.join(ENGINE_DIRECTORY, args.model)
-    model_path = os.path.join(MODEL_DIRECTORY, args.model)
-
-    # When the model and plan already exist, we can exit early, happily.
-    if os.path.exists(engine_path) and os.path.exists(model_path):
-        write_output(
-            f"TensorRT engine and plan detected for {args.model}. No work to do, exiting."
-        )
-        exit(EXIT_SUCCESS)
-
-    write_output(f"Begin generation of TensorRT engine and plan for {args.model}.")
-    write_output(" ")
-
-    # Build up a set of args for the subprocess call.
-    cmd_args = [
-        "triton",
-        "import",
-        "--model",
-        args.model,
-        "--model-repository",
-        MODEL_DIRECTORY,
-    ]
-
-    if args.engine == "vllm":
-        cmd_args += ["--backend", "vllm"]
-
-    else:
-        cmd_args += ["--backend", "tensorrtllm"]
-
-        if args.dt is not None and args.dt in ["bfloat", "float16", "float32"]:
-            cmd_args += ["--data-type", args.dt]
-
-        if args.pp > 1:
-            cmd_args += ["--pipeline-parallelism", f"{args.pp}"]
-
-        if args.tp > 1:
-            cmd_args += ["--tensor-parallelism", f"{args.tp}"]
-
-    # When verbose, insert the verbose flag.
-    # It is important to note that the flag must immediately follow `triton` and cannot be in another ordering position.
-    # This limitation will likely be removed a future release of triton_cli.
-    if is_verbose:
-        cmd_args.insert(1, "--verbose")
-
-    result = run_command(cmd_args)
-    exit(result)
-
-
-# ---
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", type=str, choices=["exec", "init"])
@@ -302,31 +242,17 @@ try:
     HUGGING_FACE_HOME = os.getenv(HUGGING_FACE_KEY)
 
     is_verbose = os.getenv(CLI_VERBOSE_KEY) is not None
-
-    # Validate that `ENGINE_DIRECTORY` isn't empty.
-    if ENGINE_DIRECTORY is None or len(ENGINE_DIRECTORY) == 0:
-        raise Exception(f"Required environment variable '{ENGINE_PATH_KEY}' not set.")
-
-    # Validate that `ENGINE_DIRECTORY` actually exists.
-    if not os.path.exists(ENGINE_DIRECTORY):
-        raise Exception(f"Engine directory '{ENGINE_DIRECTORY}' does not exist.")
-
-    # Validate that `MODEL_DIRECTORY` actually exists.
-    if not os.path.exists(MODEL_DIRECTORY):
-        raise Exception(f"Model directory '{MODEL_DIRECTORY}' does not exist.")
-
     # Parse options provided.
     args = parse_arguments()
 
-    # Update the is_verbose flag with values passed in by options.
-    is_verbose = is_verbose or args.verbose > 0
-
     if args.mode == "init":
-        initialize_model(args)
+        print("Hello, World!")
+        exit(EXIT_SUCCESS)
 
     elif args.mode == "exec":
+        # Update the is_verbose flag with values passed in by options.
+        is_verbose = is_verbose or args.verbose > 0
         execute_triton(args)
-
     else:
         write_error(f"usage: server.py <mode> [<options>].")
         write_error(f'       Invalid mode ("{args.mode}") provided.')
