@@ -83,15 +83,23 @@ class SemanticCPUCacheConfig:
 
     Attributes:
         cache (Any): The cache object to use.
+            Default: Cache(policy="lru", size=1000).
         encoder (Any): The encoder object for embedding queries.
+            Default: SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        encoder_dim (int): The encoder dimension.
+            Default: 384. The size of `all-MiniLM-L6-v2` embeddings.
         index (Any): The index object for similarity search.
+            Default: faiss.IndexIDMap(faiss.IndexFlatL2(encoder_dim))
         threshold (float): The similarity threshold for considering a match.
+            Default: 0.25
         key_mapper (Any): The key mapper object for managing key-ID mappings.
+            default: KeyMapper()
     """
 
     cache: Any = Cache(policy="lru", size=1000)
     encoder: Any = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    index: Any = faiss.IndexIDMap(faiss.IndexFlatL2(384))
+    encoder_dim: int = 384
+    index: Any = faiss.IndexIDMap(faiss.IndexFlatL2(encoder_dim))
     threshold: float = 0.25
     key_mapper: Any = KeyMapper()
 
@@ -133,11 +141,19 @@ class SemanticCPUCache:
             return default
 
         key_search = np.asarray([self.encoder.encode(key)])
+        # The vector index returns two values, distance to the most similar
+        # embedding (1 indicates we only need top 1 similar result), and
+        # its numerical index.
         dist, ind = self.index.search(key_search, 1)
 
+        # If the distance between vectors above the set threshold, i.e.
+        # the most similar embedding is too far from the current prompt
+        # embedding, this considered as cache miss and we return the `default`.
         if dist[0][0] > self.threshold:
             return default
 
+        # To retrieve the cache hit from the cache store, we need to retrieve
+        # the corresponding prompt from the key_map store, given its index.
         key_str = self.key_map.get_key(ind[0][0])
 
         return self.cache.get(key=key_str, default=default)
@@ -164,7 +180,9 @@ class SemanticCPUCache:
         self.index.add_with_ids(
             np.expand_dims(self.encoder.encode(key), axis=0), np.asarray([id])
         )
-
+        # Adding a new entry into the cache can evict an old entry, according
+        # to the policy in-use. We need to make sure we evict the same entry
+        # from the vector index, stored in `self.index`.
         evicted_key = self.cache.set(key, value)
         self._handle_evicted_key(evicted_key=evicted_key)
 

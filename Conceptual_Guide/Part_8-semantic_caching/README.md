@@ -86,9 +86,233 @@ This approach offers several benefits including, but not limited to:
 ## Sample Reference Implementation
 
 In this tutorial we provide a reference implementation for Semantic Cache in
-[semantic_caching.py](./artifacts/semantic_caching.py)
+[semantic_caching.py.](./artifacts/semantic_caching.py) There are 3 key
+dependencies:
+* [SentenceTransformer](https://sbert.net/): a Python framework for computing
+dense vector representations (embeddings) of sentences, paragraphs, and images.
+    - We use this library and `all-MiniLM-L6-v2` in particular to convert
+    incoming prompt into an embedding, enabling semantic comparison.
+    - Alternatives include [semantic search models](https://www.sbert.net/docs/sentence_transformer/pretrained_models.html#semantic-search-models),
+    OpenAI Embeddings, etc.
+* [Faiss](https://github.com/facebookresearch/faiss/wiki): an open-source library
+developed by Facebook AI Research for efficient similarity search and
+clustering of dense vectors.
+    - This library is used for the embedding store and extracting the most
+    similar embedded prompt from the cached requests (or from the index store).
+    - This is a mighty library with a great variety of CPu and GPU accelerated
+    algorithms.
+    - Alternatives include [annoy](https://github.com/spotify/annoy), or
+    [cuVS](https://github.com/rapidsai/cuvs). However, note that cuVS already
+    has an integration in Faiss, more on this can be found [here.](https://docs.rapids.ai/api/cuvs/nightly/integrations/faiss/)
+* [Theine](https://github.com/Yiling-J/theine): High performance in-memory
+cache.
+    - We will use it as our exact match cache backend. After the most similar
+    prompt is identified, the corresponding cached response id extracted from
+    the cache. This library supports multiple eviction policies, in this
+    tutorial we use "LRU".
+    - One may also look into [MemCached](https://memcached.org/about) as a
+    potential alternative.
 
-## Further optimisations
+Provided [script](./artifacts/semantic_caching.py) is heavily annotated and we
+encourage users to look through the code to gain better clarity in all
+the necessary stages.
+
+## Incorporating Semantic Cache into your workflow
+
+For this tutorial, we'll use the [vllm backend](https://github.com/triton-inference-server/vllm_backend)
+as our example, focusing on demonstrating how to cache responses for the
+non-streaming case. The principles covered here can be extended to handle
+streaming scenarios as well.
+
+### Cutomising vllm backend
+
+First, let's start by cloning Triton's vllm backend repository. This will
+provide the necessary codebase to implement our semantic caching example.
+
+``bash
+git clone https://github.com/triton-inference-server/vllm_backend.git
+```
+
+With the repository cloned, the next step is to add the
+[semantic_caching.py.](./artifacts/semantic_caching.py) script to
+the appropriate directory. This script contains the logic for our semantic
+caching implementation.
+
+```bash
+wget -P vllm_backend/src/utils/ https://raw.githubusercontent.com/triton-inference-server/tutorials/refs/heads/main/Conceptual_Guide/Part_8-semantic_caching/artifacts/semantic_caching.py
+```
+
+Now that we have added the semantic caching script, let's proceed by making
+some adjustments in `/vllm_backend/src/model.py`. These changes will integrate
+the semantic caching functionality into the model.
+
+First, ensure that you import the necessary classes from `semantic_caching.py`:
+
+```diff
+...
+
+from utils.metrics import VllmStatLogger
++from utils.semantic_caching import SemanticCPUCacheConfig, SemanticCPUCache
+```
+
+Next, initialize the semantic cache during the initialization step.
+This setup will prepare your model to utilize semantic caching during
+its operations.
+
+```diff
+    def initialize(self, args):
+        self.args = args
+        self.logger = pb_utils.Logger
+        self.model_config = json.loads(args["model_config"])
+        ...
+
+        # Starting asyncio event loop to process the received requests asynchronously.
+        self._loop = asyncio.get_event_loop()
+        self._event_thread = threading.Thread(
+            target=self.engine_loop, args=(self._loop,)
+        )
+        self._shutdown_event = asyncio.Event()
+        self._event_thread.start()
++       self.semantic_cache = SemanticCPUCache(SemanticCPUCacheConfig)
+
+```
+
+Finally, we'll add logic to query and update the semantic cache during
+request processing. This ensures that cached responses are efficiently utilized
+whenever possible.
+
+```diff
+    async def generate(self, request):
+        ...
+        try:
+            request_id = random_uuid()
+            prompt = pb_utils.get_input_tensor_by_name(
+                request, "text_input"
+            ).as_numpy()[0]
+            ...
+
+            if prepend_input and stream:
+                raise ValueError(
+                    "When streaming, `exclude_input_in_output` = False is not allowed."
+                )
++           cache_hit = self.semantic_cache.get(prompt)
++           if cache_hit:
++               try:
++                   response_sender.send(
++                   self.create_response(cache_hit, prepend_input),
++                   flags=pb_utils.TRITONSERVER_RESPONSE_COMPLETE_FINAL,
++                   )
++                   if decrement_ongoing_request_count:
++                       self.ongoing_request_count -= 1
++               except Exception as err:
++                   print(f"Unexpected {err=} for prompt {prompt}")
++               return None
+            ...
+
+            async for output in response_iterator:
+                ...
+
+            last_output = output
+
+            if not stream:
+                response_sender.send(
+                    self.create_response(last_output, prepend_input),
+                    flags=pb_utils.TRITONSERVER_RESPONSE_COMPLETE_FINAL,
+                )
++               self.semantic_cache.set(prompt, last_output)
+
+```
+
+### Launching Triton with Optimized vLLM Backend
+
+To evaluate or optimized vllm backend, let's start vllm docker container and
+mount our implementation to `/opt/tritonserver/backends/vllm`. We'll
+also mount sample model repository, provided in
+`vllm_backend/samples/model_repository`. Feel free to set up your own.
+Use the following docker command to start Triton's vllm docker container,
+but make sure to specify proper paths to the cloned `vllm_backend`
+repository and replace `<xx.yy>` with the latest release of Triton.
+
+```bash
+docker run --gpus all -it --net=host --rm -p 8001:8001 --shm-size=1G \
+--ulimit memlock=-1 --ulimit stack=67108864 \
+-v /path/to/vllm_backend/src/:/opt/tritonserver/backends/vllm \
+-v /path/to/vllm_backend/samples/model_repository:/work/model_repository \
+-w /work nvcr.io/nvidia/tritonserver:<xx.yy>-vllm-python-py3
+```
+
+When inside the container, make sure to install required dependencies:
+```bash
+pip install sentence_transformers faiss_gpu theine
+```
+
+Finally, let's launch Triton
+```bash
+tritonserver --model-repository=model_repository/
+```
+
+After you start Triton you will see output on the console showing
+the server starting up and loading the model. When you see output
+like the following, Triton is ready to accept inference requests.
+
+```
+I1030 22:33:28.291908 1 grpc_server.cc:2513] Started GRPCInferenceService at 0.0.0.0:8001
+I1030 22:33:28.292879 1 http_server.cc:4497] Started HTTPService at 0.0.0.0:8000
+I1030 22:33:28.335154 1 http_server.cc:270] Started Metrics Service at 0.0.0.0:8002
+```
+
+### Evaluation
+
+After you [start Triton](#launching-triton-with-optimized-vllm-backend)
+with the sample model_repository, you can quickly run your first inference
+request with the
+[generate endpoint](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_generate.md).
+
+We'll also time this query:
+
+```bash
+time curl -X POST localhost:8000/v2/models/vllm_model/generate -d '{"text_input": "Tell me, how do I create model repository for Triton Server?", "parameters": {"stream": false, "temperature": 0, "max_tokens":100}, "exclude_input_in_output":true}'
+```
+
+Upon success, you should see a response from the server like this one:
+```
+{"model_name":"vllm_model","model_version":"1","text_output": <MODEL'S RESPONSE>}
+real	0m1.128s
+user	0m0.000s
+sys	0m0.015s
+```
+
+Now, let's try a different response, but keep the semantics:
+
+```bash
+time curl -X POST localhost:8000/v2/models/vllm_model/generate -d '{"text_input": "How do I set up model repository for Triton Inference Server?", "parameters": {"stream": false, "temperature": 0, "max_tokens":100}, "exclude_input_in_output":true}
+```
+
+Upon success, you should see a response from the server like this one:
+```
+{"model_name":"vllm_model","model_version":"1","text_output": <SAME MODEL'S RESPONSE>}
+real	0m0.038s
+user	0m0.000s
+sys	0m0.017s
+```
+
+Let's try one more:
+
+```bash
+time curl -X POST localhost:8000/v2/models/vllm_model/generate -d '{"text_input": "How model repository should be set up for Triton Server?", "parameters": {"stream": false, "temperature": 0, "max_tokens":100}, "exclude_input_in_output":true}'
+```
+
+Upon success, you should see a response from the server like this one:
+```
+{"model_name":"vllm_model","model_version":"1","text_output": <SAME MODEL'S RESPONSE>}
+real	0m0.059s
+user	0m0.016s
+sys	0m0.000s
+```
+
+Clearly, the latter 2 requests are semantically similar to the first one, which
+resulted in a cache hit scenario, which reduced the latency of our model from
+approx 1.1s to the average of 0.048s per request.
 
 ## Interested in This Feature?
 
