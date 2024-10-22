@@ -49,39 +49,39 @@ context of the data.
 
 This approach offers several benefits including, but not limited to:
 
-+ Cost Optimization
++ **Cost Optimization**
 
-Semantic caching can substantially reduce operational expenses associated
-with LLM deployments. By storing and reusing responses for semantically
-similar queries, it minimizes the number of actual LLM calls required.
+    - Semantic caching can substantially reduce operational expenses associated
+    with LLM deployments. By storing and reusing responses for semantically
+    similar queries, it minimizes the number of actual LLM calls required.
 
-+ Reduced Latency
++ **Reduced Latency**
 
-One of the primary benefits of semantic caching is its ability to significantly
-improve response times. By retrieving cached responses for similar queries,
-the system can bypass the need for full model inference,
-resulting in the reduced latency.
+    - One of the primary benefits of semantic caching is its ability to
+    significantly improve response times. By retrieving cached responses for
+    similar queries, the system can bypass the need for full model inference,
+    resulting in the reduced latency.
 
-+ Increased Throughput
++ **Increased Throughput**
 
-Semantic caching allows for more efficient utilization of computational
-resources. By serving cached responses for similar queries, it reduces the load
-on infrastructure components. This efficiency enables the system to handle
-a higher volume of requests with the same hardware, effectively increasing
-throughput.
+    - Semantic caching allows for more efficient utilization of computational
+    resources. By serving cached responses for similar queries, it reduces the
+    load on infrastructure components. This efficiency enables the system
+    to handle a higher volume of requests with the same hardware, effectively
+    increasing throughput.
 
-+ Scalability
++ **Scalability**
 
-The improved resource efficiency and reduced computational demands allows
-applications to serve more users without a proportional increase in
-infrastructure costs.
+    - The improved resource efficiency and reduced computational demands allows
+    applications to serve more users without a proportional increase in
+    infrastructure costs.
 
-+ Consistency in Responses
++ **Consistency in Responses**
 
-For certain applications, maintaining consistency in responses to
-similar queries can be beneficial. Semantic caching ensures that analogous
-questions receive uniform answers, which can be particularly useful
-in scenarios like customer service or educational applications.
+    - For certain applications, maintaining consistency in responses to
+    similar queries can be beneficial. Semantic caching ensures that analogous
+    questions receive uniform answers, which can be particularly useful
+    in scenarios like customer service or educational applications.
 
 ## Sample Reference Implementation
 
