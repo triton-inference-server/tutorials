@@ -171,6 +171,17 @@ class SemanticCPUCache:
         return None
 
     def _handle_evicted_key(self, evicted_key: Optional[Hashable]) -> None:
+        """
+        Handle the eviction of a key from the cache.
+
+        This method is called when a key is evicted from the cache. It removes
+        the evicted key from the key_map and its corresponding
+        vector embedding from the index.
+
+        Args:
+            evicted_key (Optional[Hashable]): The key that was evicted from the
+            cache.
+        """
         if evicted_key:
             evicted_id = self.key_map.remove_key(evicted_key)
             self.index.remove_ids(np.array([evicted_id]))
