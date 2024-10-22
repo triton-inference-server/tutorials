@@ -86,7 +86,7 @@ This approach offers several benefits including, but not limited to:
 ## Sample Reference Implementation
 
 In this tutorial we provide a reference implementation for Semantic Cache in
-[semantic_caching.py](tutorials/Conceptual_Guide/Part_8-semantic_caching/artifacts/semantic_caching.py)
+[semantic_caching.py](./artifacts/semantic_caching.py)
 
 ## Further optimisations
 
