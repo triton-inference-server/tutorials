@@ -286,7 +286,7 @@ sys	0m0.015s
 Now, let's try a different response, but keep the semantics:
 
 ```bash
-time curl -X POST localhost:8000/v2/models/vllm_model/generate -d '{"text_input": "How do I set up model repository for Triton Inference Server?", "parameters": {"stream": false, "temperature": 0, "max_tokens":100}, "exclude_input_in_output":true}
+time curl -X POST localhost:8000/v2/models/vllm_model/generate -d '{"text_input": "How do I set up model repository for Triton Inference Server?", "parameters": {"stream": false, "temperature": 0, "max_tokens":100}, "exclude_input_in_output":true}'
 ```
 
 Upon success, you should see a response from the server like this one:
