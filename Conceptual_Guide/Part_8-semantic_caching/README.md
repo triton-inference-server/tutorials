@@ -172,7 +172,8 @@ its operations.
         )
         self._shutdown_event = asyncio.Event()
         self._event_thread.start()
-+       self.semantic_cache = SemanticCPUCache(SemanticCPUCacheConfig)
++       config = SemanticCPUCacheConfig()
++       self.semantic_cache = SemanticCPUCache(config=config)
 
 ```
 
