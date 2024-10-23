@@ -26,7 +26,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-# Semantic caching
+# Semantic Caching
 
 When deploying large language models (LLMs) or LLM-based workflows
 there are two key factors to consider: the performance and cost-efficiency
@@ -37,10 +37,9 @@ pressing need for optimization strategies that can maintain
 high-quality outputs while minimizing operational expenses.
 
 Semantic caching emerges as a powerful solution to reduce computational costs
-for LLM-based applications. Unlike traditional caching, it considers
-the content and context of incoming requests.
+for LLM-based applications.
 
-## Definition and Main Benefits
+## Definition and Benefits
 
 **_Semantic caching_** is a caching mechanism that takes into account
 the semantics of the incoming request, rather than just the raw data itself.
@@ -60,7 +59,7 @@ This approach offers several benefits including, but not limited to:
     - One of the primary benefits of semantic caching is its ability to
     significantly improve response times. By retrieving cached responses for
     similar queries, the system can bypass the need for full model inference,
-    resulting in the reduced latency.
+    resulting in reduced latency.
 
 + **Increased Throughput**
 
@@ -85,7 +84,7 @@ This approach offers several benefits including, but not limited to:
 
 ## Sample Reference Implementation
 
-In this tutorial we provide a reference implementation for Semantic Cache in
+In this tutorial we provide a reference implementation for a Semantic Cache in
 [semantic_caching.py.](./artifacts/semantic_caching.py) There are 3 key
 dependencies:
 * [SentenceTransformer](https://sbert.net/): a Python framework for computing
@@ -99,7 +98,7 @@ developed by Facebook AI Research for efficient similarity search and
 clustering of dense vectors.
     - This library is used for the embedding store and extracting the most
     similar embedded prompt from the cached requests (or from the index store).
-    - This is a mighty library with a great variety of CPu and GPU accelerated
+    - This is a mighty library with a great variety of CPU and GPU accelerated
     algorithms.
     - Alternatives include [annoy](https://github.com/spotify/annoy), or
     [cuVS](https://github.com/rapidsai/cuvs). However, note that cuVS already
@@ -107,7 +106,7 @@ clustering of dense vectors.
 * [Theine](https://github.com/Yiling-J/theine): High performance in-memory
 cache.
     - We will use it as our exact match cache backend. After the most similar
-    prompt is identified, the corresponding cached response id extracted from
+    prompt is identified, the corresponding cached response is extracted from
     the cache. This library supports multiple eviction policies, in this
     tutorial we use "LRU".
     - One may also look into [MemCached](https://memcached.org/about) as a
@@ -124,12 +123,12 @@ as our example, focusing on demonstrating how to cache responses for the
 non-streaming case. The principles covered here can be extended to handle
 streaming scenarios as well.
 
-### Cutomising vllm backend
+### Customising vLLM Backend
 
 First, let's start by cloning Triton's vllm backend repository. This will
 provide the necessary codebase to implement our semantic caching example.
 
-``bash
+```bash
 git clone https://github.com/triton-inference-server/vllm_backend.git
 ```
 
@@ -143,7 +142,7 @@ wget -P vllm_backend/src/utils/ https://raw.githubusercontent.com/triton-inferen
 ```
 
 Now that we have added the semantic caching script, let's proceed by making
-some adjustments in `/vllm_backend/src/model.py`. These changes will integrate
+some adjustments in `vllm_backend/src/model.py`. These changes will integrate
 the semantic caching functionality into the model.
 
 First, ensure that you import the necessary classes from `semantic_caching.py`:
@@ -234,11 +233,12 @@ but make sure to specify proper paths to the cloned `vllm_backend`
 repository and replace `<xx.yy>` with the latest release of Triton.
 
 ```bash
-docker run --gpus all -it --net=host --rm -p 8001:8001 --shm-size=1G \
---ulimit memlock=-1 --ulimit stack=67108864 \
--v /path/to/vllm_backend/src/:/opt/tritonserver/backends/vllm \
--v /path/to/vllm_backend/samples/model_repository:/work/model_repository \
--w /work nvcr.io/nvidia/tritonserver:<xx.yy>-vllm-python-py3
+docker run --gpus all -it --net=host --rm \
+    --shm-size=1G --ulimit memlock=-1 --ulimit stack=67108864 \
+    -v /path/to/vllm_backend/src/:/opt/tritonserver/backends/vllm \
+    -v /path/to/vllm_backend/samples/model_repository:/workspace/model_repository \
+    -w /workspace \
+    nvcr.io/nvidia/tritonserver:<xx.yy>-vllm-python-py3
 ```
 
 When inside the container, make sure to install required dependencies:
