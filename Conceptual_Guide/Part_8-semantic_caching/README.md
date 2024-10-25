@@ -337,6 +337,14 @@ such as `max_tokens` and `temperature`. As a result, these parameters are not
 included in the cache hit evaluation, which may affect the accuracy of cached
 responses when different configurations are used.
 
+* Semantic Cache effectiveness is heavily reliant on the choice of embedding
+model and application context. For instance, queries like "How to set up model
+repository for Triton Inference Server?" and "How not to set up model
+repository for Triton Inference Server?" may have high cosine similarity
+despite differing semantically. This makes it challenging to set an optimal
+threshold for cache hits, as a narrow similarity range might exclude useful
+cache entries.
+
 ## Interested in This Feature?
 
 While this reference implementation provides a glimpse into the potential
