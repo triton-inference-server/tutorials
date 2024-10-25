@@ -71,9 +71,11 @@ This approach offers several benefits including, but not limited to:
 
 + **Scalability**
 
-    - The improved resource efficiency and reduced computational demands allows
-    applications to serve more users without a proportional increase in
-    infrastructure costs.
+    - As the user base and the volume of queries grow, the probability of cache
+    hits increases, provided that there is adequate storage and resources
+    available to support this scaling. The improved resource efficiency and
+    reduced computational demands allows applications to serve more users
+    without a proportional increase in infrastructure costs.
 
 + **Consistency in Responses**
 
@@ -130,22 +132,34 @@ provide the necessary codebase to implement our semantic caching example.
 
 ```bash
 git clone https://github.com/triton-inference-server/vllm_backend.git
+cd vllm_backend
 ```
 
-With the repository cloned, the next step is to add the
-[semantic_caching.py.](./artifacts/semantic_caching.py) script to
-the appropriate directory. This script contains the logic for our semantic
-caching implementation.
+With the repository successfully cloned, the next step is to apply all
+necessary modifications. To simplify this process, we've prepared a
+[semantic_cache.patch](tutorials/Conceptual_Guide/Part_8-semantic_caching/artifacts/semantic_cache.patch)
+that consolidates all changes into a single step:
 
 ```bash
-wget -P vllm_backend/src/utils/ https://raw.githubusercontent.com/triton-inference-server/tutorials/refs/heads/main/Conceptual_Guide/Part_8-semantic_caching/artifacts/semantic_caching.py
+curl https://raw.githubusercontent.com/triton-inference-server/tutorials/refs/heads/main/Conceptual_Guide/Part_8-semantic_caching/artifacts/semantic_cache.patch | git apply -v
 ```
 
-Now that we have added the semantic caching script, let's proceed by making
-some adjustments in `vllm_backend/src/model.py`. These changes will integrate
-the semantic caching functionality into the model.
+If you're eager to start using Triton with the optimized vLLM backend,
+you can skip ahead to the
+[Launching Triton with Optimized vLLM Backend](#launching-triton-with-optimized-vllm-backend)
+section. However, for those interested in understanding the specifics,
+let's explore what this patch includes.
 
-First, ensure that you import the necessary classes from `semantic_caching.py`:
+The patch introduces a new script,
+[semantic_caching.py.](./artifacts/semantic_caching.py), which is added to the
+appropriate directory. This script implements the core logic for our
+semantic caching functionality.
+
+Next, the patch integrates semantic caching into the model. Let's walk through
+these changes step-by-step.
+
+Firstly, it imports the necessary classes from
+[semantic_caching.py.](./artifacts/semantic_caching.py) into the codebase:
 
 ```diff
 ...
@@ -154,7 +168,7 @@ from utils.metrics import VllmStatLogger
 +from utils.semantic_caching import SemanticCPUCacheConfig, SemanticCPUCache
 ```
 
-Next, initialize the semantic cache during the initialization step.
+Next, it sets up the semantic cache during the initialization step.
 This setup will prepare your model to utilize semantic caching during
 its operations.
 
@@ -177,9 +191,9 @@ its operations.
 
 ```
 
-Finally, we'll add logic to query and update the semantic cache during
-request processing. This ensures that cached responses are efficiently utilized
-whenever possible.
+Finally, the patch incorporates logic to query and update the semantic cache
+during request processing. This ensures that cached responses are efficiently
+utilized whenever possible.
 
 ```diff
     async def generate(self, request):
@@ -314,6 +328,14 @@ sys	0m0.000s
 Clearly, the latter 2 requests are semantically similar to the first one, which
 resulted in a cache hit scenario, which reduced the latency of our model from
 approx 1.1s to the average of 0.048s per request.
+
+## Current limitations
+
+* The current implementation of the Semantic Cache only considers the prompt
+itself for cache hits, without accounting for additional request parameters
+such as `max_tokens` and `temperature`. As a result, these parameters are not
+included in the cache hit evaluation, which may affect the accuracy of cached
+responses when different configurations are used.
 
 ## Interested in This Feature?
 
