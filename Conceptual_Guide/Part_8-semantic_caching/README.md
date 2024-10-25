@@ -344,8 +344,8 @@ of semantic caching, it's important to note that it's not an officially
 supported feature in Triton Inference Server.
 
 We value your input! If you're interested in seeing semantic caching as a
-supported feature in future releases, we encourage you to [FILL IN]
-
-Provide details about why you think semantic caching would be valuable for
-your use case. Your feedback helps shape our product roadmap,
+supported feature in future releases, we invite you to join the ongoing
+[discussion.](https://github.com/triton-inference-server/server/discussions/7742)
+Provide details about why you think semantic caching would
+be valuable for your use case. Your feedback helps shape our product roadmap,
 and we appreciate your contributions to making our software better for everyone.
