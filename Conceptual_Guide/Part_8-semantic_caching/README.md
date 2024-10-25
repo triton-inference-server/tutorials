@@ -329,7 +329,7 @@ Clearly, the latter 2 requests are semantically similar to the first one, which
 resulted in a cache hit scenario, which reduced the latency of our model from
 approx 1.1s to the average of 0.048s per request.
 
-## Current limitations
+## Current Limitations
 
 * The current implementation of the Semantic Cache only considers the prompt
 itself for cache hits, without accounting for additional request parameters
