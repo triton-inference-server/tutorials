@@ -87,7 +87,7 @@ This approach offers several benefits including, but not limited to:
 ## Sample Reference Implementation
 
 In this tutorial we provide a reference implementation for a Semantic Cache in
-[semantic_caching.py.](./artifacts/semantic_caching.py) There are 3 key
+[semantic_caching.py](./artifacts/semantic_caching.py). There are 3 key
 dependencies:
 * [SentenceTransformer](https://sbert.net/): a Python framework for computing
 dense vector representations (embeddings) of sentences, paragraphs, and images.
@@ -104,7 +104,7 @@ clustering of dense vectors.
     algorithms.
     - Alternatives include [annoy](https://github.com/spotify/annoy), or
     [cuVS](https://github.com/rapidsai/cuvs). However, note that cuVS already
-    has an integration in Faiss, more on this can be found [here.](https://docs.rapids.ai/api/cuvs/nightly/integrations/faiss/)
+    has an integration in Faiss, more on this can be found [here](https://docs.rapids.ai/api/cuvs/nightly/integrations/faiss/).
 * [Theine](https://github.com/Yiling-J/theine): High performance in-memory
 cache.
     - We will use it as our exact match cache backend. After the most similar
@@ -151,7 +151,7 @@ section. However, for those interested in understanding the specifics,
 let's explore what this patch includes.
 
 The patch introduces a new script,
-[semantic_caching.py.](./artifacts/semantic_caching.py), which is added to the
+[semantic_caching.py](./artifacts/semantic_caching.py), which is added to the
 appropriate directory. This script implements the core logic for our
 semantic caching functionality.
 
@@ -159,7 +159,7 @@ Next, the patch integrates semantic caching into the model. Let's walk through
 these changes step-by-step.
 
 Firstly, it imports the necessary classes from
-[semantic_caching.py.](./artifacts/semantic_caching.py) into the codebase:
+[semantic_caching.py](./artifacts/semantic_caching.py) into the codebase:
 
 ```diff
 ...
@@ -353,7 +353,7 @@ supported feature in Triton Inference Server.
 
 We value your input! If you're interested in seeing semantic caching as a
 supported feature in future releases, we invite you to join the ongoing
-[discussion.](https://github.com/triton-inference-server/server/discussions/7742)
+[discussion](https://github.com/triton-inference-server/server/discussions/7742).
 Provide details about why you think semantic caching would
 be valuable for your use case. Your feedback helps shape our product roadmap,
 and we appreciate your contributions to making our software better for everyone.
