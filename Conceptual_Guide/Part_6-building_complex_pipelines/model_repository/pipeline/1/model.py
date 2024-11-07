@@ -147,7 +147,7 @@ class TritonPythonModel:
             )
 
             decoding_response = decoding_request.exec()
-            if response.has_error():
+            if decoding_response.has_error():
                 raise pb_utils.TritonModelException(decoding_response.error().message())
             else:
                 decoded_image = pb_utils.get_output_tensor_by_name(
