@@ -201,7 +201,7 @@ assistant
 
 ```
 
-## Enforcig Output Format via External Libraries
+## Enforcing Output Format via External Libraries
 
 In this section of the tutorial, we'll show how to impose constrains on LLMs,
 which are not inherently fine-tuned for constrained decoding. We'll
