@@ -189,7 +189,7 @@ ensemble_model/
 ├── 1
 └── config.pbtxt
 ```
-This time, we only need the configuration file to describe our ensemble along with an empty version folder (which you will need to create with `mkdir -p model_repository/ensemble_model/1`). Within the config file, we'll define the execution graph of our ensemble. This graph describes what the overall inputs and outputs of the ensemble will be, as well as how the data will flow through the models in the form of a Directed Acyclic Graph. Below is a graphical representation of our model pipeline. The diamonds represent the final input and output of the ensemble, which is all the client will interact with. The circles are the different deployed models, and the rectangles are the tensors that get passed between models.
+This time, we only need the configuration file to describe our ensemble along with an empty version folder (which you can see at `model_repository/ensemble_model/1`). Within the config file, we'll define the execution graph of our ensemble. This graph describes what the overall inputs and outputs of the ensemble will be, as well as how the data will flow through the models in the form of a Directed Acyclic Graph. Below is a graphical representation of our model pipeline. The diamonds represent the final input and output of the ensemble, which is all the client will interact with. The circles are the different deployed models, and the rectangles are the tensors that get passed between models.
 
 ```mermaid
 flowchart LR
