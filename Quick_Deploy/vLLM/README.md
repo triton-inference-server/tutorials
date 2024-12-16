@@ -79,9 +79,9 @@ The content of `model.json` is:
 ```
 
 This file can be modified to provide further settings to the vLLM engine. See vLLM
-[AsyncEngineArgs](https://github.com/vllm-project/vllm/blob/32b6816e556f69f1672085a6267e8516bcb8e622/vllm/engine/arg_utils.py#L165)
+[AsyncEngineArgs](https://github.com/vllm-project/vllm/blob/c7f2cf2b7f67bce5842fedfdba508440fe257375/vllm/engine/arg_utils.py#L615)
 and
-[EngineArgs](https://github.com/vllm-project/vllm/blob/32b6816e556f69f1672085a6267e8516bcb8e622/vllm/engine/arg_utils.py#L11)
+[EngineArgs](https://github.com/vllm-project/vllm/blob/c7f2cf2b7f67bce5842fedfdba508440fe257375/vllm/engine/arg_utils.py#L21)
 for supported key-value pairs. Inflight batching and paged attention is handled
 by the vLLM engine.
 
