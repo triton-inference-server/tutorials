@@ -43,7 +43,7 @@ git clone -b r25.01 https://github.com/triton-inference-server/vllm_backend.git
 
 The sample model repository uses [`facebook/opt-125m` model,](https://github.com/triton-inference-server/vllm_backend/blob/80dd0371e0301fabf79c57536e60700d016fcc76/samples/model_repository/vllm_model/1/model.json#L2)
 let's replace it with `"deepseek-ai/DeepSeek-R1-Distill-Llama-8B"` and increase
-`gpu_memory_utilization` to `0.9`. Resulted `model.json` should look like:
+`gpu_memory_utilization` to `0.9`. The resulting `model.json` should look like:
 ```json
 {
     "model":"deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
@@ -75,7 +75,7 @@ I0922 23:28:40.395611 1 http_server.cc:187] Started Metrics Service at 0.0.0.0:8
 As a simple example to make sure the server works, you can use the `generate` endpoint to test. More about the generate endpoint [here](https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_generate.md).
 
 ```bash
-$ curl -X POST localhost:8000/v2/models/vllm_model/generate -d '{"text_input": "What is Triton Inference Server?", "parameters": {"stream": false, n"temperature": 0, "exclude_input_in_output": true, "max_tokens": 45}}' | jq
+$ curl -X POST localhost:8000/v2/models/vllm_model/generate -d '{"text_input": "What is Triton Inference Server?", "parameters": {"stream": false, "temperature": 0, "exclude_input_in_output": true, "max_tokens": 45}}' | jq
 {
   "model_name": "vllm_model",
   "model_version": "1",
@@ -89,8 +89,8 @@ The Triton vLLM Backend repository has a [samples folder](https://github.com/tri
 that has an example client.py to test the model.
 
 ```bash
-LOCAL_MODEL_REPOSITORY=./vllm_backend/samples
-docker run -ti --gpus all --network=host --pid=host --ipc=host -v $LOCAL_MODEL_REPOSITORY:/workspace nvcr.io/nvidia/tritonserver:25.01-py3-sdk
+LOCAL_WORKSPACE=./vllm_backend/samples
+docker run -ti --gpus all --network=host --pid=host --ipc=host -v $LOCAL_WORKSPACE:/workspace nvcr.io/nvidia/tritonserver:25.01-py3-sdk
 ```
 Then you can use client as follows:
 ```bash
