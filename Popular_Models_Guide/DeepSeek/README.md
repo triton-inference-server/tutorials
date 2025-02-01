@@ -42,8 +42,15 @@ git clone -b r25.01 https://github.com/triton-inference-server/vllm_backend.git
 ```
 
 The sample model repository uses [`facebook/opt-125m` model,](https://github.com/triton-inference-server/vllm_backend/blob/80dd0371e0301fabf79c57536e60700d016fcc76/samples/model_repository/vllm_model/1/model.json#L2)
-let's replace it with `"deepseek-ai/DeepSeek-R1-Distill-Llama-8B"` and increase
-`gpu_memory_utilization` to `0.9`. The resulting `model.json` should look like:
+let's replace it with `"deepseek-ai/DeepSeek-R1-Distill-Llama-8B"`.
+Additionally, please note, that with the default parameters it's important to adjust `gpu_memory_utilization` appropriately to
+your hardware. Please note, that with all default parameters
+`"deepseek-ai/DeepSeek-R1-Distill-Llama-8B"` needs about 35GB of memory to be
+deployed via Triton + vLLM backend, make sure to adjust "gpu_memory_utilization"
+accordingly. For example, for RTX 5880 the minimum value should be `0.69`, at
+the same time `0.41` is sufficient for A100. For the simplicity of this
+tutorial, we'll set this number to `0.9`. The resulting `model.json` should
+look like:
 ```json
 {
     "model":"deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
@@ -76,6 +83,9 @@ As a simple example to make sure the server works, you can use the `generate` en
 
 ```bash
 $ curl -X POST localhost:8000/v2/models/vllm_model/generate -d '{"text_input": "What is Triton Inference Server?", "parameters": {"stream": false, "temperature": 0, "exclude_input_in_output": true, "max_tokens": 45}}' | jq
+```
+The expected output should look like:
+```json
 {
   "model_name": "vllm_model",
   "model_version": "1",
@@ -98,7 +108,7 @@ python client.py -m vllm_model
 ```
 
 The following steps should result in a `results.txt` that has the following content
-```bash
+```
 Hello, my name is
 I need to write a program that can read a text file and find all the names in the text. The names can be in any case (uppercase, lowercase, or mixed). Also, the names can be part of longer words or phrases, so I need to make sure that I'm extracting only the names and not parts of other words. Additionally, the names can be separated by various non-word characters, such as commas, periods, apostrophes, etc. So, I need to extract
 
