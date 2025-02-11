@@ -217,7 +217,7 @@ the Triton container. Simply follow the next steps:
 ```bash
 HF_LLAMA_MODEL=/Llama-2-7b-hf
 UNIFIED_CKPT_PATH=/tmp/ckpt/llama/7b/
-ENGINE_DIR=/engines
+ENGINE_DIR=/engines/llama-2-7b/1-gpu/
 CONVERT_CHKPT_SCRIPT=/tensorrtllm_backend/tensorrt_llm/examples/llama/convert_checkpoint.py
 python3 ${CONVERT_CHKPT_SCRIPT} --model_dir ${HF_LLAMA_MODEL} --output_dir ${UNIFIED_CKPT_PATH} --dtype float16
 trtllm-build --checkpoint_dir ${UNIFIED_CKPT_PATH} \
@@ -233,13 +233,12 @@ trtllm-build --checkpoint_dir ${UNIFIED_CKPT_PATH} \
 > located in the same llama examples folder.
 >
 >   ```bash
->    python3 /tensorrtllm_backend/tensorrt_llm/examples/run.py --engine_dir=/engines/1-gpu/ --max_output_len 50 --tokenizer_dir /Llama-2-7b-hf --input_text "What is ML?"
+>    python3 /tensorrtllm_backend/tensorrt_llm/examples/run.py --engine_dir=/engines/llama-2-7b/1-gpu/ --max_output_len 50 --tokenizer_dir /Llama-2-7b-hf --input_text "What is ML?"
 >    ```
 > You should expect the following response:
 > ```
-> [TensorRT-LLM] TensorRT-LLM version: 0.9.0
+> [TensorRT-LLM] TensorRT-LLM version: 0.17.0.post1
 > ...
-> [TensorRT-LLM][INFO] Max KV cache pages per sequence: 1
 > Input [Text 0]: "<s> What is ML?"
 > Output [Text 0 Beam 0]: "
 > ML is a branch of AI that allows computers to learn from data, identify patterns, and make predictions. It is a powerful tool that can be used in a variety of industries, including healthcare, finance, and transportation."
@@ -269,19 +268,20 @@ Note: `TRITON_BACKEND` has two possible options: `tensorrtllm` and `python`. If 
 # preprocessing
 TOKENIZER_DIR=/Llama-2-7b-hf/
 TOKENIZER_TYPE=auto
-ENGINE_DIR=/engines
+ENGINE_DIR=/engines/llama-2-7b/1-gpu/
 DECOUPLED_MODE=false
 MODEL_FOLDER=/opt/tritonserver/inflight_batcher_llm
 MAX_BATCH_SIZE=4
 INSTANCE_COUNT=1
 MAX_QUEUE_DELAY_MS=10000
 TRITON_BACKEND=tensorrtllm
+LOGITS_DATATYPE="TYPE_FP32"
 FILL_TEMPLATE_SCRIPT=/tensorrtllm_backend/tools/fill_template.py
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/preprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},preprocessing_instance_count:${INSTANCE_COUNT}
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/postprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},postprocessing_instance_count:${INSTANCE_COUNT}
-python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm_bls/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},bls_instance_count:${INSTANCE_COUNT}
-python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/ensemble/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE}
-python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt triton_backend:${TRITON_BACKEND},triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},engine_dir:${ENGINE_DIR},max_queue_delay_microseconds:${MAX_QUEUE_DELAY_MS},batching_strategy:inflight_fused_batching
+python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm_bls/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},bls_instance_count:${INSTANCE_COUNT},logits_datatype:${LOGITS_DATATYPE}
+python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/ensemble/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},logits_datatype:${LOGITS_DATATYPE}
+python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt triton_backend:${TRITON_BACKEND},triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},engine_dir:${ENGINE_DIR},max_queue_delay_microseconds:${MAX_QUEUE_DELAY_MS},batching_strategy:inflight_fused_batching,encoder_input_features_data_type:TYPE_FP16,logits_datatype:${LOGITS_DATATYPE}
 ```
 
 3.  Launch Tritonserver
@@ -290,6 +290,7 @@ Use the [launch_triton_server.py](https://github.com/triton-inference-server/ten
 ```bash
 python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=<world size of the engine> --model_repo=/opt/tritonserver/inflight_batcher_llm
 ```
+`<world size of the engine>` is the number of GPUs you want to use to run the engine. Set it to 1 for single GPU deployment.
 > You should expect the following response:
 > ```
 > ...
@@ -302,6 +303,7 @@ To stop Triton Server inside the container, run:
 ```bash
 pkill tritonserver
 ```
+Note: do not forget to run above command to stop Triton Server if launch Tritionserver failed due to various reasons. Otherwise, it could cause OOM or MPI issues.
 
 ### Send an inference request
 
@@ -335,14 +337,14 @@ curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "What
 ```
 > You should expect the following response:
 > ```
-> {"context_logits":0.0,...,"text_output":"What is ML?\nML is a branch of AI that allows computers to learn from data, identify patterns, and make predictions. It is a powerful tool that can be used in a variety of industries, including healthcare, finance, and transportation."}
+> {"model_name":"ensemble","model_version":"1","sequence_end":false,"sequence_id":0,"sequence_start":false,"text_output":"What is ML?\nML is a branch of AI that allows computers to learn from data, identify patterns, and make predictions. It is a powerful tool that can be used in a variety of industries, including healthcare, finance, and transportation."}
 > ```
 
 ### Evaluating performance with Gen-AI Perf
 Gen-AI Perf is a command line tool for measuring the throughput and latency of generative AI models as served through an inference server.
 You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/client/src/c%2B%2B/perf_analyzer/genai-perf/README.html).
 
-To use Gen-AI Perf, run the following command in the same Triton docker container:
+To use Gen-AI Perf, run the following command in the same Triton docker container (i.e. nvcr.io/nvidia/tritonserver:<xx.yy>-py3-sdk):
 ```bash
 genai-perf \
   profile \
