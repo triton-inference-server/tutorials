@@ -24,21 +24,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import json
 import argparse
+import json
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Convert dataset format')
-    parser.add_argument('-i', '--input_file', required=True, help='Input JSONL file path')
-    parser.add_argument('-o', '--output_file', required=True, help='Output JSONL file path')
+    parser = argparse.ArgumentParser(description="Convert dataset format")
+    parser.add_argument(
+        "-i", "--input_file", required=True, help="Input JSONL file path"
+    )
+    parser.add_argument(
+        "-o", "--output_file", required=True, help="Output JSONL file path"
+    )
     return parser.parse_args()
 
+
 def convert_dataset(input_file, output_file):
-    with open(input_file, "r", encoding="utf-8") as infile, open(output_file, "w", encoding="utf-8") as outfile:
+    with open(input_file, "r", encoding="utf-8") as infile, open(
+        output_file, "w", encoding="utf-8"
+    ) as outfile:
         for line in infile:
             data = json.loads(line)  # Load each JSONL line as a dict
-            if "turns" in data and isinstance(data["turns"], list):  
+            if "turns" in data and isinstance(data["turns"], list):
                 for turn in data["turns"]:  # Iterate over "turns" list
                     json.dump({"text": turn}, outfile)
                     outfile.write("\n")  # Newline for JSONL format
