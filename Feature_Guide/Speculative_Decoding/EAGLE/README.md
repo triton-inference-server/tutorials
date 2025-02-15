@@ -26,9 +26,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-# EAGLE Speculative Decoding 
+# EAGLE Speculative Decoding
 
-This tutorial shows how to build and run a model using EAGLE speculative decoding ([paper](https://arxiv.org/pdf/2401.15077) | [github](hhttps://github.com/SafeAILab/EAGLE/tree/main) | [blog](https://sites.google.com/view/eagle-llm)) in Triton Inference Server with TensorRT-LLM backend on a single node with one GPU. 
+This tutorial shows how to build and run a model using EAGLE speculative decoding ([paper](https://arxiv.org/pdf/2401.15077) | [github](hhttps://github.com/SafeAILab/EAGLE/tree/main) | [blog](https://sites.google.com/view/eagle-llm)) in Triton Inference Server with TensorRT-LLM backend on a single node with one GPU.
 
 TensorRT-LLM is NVIDIA's recommended solution of running Large Language Models(LLMs) on NVIDIA GPUs. Read more about TensoRT-LLM [here](https://github.com/NVIDIA/TensorRT-LLM) and Triton's TensorRT-LLM Backend [here](https://github.com/triton-inference-server/tensorrtllm_backend).
 
@@ -224,13 +224,13 @@ curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "What
 ## Evaluating Performance with Gen-AI Perf
 
 Gen-AI Perf is a command line tool for measuring the throughput and latency of generative AI models as served through an inference server.
-You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_analyzer/genai-perf/README.html). We will use Gen-AI Perf to evaluate the performance gain of EAGLE model over the base model. 
+You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_analyzer/genai-perf/README.html). We will use Gen-AI Perf to evaluate the performance gain of EAGLE model over the base model.
 
 *NOTE: below experiment is done on a single node with one GPU - RTX 5880 (48GB GPU memory). The number below is only for reference. The actual number may vary due to the different hardware and environment.*
 
 1. Prepare Dataset
 
-We will be using the HumanEval dataset for our evluation, which is used in the original EAGLE paper. The HumanEval dataset has been converted to the format required by EAGLE and is available [here](https://github.com/SafeAILab/EAGLE/blob/main/eagle/data/humaneval/question.jsonl). To make it compatible for Gen-AI Perf, we need to do another conversion. You may use other datasets besides HumanEval as well, as long as it could be converted to the format required by Gen-AI Perf. Note that MT-bench could not be used since Gen-AI Perf does not support multiturn dataset as input yet. Follow the steps below to download and convert the dataset.
+We will be using the HumanEval dataset for our evaluation, which is used in the original EAGLE paper. The HumanEval dataset has been converted to the format required by EAGLE and is available [here](https://github.com/SafeAILab/EAGLE/blob/main/eagle/data/humaneval/question.jsonl). To make it compatible for Gen-AI Perf, we need to do another conversion. You may use other datasets besides HumanEval as well, as long as it could be converted to the format required by Gen-AI Perf. Note that MT-bench could not be used since Gen-AI Perf does not support multiturn dataset as input yet. Follow the steps below to download and convert the dataset.
 
 ```bash
 wget https://raw.githubusercontent.com/SafeAILab/EAGLE/main/eagle/data/humaneval/question.jsonl
@@ -313,7 +313,7 @@ trtllm-build --checkpoint_dir ${CKPT_PATH} \
             --max_batch_size 4
 ```
 
-Create the Triton readable model for the base model:
+Create a Triton readable model for the base model:
 ```bash
 mkdir -p /opt/tritonserver/vicuna_base
 cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/vicuna_base/.
