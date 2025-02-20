@@ -28,7 +28,7 @@
 
 # EAGLE Speculative Decoding
 
-This tutorial shows how to build and run a model using EAGLE speculative decoding ([paper](https://arxiv.org/pdf/2401.15077) | [github](hhttps://github.com/SafeAILab/EAGLE/tree/main) | [blog](https://sites.google.com/view/eagle-llm)) in Triton Inference Server with TensorRT-LLM backend on a single node with one GPU.
+This tutorial shows how to build and run a model using EAGLE speculative decoding ([paper](https://arxiv.org/pdf/2401.15077) | [github](https://github.com/SafeAILab/EAGLE/tree/main) | [blog](https://sites.google.com/view/eagle-llm)) in Triton Inference Server with TensorRT-LLM backend on a single node with one GPU.
 
 TensorRT-LLM is NVIDIA's recommended solution of running Large Language Models(LLMs) on NVIDIA GPUs. Read more about TensoRT-LLM [here](https://github.com/NVIDIA/TensorRT-LLM) and Triton's TensorRT-LLM Backend [here](https://github.com/triton-inference-server/tensorrtllm_backend).
 
@@ -230,62 +230,53 @@ You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/
 
 1. Prepare Dataset
 
-We will be using the HumanEval dataset for our evaluation, which is used in the original EAGLE paper. The HumanEval dataset has been converted to the format required by EAGLE and is available [here](https://github.com/SafeAILab/EAGLE/blob/main/eagle/data/humaneval/question.jsonl). To make it compatible for Gen-AI Perf, we need to do another conversion. You may use other datasets besides HumanEval as well, as long as it could be converted to the format required by Gen-AI Perf. Note that MT-bench could not be used since Gen-AI Perf does not support multiturn dataset as input yet. Follow the steps below to download and convert the dataset.
-
+We will be using the HumanEval dataset for our evaluation, which is used in the original EAGLE paper. The HumanEval dataset has been converted to the format required by EAGLE and is available [here](https://github.com/SafeAILab/EAGLE/blob/main/eagle/data/humaneval/question.jsonl). To make it compatible for Gen-AI Perf, we need to do another conversion. You may use other datasets besides HumanEval as well, as long as it could be converted to the
+format required by Gen-AI Perf. Note that MT-bench could not be used since Gen-AI Perf does not support multiturn dataset as input yet. Follow the steps below to download and convert the dataset.
 ```bash
 wget https://raw.githubusercontent.com/SafeAILab/EAGLE/main/eagle/data/humaneval/question.jsonl
 
 python3 dataset-converter.py --input_file question.jsonl --output_file converted_humaneval.jsonl
 ```
 
-2. Get Gen-AI Perf Tool
-
-Gen-AI Perf is available in the SDK container as shown in the [Send an Inference Request](#send-an-inference-request) section. The only difference is that you need to mount the converted dataset to the container:
+2. Install GenAI-Perf (Ubuntu 24.04, Python 3.10+)
 
 ```bash
-docker run --rm -it --net host --shm-size=2g \
-    --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
-    -v </path/to/tensorrtllm_backend/inflight_batcher_llm/client>:/tensorrtllm_client \
-    -v </path/to/eagle/and/base/model/>:/hf-models \
-    -v </path/to/converted/dataset/>:/data \
-    nvcr.io/nvidia/tritonserver:<xx.yy>-py3-sdk
+pip install genai-perf
 ```
+NOTE: you must already have CUDA 12 installed
 
-3. Run Gen-AI Perf Tool
+3. Run Gen-AI Perf
 
 Run the following command in the SDK container:
 ```bash
-pip3 install transformers sentencepiece
-
 genai-perf \
   profile \
   -m ensemble \
   --service-kind triton \
   --backend tensorrtllm \
-  --input-file /data/converted_humaneval.jsonl \
-  --tokenizer /hf-models/vicuna-7b-v1.3/ \
-  --concurrency 1 \
-  --measurement-interval 4000 \
+  --input-file /path/to/converted/dataset/converted_humaneval.jsonl \
+  --tokenizer /path/to/hf-models/vicuna-7b-v1.3/ \
   --profile-export-file my_profile_export.json \
-  --url localhost:8001
+  --url localhost:8001 \
+  --request-rate 2
 ```
 NOTE: you may need to change the input-file name according to your converted dataset. Above is using converted_humaneval.jsonl as an example.
 A sample output that looks like this:
 ```
-                                   NVIDIA GenAI-Perf | LLM Metrics
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┓
-┃                         Statistic ┃      avg ┃    min ┃      max ┃      p99 ┃      p90 ┃      p75 ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━┩
-│              Request Latency (ms) │ 1,246.69 │ 611.48 │ 1,979.95 │ 1,968.77 │ 1,868.16 │ 1,738.61 │
-│   Output Sequence Length (tokens) │   316.55 │ 153.00 │   433.00 │   431.70 │   420.00 │   399.50 │
-│    Input Sequence Length (tokens) │   142.09 │  63.00 │   195.00 │   194.20 │   187.00 │   175.00 │
-│ Output Token Throughput (per sec) │   253.89 │    N/A │      N/A │      N/A │      N/A │      N/A │
-│      Request Throughput (per sec) │     0.80 │    N/A │      N/A │      N/A │      N/A │      N/A │
-│             Request Count (count) │    11.00 │    N/A │      N/A │      N/A │      N/A │      N/A │
-└───────────────────────────────────┴──────────┴────────┴──────────┴──────────┴──────────┴──────────┘
+                                     NVIDIA GenAI-Perf | LLM Metrics
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃                         Statistic ┃      avg ┃    min ┃       max ┃       p99 ┃       p90 ┃       p75 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
+│              Request Latency (ms) │ 7,667.61 │ 940.38 │ 16,101.65 │ 15,439.36 │ 14,043.33 │ 10,662.31 │
+│   Output Sequence Length (tokens) │   319.87 │ 133.00 │    485.00 │    472.08 │    441.60 │    404.00 │
+│    Input Sequence Length (tokens) │   153.05 │  63.00 │    278.00 │    259.38 │    190.20 │    183.50 │
+│ Output Token Throughput (per sec) │   360.53 │    N/A │       N/A │       N/A │       N/A │       N/A │
+│      Request Throughput (per sec) │     1.13 │    N/A │       N/A │       N/A │       N/A │       N/A │
+│             Request Count (count) │    39.00 │    N/A │       N/A │       N/A │       N/A │       N/A │
+└───────────────────────────────────┴──────────┴────────┴───────────┴───────────┴───────────┴───────────┘
 ```
 
-4. Run Gen-AI Perf Tool on Base Model
+4. Run Gen-AI Perf on Base Model
 
 To compare performance between EAGLE and base model, we need to run Gen-AI Perf Tool on the base model as well. To do so, we need to repeat the steps above for the base model with minor changes.
 
@@ -348,31 +339,70 @@ genai-perf \
   -m ensemble \
   --service-kind triton \
   --backend tensorrtllm \
-  --input-file /data/converted_humaneval.jsonl \
-  --tokenizer /hf-models/vicuna-7b-v1.3/ \
-  --concurrency 1 \
-  --measurement-interval 4000 \
+  --input-file /path/to/converted/dataset/converted_humaneval.jsonl \
+  --tokenizer /path/to/hf-models/vicuna-7b-v1.3/ \
   --profile-export-file my_profile_export.json \
-  --url localhost:8001
+  --url localhost:8001 \
+  --request-rate 2
 ```
 
 Sample performance output for base model:
 ```
-                                    NVIDIA GenAI-Perf | LLM Metrics
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┓
-┃                         Statistic ┃      avg ┃      min ┃      max ┃      p99 ┃      p90 ┃      p75 ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━┩
-│              Request Latency (ms) │ 3,070.83 │ 1,681.38 │ 4,089.21 │ 4,088.88 │ 4,085.93 │ 4,081.01 │
-│   Output Sequence Length (tokens) │   335.00 │   235.00 │   414.00 │   412.17 │   395.70 │   368.25 │
-│    Input Sequence Length (tokens) │   143.25 │    97.00 │   187.00 │   186.13 │   178.30 │   165.25 │
-│ Output Token Throughput (per sec) │   109.09 │      N/A │      N/A │      N/A │      N/A │      N/A │
-│      Request Throughput (per sec) │     0.33 │      N/A │      N/A │      N/A │      N/A │      N/A │
-│             Request Count (count) │     4.00 │      N/A │      N/A │      N/A │      N/A │      N/A │
-└───────────────────────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
+                                      NVIDIA GenAI-Perf | LLM Metrics
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃                         Statistic ┃      avg ┃      min ┃       max ┃       p99 ┃       p90 ┃       p75 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
+│              Request Latency (ms) │ 8,730.66 │ 1,792.94 │ 16,376.18 │ 16,054.17 │ 14,780.51 │ 12,529.04 │
+│   Output Sequence Length (tokens) │   353.32 │   153.00 │    534.00 │    508.65 │    445.30 │    428.25 │
+│    Input Sequence Length (tokens) │   156.62 │    63.00 │    296.00 │    288.98 │    196.60 │    185.00 │
+│ Output Token Throughput (per sec) │   410.03 │      N/A │       N/A │       N/A │       N/A │       N/A │
+│      Request Throughput (per sec) │     1.16 │      N/A │       N/A │       N/A │       N/A │       N/A │
+│             Request Count (count) │    40.00 │      N/A │       N/A │       N/A │       N/A │       N/A │
+└───────────────────────────────────┴──────────┴──────────┴───────────┴───────────┴───────────┴───────────┘
 ```
 
 5. Compare Performance
 
-From the sample runs above, we can see that the EAGLE model has a lower latency and higher throughput than the base model. Specifically, the EAGLE model can generate 253.89 tokens per second, while the base model can only generate 109.09 tokens per second with a speed up of 2.33x.
+```bash
+genai-perf \
+  profile \
+  -m ensemble \
+  --service-kind triton \
+  --backend tensorrtllm \
+  --input-file /path/to/converted/dataset/converted_gsm8k.jsonl \
+  --tokenizer /path/to/hf-models/vicuna-7b-v1.3/ \
+  --profile-export-file my_profile_export.json \
+  --url localhost:8001 \
+  --request-rate 5
+```
 
-As stated above, the number above is gathered from a single node with one GPU - RTX 5880 (48GB GPU memory). The actual number may vary due to the different hardware and environment.
+EAGLE model performance output on GSM8K:
+```
+                                   NVIDIA GenAI-Perf | LLM Metrics
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┓
+┃                         Statistic ┃      avg ┃   min ┃       max ┃       p99 ┃      p90 ┃      p75 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━┩
+│              Request Latency (ms) │ 5,633.32 │ 34.94 │ 13,317.99 │ 12,415.99 │ 9,931.24 │ 8,085.09 │
+│   Output Sequence Length (tokens) │   116.02 │ 23.00 │    353.00 │    348.77 │   305.30 │   126.00 │
+│    Input Sequence Length (tokens) │    66.70 │ 23.00 │    148.00 │    144.39 │   102.10 │    81.00 │
+│ Output Token Throughput (per sec) │   389.08 │   N/A │       N/A │       N/A │      N/A │      N/A │
+│      Request Throughput (per sec) │     3.35 │   N/A │       N/A │       N/A │      N/A │      N/A │
+│             Request Count (count) │   120.00 │   N/A │       N/A │       N/A │      N/A │      N/A │
+└───────────────────────────────────┴──────────┴───────┴───────────┴───────────┴──────────┴──────────┘
+```
+
+Base model performance output on GSM8K:
+```
+                                  NVIDIA GenAI-Perf | LLM Metrics
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┓
+┃                         Statistic ┃      avg ┃   min ┃      max ┃      p99 ┃      p90 ┃      p75 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━┩
+│              Request Latency (ms) │ 4,327.16 │ 32.04 │ 9,253.56 │ 9,033.99 │ 7,175.71 │ 6,257.44 │
+│   Output Sequence Length (tokens) │   116.09 │ 23.00 │   353.00 │   330.00 │   289.00 │   127.00 │
+│    Input Sequence Length (tokens) │    65.24 │ 23.00 │   148.00 │   139.83 │    98.40 │    79.00 │
+│ Output Token Throughput (per sec) │   472.50 │   N/A │      N/A │      N/A │      N/A │      N/A │
+│      Request Throughput (per sec) │     4.07 │   N/A │      N/A │      N/A │      N/A │      N/A │
+│             Request Count (count) │   144.00 │   N/A │      N/A │      N/A │      N/A │      N/A │
+└───────────────────────────────────┴──────────┴───────┴──────────┴──────────┴──────────┴──────────┘
+```
+

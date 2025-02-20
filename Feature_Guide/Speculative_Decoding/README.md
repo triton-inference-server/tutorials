@@ -55,4 +55,4 @@ may prove simpler than generating a summary for an article.
 ## Speculative Decoding with Triton Inference Server
 Triton Inference Server supports speculative decoding with [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM). Currently, Triton Inference Server supports following popular speculative decoding approaches:
 
-1. [EAGLE](./EAGLE/README.md) speculative decoding ([paper](https://arxiv.org/pdf/2401.15077) | [github](hhttps://github.com/SafeAILab/EAGLE/tree/main) | [blog](https://sites.google.com/view/eagle-llm))
+1. [EAGLE](./EAGLE/README.md) speculative decoding ([paper](https://arxiv.org/pdf/2401.15077) | [github](https://github.com/SafeAILab/EAGLE/tree/main) | [blog](https://sites.google.com/view/eagle-llm))
