@@ -28,7 +28,7 @@
 
 # Speculative Decoding
 
-- [About Speculative Sampling](#about-speculative-sampling)
+- [About Speculative Dampling](#about-speculative-decoding)
 - [Performance Improvements](#performance-improvements)
 - [Speculative Decoding with Triton Inference Server](#speculative-decoding-with-triton-inference-server)
 
@@ -50,9 +50,8 @@ The combination of both these allows speculative decoding to result in reduced l
 
 It's important to note that the effectiveness of speculative decoding techniques is highly dependent
 on the specific task at hand. For instance, forecasting subsequent tokens in a code-completion scenario
-may prove simpler than generating a summary for an article.
+may prove simpler than generating a summary for an article. [Spec-Bench](https://sites.google.com/view/spec-bench)
+shows the performance of different speculative decoding approaches on different tasks.
 
 ## Speculative Decoding with Triton Inference Server
-Triton Inference Server supports speculative decoding with [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM). Currently, Triton Inference Server supports following popular speculative decoding approaches:
-
-1. [EAGLE](./EAGLE/README.md) speculative decoding ([paper](https://arxiv.org/pdf/2401.15077) | [github](https://github.com/SafeAILab/EAGLE/tree/main) | [blog](https://sites.google.com/view/eagle-llm))
+Follow here to learn how Triton Inference Server supports speculative decoding with [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM).

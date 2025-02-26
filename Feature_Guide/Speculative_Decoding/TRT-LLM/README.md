@@ -26,22 +26,23 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-# EAGLE Speculative Decoding
+# Speculative Decoding with TensorRT-LLM
 
-This tutorial shows how to build and run a model using EAGLE speculative decoding ([paper](https://arxiv.org/pdf/2401.15077) | [github](https://github.com/SafeAILab/EAGLE/tree/main) | [blog](https://sites.google.com/view/eagle-llm)) in Triton Inference Server with TensorRT-LLM backend on a single node with one GPU.
+This tutorial shows how to build and serve speculative decoding models in Triton Inference Server with [TensorRT-LLM backend](https://github.com/triton-inference-server/tensorrtllm_backend) on a single node with one GPU.
 
-TensorRT-LLM is NVIDIA's recommended solution of running Large Language Models(LLMs) on NVIDIA GPUs. Read more about TensoRT-LLM [here](https://github.com/NVIDIA/TensorRT-LLM) and Triton's TensorRT-LLM Backend [here](https://github.com/triton-inference-server/tensorrtllm_backend).
+According to [Spec-Bench](https://sites.google.com/view/spec-bench), EAGLE is currently the top-performing approach for speeding up LLM inference across different tasks.
+In this tutorial, we'll focus on [EAGLE](#eagle) and demonstrate how to make it work with Triton Inference Server. However, we'll also cover [MEDUSA](#medusa) and [Speculative Sampling (SpS)](#speculative-sampling) for those interested in exploring alternative methods. This way, you can choose the best fit for your needs.
 
-## Limitations
-  * EAGLE-2 is not supported.
-  * [mc_sim_7b_63](https://github.com/FasterDecoding/Medusa/blob/main/medusa/model/medusa_choices.py#L1) would be used as EAGLE choices for each inference request and cannot be changed.
-  * Pipeline parallelism is not supported.
+## EAGLE
 
-## Acquiring EAGLE Model and its Base Model
+EAGLE ([paper](https://arxiv.org/pdf/2401.15077) | [github](https://github.com/SafeAILab/EAGLE) | [blog](https://sites.google.com/view/eagle-llm)) is a speculative decoding technique that accelerates Large Language Model (LLM) inference by predicting future tokens based on contextual features extracted from the LLM's second-top layer. It employs a lightweight Auto-regression Head to predict the next feature vector, which is then used to generate tokens through the LLM's frozen classification head, achieving significant speedups (2x-3x faster than vanilla decoding) while maintaining output quality and distribution consistency. EAGLE-2, an improved version, further enhances performance by using confidence scores from the draft model to dynamically adjust the draft tree structure, resulting in even faster inference speeds.
 
-Throughout the tutorial, we will be using the [EAGLE-Vicuna-7B-v1.3](https://huggingface.co/yuhuili/EAGLE-Vicuna-7B-v1.3) model, uploaded to HuggingFace by the authors of EAGLE. More types of EAGLE models could be found [here](https://sites.google.com/view/eagle-llm). The base model [Vicuna-7B-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3) is also needed for EAGLE to work.
+*NOTE: EAGLE-2 is not supported via Triton Inference Server using TensorRT-LLM backend yet.*
 
-Vicuna-7B-v1.3 model is a fine-tuned Llama. With some modifications, you can add EAGLE to other base models as well. Some TensorRT-LLM models might not work with EAGLE due to the missing head size in the speculative decoding XQA attention kernels.
+### Acquiring EAGLE Model and its Base Model
+
+In this example, we will be using the [EAGLE-Vicuna-7B-v1.3](https://huggingface.co/yuhuili/EAGLE-Vicuna-7B-v1.3) model.
+More types of EAGLE models could be found [here](https://sites.google.com/view/eagle-llm). The base model [Vicuna-7B-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3) is also needed for EAGLE to work.
 
 To download both models, run the following command:
 ```bash
@@ -52,12 +53,7 @@ git clone https://huggingface.co/lmsys/vicuna-7b-v1.3
 git clone https://huggingface.co/yuhuili/EAGLE-Vicuna-7B-v1.3
 ```
 
-## Acquiring TensorRT-LLM backend
-
-This tutorial requires TensorRT-LLM Backend repository. Please note,
-that for best user experience we recommend using the latest
-[release tag](https://github.com/triton-inference-server/tensorrtllm_backend/tags)
-of `tensorrtllm_backend`.
+### Acquiring TensorRT-LLM backend
 
 To clone TensorRT-LLM Backend repository, make sure to run the following set of commands:
 ```bash
@@ -66,7 +62,11 @@ cd tensorrtllm_backend
 git submodule update --init --recursive
 ```
 
-## Launch Triton TensorRT-LLM container
+*NOTE: that for best user experience we recommend using the latest
+[release tag](https://github.com/triton-inference-server/tensorrtllm_backend/tags)
+of `tensorrtllm_backend`.*
+
+### Launch Triton TensorRT-LLM container
 
 Launch Triton docker container with TensorRT-LLM backend.
 Note that we're mounting `tensorrtllm_backend` to `/tensorrtllm_backend`
@@ -84,7 +84,7 @@ docker run --rm -it --net host --shm-size=2g \
     nvcr.io/nvidia/tritonserver:<xx.yy>-trtllm-python-py3
 ```
 
-## Create Engines for Each Model [skip this step if you already have an engine]
+### Create Engines for Each Model [skip this step if you already have an engine]
 
 TensorRT-LLM requires each model to be compiled for the configuration
 you need before running. To do so, before you run your model for the first time
@@ -131,9 +131,9 @@ Sample output:
 > [TensorRT-LLM][INFO] Refreshed the MPI local session
 ```
 
-## Serving with Triton
+### Serving with Triton
 
-The last step is to create a Triton readable model. You can find a template of a model that uses inflight batching in
+The last step is to create a Triton readable model and serve it. You can find a template of a model that uses inflight batching in
 [tensorrtllm_backend/all_models/inflight_batcher_llm](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/all_models/inflight_batcher_llm). To run EAGLE model, you will need to:
 
 1. Copy over the inflight batcher models repository
@@ -162,6 +162,8 @@ python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/ensemble/config.pbtxt triton_
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt triton_backend:${TRITON_BACKEND},triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},engine_dir:${ENGINE_DIR},max_queue_delay_microseconds:${MAX_QUEUE_DELAY_MS},batching_strategy:inflight_fused_batching,encoder_input_features_data_type:TYPE_FP16,logits_datatype:${LOGITS_DATATYPE}
 ```
 
+*NOTE: you can specify `eagle_choices` by manually changing tensorrt_llm/config.pbtxt. If you do not specify any choices, the default, [mc_sim_7b_63](https://github.com/FasterDecoding/Medusa/blob/main/medusa/model/medusa_choices.py#L1) choices are used. For more information regarding choices tree, refer to [Medusa Tree](https://nvidia.github.io/TensorRT-LLM/advanced/speculative-decoding.html#medusa-tree).*
+
 3. Launch Tritonserver
 
 Launch Tritonserver with the [launch_triton_server.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/release/0.5.0/scripts/launch_triton_server.py) script. Here, we launch a single instance of `tritonserver` with MPI by setting `--world_size=1`.
@@ -182,14 +184,12 @@ To stop Triton Server inside the container, run:
 ```bash
 pkill tritonserver
 ```
-Note: do not forget to run above command to stop Triton Server if launch Tritionserver failed due to various reasons. Otherwise, it could cause OOM or MPI issues.
+*NOTE: do not forget to run above command to stop Triton Server if launch Tritionserver failed due to various reasons. Otherwise, it could cause OOM or MPI issues.*
 
-curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "What is ML?", "max_tokens": 50, "bad_words": "", "stop_words": "", "pad_id": 2, "end_id": 2}'
-
-## Send an Inference Request
+### Send Inference Requests
 
 You can test the results of the run with:
-1. The [inflight_batcher_llm_client.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/inflight_batcher_llm/client/inflight_batcher_llm_client.py) script.
+1. The [inflight_batcher_llm_client.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/inflight_batcher_llm/client/inflight_batcher_llm_client.py) script. Run below in another terminal:
 
 ```bash
 # Using the SDK container as an example. <xx.yy> is the version of Triton Server you are using.
@@ -221,7 +221,7 @@ curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "What
 > {"model_name":"ensemble","model_version":"1","sequence_end":false,"sequence_id":0,"sequence_start":false,"text_output":"What is ML?\nML is a branch of AI that allows computers to learn from data, identify patterns, and make predictions. It is a powerful tool that can be used in a variety of industries, including healthcare, finance, and transportation."}
 > ```
 
-## Evaluating Performance with Gen-AI Perf
+### Evaluating Performance with Gen-AI Perf
 
 Gen-AI Perf is a command line tool for measuring the throughput and latency of generative AI models as served through an inference server.
 You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_analyzer/genai-perf/README.html). We will use Gen-AI Perf to evaluate the performance gain of EAGLE model over the base model.
@@ -235,6 +235,7 @@ format required by Gen-AI Perf. Note that MT-bench could not be used since Gen-A
 ```bash
 wget https://raw.githubusercontent.com/SafeAILab/EAGLE/main/eagle/data/humaneval/question.jsonl
 
+# dataset-converter.py file can be found in the same folder as this README.
 python3 dataset-converter.py --input_file question.jsonl --output_file converted_humaneval.jsonl
 ```
 
@@ -243,7 +244,7 @@ python3 dataset-converter.py --input_file question.jsonl --output_file converted
 ```bash
 pip install genai-perf
 ```
-NOTE: you must already have CUDA 12 installed
+*NOTE: you must already have CUDA 12 installed.*
 
 3. Run Gen-AI Perf
 
@@ -258,27 +259,28 @@ genai-perf \
   --tokenizer /path/to/hf-models/vicuna-7b-v1.3/ \
   --profile-export-file my_profile_export.json \
   --url localhost:8001 \
-  --request-rate 2
+  --concurrency 1
 ```
-NOTE: you may need to change the input-file name according to your converted dataset. Above is using converted_humaneval.jsonl as an example.
+*NOTE: When benchmarking the speedup of speculative decoding versus the base model, use `--concurrency 1`. This setting is crucial because speculative decoding is designed to trade extra computation for reduced token generation latency. By limiting concurrency, we avoid saturating hardware resources with multiple requests, allowing for a more accurate assessment of the technique's latency benefits. This approach ensures that the benchmark reflects the true performance gains of speculative decoding in real-world, low-concurrency scenarios.*
+
 A sample output that looks like this:
 ```
-                                     NVIDIA GenAI-Perf | LLM Metrics
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
-┃                         Statistic ┃      avg ┃    min ┃       max ┃       p99 ┃       p90 ┃       p75 ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
-│              Request Latency (ms) │ 7,667.61 │ 940.38 │ 16,101.65 │ 15,439.36 │ 14,043.33 │ 10,662.31 │
-│   Output Sequence Length (tokens) │   319.87 │ 133.00 │    485.00 │    472.08 │    441.60 │    404.00 │
-│    Input Sequence Length (tokens) │   153.05 │  63.00 │    278.00 │    259.38 │    190.20 │    183.50 │
-│ Output Token Throughput (per sec) │   360.53 │    N/A │       N/A │       N/A │       N/A │       N/A │
-│      Request Throughput (per sec) │     1.13 │    N/A │       N/A │       N/A │       N/A │       N/A │
-│             Request Count (count) │    39.00 │    N/A │       N/A │       N/A │       N/A │       N/A │
-└───────────────────────────────────┴──────────┴────────┴───────────┴───────────┴───────────┴───────────┘
+                                   NVIDIA GenAI-Perf | LLM Metrics
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┓
+┃                         Statistic ┃      avg ┃    min ┃      max ┃      p99 ┃      p90 ┃      p75 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━┩
+│              Request Latency (ms) │ 1,355.35 │ 387.84 │ 2,002.81 │ 2,000.44 │ 1,868.83 │ 1,756.85 │
+│   Output Sequence Length (tokens) │   348.27 │ 153.00 │   534.00 │   517.25 │   444.50 │   426.75 │
+│    Input Sequence Length (tokens) │   156.54 │  63.00 │   278.00 │   265.75 │   203.00 │   185.75 │
+│ Output Token Throughput (per sec) │   256.94 │    N/A │      N/A │      N/A │      N/A │      N/A │
+│      Request Throughput (per sec) │     0.74 │    N/A │      N/A │      N/A │      N/A │      N/A │
+│             Request Count (count) │    26.00 │    N/A │      N/A │      N/A │      N/A │      N/A │
+└───────────────────────────────────┴──────────┴────────┴──────────┴──────────┴──────────┴──────────┘
 ```
 
 4. Run Gen-AI Perf on Base Model
 
-To compare performance between EAGLE and base model, we need to run Gen-AI Perf Tool on the base model as well. To do so, we need to repeat the steps above for the base model with minor changes.
+To compare performance between EAGLE and base model (i.e. vanilla LLM w/o speculative decoding), we need to run Gen-AI Perf Tool on the base model as well. To do so, we need to repeat the steps above for the base model with minor changes.
 
 Kill the existing Triton Server and run the following command in the Triton Server container:
 ```bash
@@ -343,66 +345,110 @@ genai-perf \
   --tokenizer /path/to/hf-models/vicuna-7b-v1.3/ \
   --profile-export-file my_profile_export.json \
   --url localhost:8001 \
-  --request-rate 2
+  --concurrency 1
 ```
 
 Sample performance output for base model:
 ```
-                                      NVIDIA GenAI-Perf | LLM Metrics
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
-┃                         Statistic ┃      avg ┃      min ┃       max ┃       p99 ┃       p90 ┃       p75 ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
-│              Request Latency (ms) │ 8,730.66 │ 1,792.94 │ 16,376.18 │ 16,054.17 │ 14,780.51 │ 12,529.04 │
-│   Output Sequence Length (tokens) │   353.32 │   153.00 │    534.00 │    508.65 │    445.30 │    428.25 │
-│    Input Sequence Length (tokens) │   156.62 │    63.00 │    296.00 │    288.98 │    196.60 │    185.00 │
-│ Output Token Throughput (per sec) │   410.03 │      N/A │       N/A │       N/A │       N/A │       N/A │
-│      Request Throughput (per sec) │     1.16 │      N/A │       N/A │       N/A │       N/A │       N/A │
-│             Request Count (count) │    40.00 │      N/A │       N/A │       N/A │       N/A │       N/A │
-└───────────────────────────────────┴──────────┴──────────┴───────────┴───────────┴───────────┴───────────┘
+                                    NVIDIA GenAI-Perf | LLM Metrics
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┓
+┃                         Statistic ┃      avg ┃      min ┃      max ┃      p99 ┃      p90 ┃      p75 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━┩
+│              Request Latency (ms) │ 2,663.13 │ 1,017.15 │ 4,197.72 │ 4,186.59 │ 4,096.25 │ 4,090.93 │
+│   Output Sequence Length (tokens) │   310.75 │   153.00 │   441.00 │   440.12 │   431.70 │   415.50 │
+│    Input Sequence Length (tokens) │   145.67 │    63.00 │   195.00 │   194.12 │   186.90 │   185.25 │
+│ Output Token Throughput (per sec) │   116.68 │      N/A │      N/A │      N/A │      N/A │      N/A │
+│      Request Throughput (per sec) │     0.38 │      N/A │      N/A │      N/A │      N/A │      N/A │
+│             Request Count (count) │    12.00 │      N/A │      N/A │      N/A │      N/A │      N/A │
+└───────────────────────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 ```
 
 5. Compare Performance
 
+From the sample runs above, we can see that the EAGLE model has a lower latency and higher throughput than the base model. Specifically, the EAGLE model can generate 256.94 tokens per second, while the base model can only generate 116.68 tokens per second with a speed up of 2.2x.
+
+As stated above, the number above is gathered from a single node with one GPU - RTX 5880 (48GB GPU memory). The actual number may vary due to the different hardware and environment.
+
+## Medusa
+
+MEDUSA ([paper](https://arxiv.org/pdf/2401.10774) | [github](https://github.com/FasterDecoding/Medusa) | [blog](https://sites.google.com/view/medusa-llm)) is a speculative decoding framework that, like EAGLE, aims to accelerate LLM inference. However, there are several key differences between the two approaches:
+
+ - Architecture: MEDUSA adds extra decoding heads to LLMs to predict multiple subsequent tokens in parallel, while EAGLE extrapolates second-top-layer contextual feature vectors of LLMs.
+
+ - Generation structure: MEDUSA generates a fully connected tree across adjacent layers through the Cartesian product, often resulting in nonsensical combinations. In contrast, EAGLE creates a sparser, more selective tree structure that is more context-aware1.
+
+ - Consistency: MEDUSA's non-greedy generation does not guarantee lossless performance, while EAGLE provably maintains consistency with vanilla decoding in the distribution of generated texts.
+
+ - Accuracy: MEDUSA achieves an accuracy of about 0.6 in generating drafts, whereas EAGLE attains a higher accuracy of approximately 0.8 as claimed in the EAGLE paper.
+
+ - Speed: EAGLE is reported to be 1.6x faster than MEDUSA for certained models as claimed in the EAGLE paper.
+
+To run MEDUSA with Triton Inference Server, it is very similar to the steps above for EAGLE with only a few simple configuration changes. We only list the changes below. The rest steps not listed below are the same as the steps for EAGLE above, e.g. launch docker, launch triton server, send requests, evalaution.
+
+### Download the MEDUSA model
+
+We will be using [medusa-vicuna-7b-v1.3](https://huggingface.co/FasterDecoding/medusa-vicuna-7b-v1.3), same model family as what we used for EAGLE above:
+
 ```bash
-genai-perf \
-  profile \
-  -m ensemble \
-  --service-kind triton \
-  --backend tensorrtllm \
-  --input-file /path/to/converted/dataset/converted_gsm8k.jsonl \
-  --tokenizer /path/to/hf-models/vicuna-7b-v1.3/ \
-  --profile-export-file my_profile_export.json \
-  --url localhost:8001 \
-  --request-rate 5
+git clone https://huggingface.co/FasterDecoding/medusa-vicuna-7b-v1.3
 ```
 
-EAGLE model performance output on GSM8K:
-```
-                                   NVIDIA GenAI-Perf | LLM Metrics
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┓
-┃                         Statistic ┃      avg ┃   min ┃       max ┃       p99 ┃      p90 ┃      p75 ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━┩
-│              Request Latency (ms) │ 5,633.32 │ 34.94 │ 13,317.99 │ 12,415.99 │ 9,931.24 │ 8,085.09 │
-│   Output Sequence Length (tokens) │   116.02 │ 23.00 │    353.00 │    348.77 │   305.30 │   126.00 │
-│    Input Sequence Length (tokens) │    66.70 │ 23.00 │    148.00 │    144.39 │   102.10 │    81.00 │
-│ Output Token Throughput (per sec) │   389.08 │   N/A │       N/A │       N/A │      N/A │      N/A │
-│      Request Throughput (per sec) │     3.35 │   N/A │       N/A │       N/A │      N/A │      N/A │
-│             Request Count (count) │   120.00 │   N/A │       N/A │       N/A │      N/A │      N/A │
-└───────────────────────────────────┴──────────┴───────┴───────────┴───────────┴──────────┴──────────┘
-```
-
-Base model performance output on GSM8K:
-```
-                                  NVIDIA GenAI-Perf | LLM Metrics
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┓
-┃                         Statistic ┃      avg ┃   min ┃      max ┃      p99 ┃      p90 ┃      p75 ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━┩
-│              Request Latency (ms) │ 4,327.16 │ 32.04 │ 9,253.56 │ 9,033.99 │ 7,175.71 │ 6,257.44 │
-│   Output Sequence Length (tokens) │   116.09 │ 23.00 │   353.00 │   330.00 │   289.00 │   127.00 │
-│    Input Sequence Length (tokens) │    65.24 │ 23.00 │   148.00 │   139.83 │    98.40 │    79.00 │
-│ Output Token Throughput (per sec) │   472.50 │   N/A │      N/A │      N/A │      N/A │      N/A │
-│      Request Throughput (per sec) │     4.07 │   N/A │      N/A │      N/A │      N/A │      N/A │
-│             Request Count (count) │   144.00 │   N/A │      N/A │      N/A │      N/A │      N/A │
-└───────────────────────────────────┴──────────┴───────┴──────────┴──────────┴──────────┴──────────┘
+### Build the TRT-LLM engine for MEDUSA:
+```bash
+BASE_MODEL=/hf-models/vicuna-7b-v1.3
+MEDUSA_MODEL=/hf-models/medusa-vicuna-7b-v1.3
+CKPT_PATH=/tmp/ckpt/vicuna-medusa/7b/
+ENGINE_DIR=/engines/medusa-vicuna-7b/1-gpu/
+CONVERT_CHKPT_SCRIPT=/tensorrtllm_backend/tensorrt_llm/examples/medusa/convert_checkpoint.py
+python3 ${CONVERT_CHKPT_SCRIPT} --model_dir ${BASE_MODEL} \
+                                --medusa_model_dir ${MEDUSA_MODEL} \
+                                --output_dir ${CKPT_PATH} \
+                                --dtype float16 \
+                                --num_medusa_heads 4
+trtllm-build --checkpoint_dir ${CKPT_PATH} \
+            --output_dir ${ENGINE_DIR} \
+            --gemm_plugin float16 \
+            --speculative_decoding_mode medusa \
+            --max_batch_size 4
 ```
 
+### Create a Triton readable model for MEDUSA:
+```bash
+mkdir -p /opt/tritonserver/vicuna_medusa
+cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/vicuna_medusa/.
+
+TOKENIZER_DIR=/hf-models/vicuna-7b-v1.3
+TOKENIZER_TYPE=auto
+ENGINE_DIR=/engines/medusa-vicuna-7b/1-gpu/
+DECOUPLED_MODE=false
+MODEL_FOLDER=/opt/tritonserver/vicuna_medusa/inflight_batcher_llm
+MAX_BATCH_SIZE=4
+INSTANCE_COUNT=1
+MAX_QUEUE_DELAY_MS=10000
+TRITON_BACKEND=tensorrtllm
+LOGITS_DATATYPE="TYPE_FP32"
+FILL_TEMPLATE_SCRIPT=/tensorrtllm_backend/tools/fill_template.py
+python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/preprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},preprocessing_instance_count:${INSTANCE_COUNT}
+python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/postprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},postprocessing_instance_count:${INSTANCE_COUNT}
+python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm_bls/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},bls_instance_count:${INSTANCE_COUNT},logits_datatype:${LOGITS_DATATYPE}
+python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/ensemble/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},logits_datatype:${LOGITS_DATATYPE}
+python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt triton_backend:${TRITON_BACKEND},triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},engine_dir:${ENGINE_DIR},max_queue_delay_microseconds:${MAX_QUEUE_DELAY_MS},batching_strategy:inflight_fused_batching,encoder_input_features_data_type:TYPE_FP16,logits_datatype:${LOGITS_DATATYPE}
+```
+
+## Speculative Sampling
+
+Speculative Sampling (SpS) ([paper](https://arxiv.org/pdf/2302.01318)) is another (and earlier) approach to accelerate LLM inference, distinct from both EAGLE and MEDUSA. Here are the key differences:
+
+ - Draft Generation: SpS uses a smaller, faster LLM as a draft model to predict multiple tokens ahead1. This contrasts with EAGLE's feature-level extrapolation and MEDUSA's additional decoding heads.
+
+ - Verification Process: SpS employs a chain-like structure for draft generation and verification, unlike EAGLE and MEDUSA which use tree-based attention mechanisms.
+
+ - Consistency: SpS maintains distribution consistency with the target LLM in both greedy and non-greedy settings, similar to EAGLE but different from MEDUSA.
+
+ - Efficiency: While effective, SpS is generally slower than both EAGLE and MEDUSA.
+
+ - Implementation: SpS requires a separate draft model, which can be challenging to implement effectively for smaller target models. EAGLE and MEDUSA, in contrast, modify the existing model architecture.
+
+ - Accuracy: SpS's draft accuracy can vary depending on the draft model used, while EAGLE achieves a higher draft accuracy (about 0.8) compared to MEDUSA (about 0.6).
+
+ Please follow the steps [here](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/advanced/speculative-decoding.md#using-draft-target-model-approach-with-triton-inference-server) to run SpS with Triton Inference Server.
