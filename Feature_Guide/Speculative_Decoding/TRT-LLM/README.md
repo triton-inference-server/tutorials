@@ -53,32 +53,17 @@ git clone https://huggingface.co/lmsys/vicuna-7b-v1.3
 git clone https://huggingface.co/yuhuili/EAGLE-Vicuna-7B-v1.3
 ```
 
-### Acquiring TensorRT-LLM backend
-
-To clone TensorRT-LLM Backend repository, make sure to run the following set of commands:
-```bash
-git clone https://github.com/triton-inference-server/tensorrtllm_backend.git  --branch <release branch>
-cd tensorrtllm_backend
-git submodule update --init --recursive
-```
-
-*NOTE: that for best user experience we recommend using the latest
-[release tag](https://github.com/triton-inference-server/tensorrtllm_backend/tags)
-of `tensorrtllm_backend`.*
-
 ### Launch Triton TensorRT-LLM container
 
 Launch Triton docker container with TensorRT-LLM backend.
-Note that we're mounting `tensorrtllm_backend` to `/tensorrtllm_backend`
-and the downloaded EAGLE and base models to `/hf-models` in the docker container for simplicity.
+Note that we're mounting the downloaded EAGLE and base models to `/hf-models` in the docker container.
 Make an `engines` folder outside docker to reuse engines for future runs.
 Please, make sure to replace <xx.yy> with the version of Triton that you want
-to use. The latest Triton Server container could be found [here](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver/tags).
+to use (must be >= 25.01). The latest Triton Server container could be found [here](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver/tags).
 
 ```bash
 docker run --rm -it --net host --shm-size=2g \
     --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
-    -v </path/to/tensorrtllm_backend>:/tensorrtllm_backend \
     -v </path/to/eagle/and/base/model/>:/hf-models \
     -v </path/to/engines>:/engines \
     nvcr.io/nvidia/tritonserver:<xx.yy>-trtllm-python-py3
@@ -100,7 +85,7 @@ BASE_MODEL=/hf-models/vicuna-7b-v1.3
 EAGLE_MODEL=/hf-models/EAGLE-Vicuna-7B-v1.3
 CKPT_PATH=/tmp/ckpt/vicuna/7b/
 ENGINE_DIR=/engines/eagle-vicuna-7b/1-gpu/
-CONVERT_CHKPT_SCRIPT=/tensorrtllm_backend/tensorrt_llm/examples/eagle/convert_checkpoint.py
+CONVERT_CHKPT_SCRIPT=/app/examples/eagle/convert_checkpoint.py
 python3 ${CONVERT_CHKPT_SCRIPT} --model_dir ${BASE_MODEL} \
                                 --eagle_model_dir ${EAGLE_MODEL} \
                                 --output_dir ${CKPT_PATH} \
@@ -118,7 +103,7 @@ trtllm-build --checkpoint_dir ${CKPT_PATH} \
 
 To verify that the engine is built correctly, run the following command:
 ```bash
-python3 /tensorrtllm_backend/tensorrt_llm/examples/run.py --engine_dir ${ENGINE_DIR} \
+python3 /app/examples/run.py --engine_dir ${ENGINE_DIR} \
                  --tokenizer_dir ${BASE_MODEL} \
                  --max_output_len=100 \
                  --input_text "Once upon"
@@ -138,7 +123,7 @@ The last step is to create a Triton readable model and serve it. You can find a 
 
 1. Copy over the inflight batcher models repository
 ```bash
-cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/.
+cp -R /app/all_models/inflight_batcher_llm /opt/tritonserver/.
 ```
 
 2. Modify config.pbtxt for the preprocessing, postprocessing and processing steps.
@@ -154,7 +139,7 @@ INSTANCE_COUNT=1
 MAX_QUEUE_DELAY_MS=10000
 TRITON_BACKEND=tensorrtllm
 LOGITS_DATATYPE="TYPE_FP32"
-FILL_TEMPLATE_SCRIPT=/tensorrtllm_backend/tools/fill_template.py
+FILL_TEMPLATE_SCRIPT=/app/tools/fill_template.py
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/preprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},preprocessing_instance_count:${INSTANCE_COUNT}
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/postprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},postprocessing_instance_count:${INSTANCE_COUNT}
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm_bls/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},bls_instance_count:${INSTANCE_COUNT},logits_datatype:${LOGITS_DATATYPE}
@@ -169,7 +154,7 @@ python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt tri
 Launch Tritonserver with the [launch_triton_server.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/release/0.5.0/scripts/launch_triton_server.py) script. Here, we launch a single instance of `tritonserver` with MPI by setting `--world_size=1`.
 
 ```bash
-python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=1 --model_repo=/opt/tritonserver/inflight_batcher_llm
+python3 /app/scripts/launch_triton_server.py --world_size=1 --model_repo=/opt/tritonserver/inflight_batcher_llm
 ```
 
 > You should expect the following response:
@@ -195,7 +180,6 @@ You can test the results of the run with:
 # Using the SDK container as an example. <xx.yy> is the version of Triton Server you are using.
 docker run --rm -it --net host --shm-size=2g \
     --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
-    -v </path/to/tensorrtllm_backend/inflight_batcher_llm/client>:/tensorrtllm_client \
     -v </path/to/eagle/and/base/model/>:/hf-models \
     nvcr.io/nvidia/tritonserver:<xx.yy>-py3-sdk
 # Install extra dependencies for the script
@@ -292,7 +276,7 @@ Build the TRT-LLM engine for the base model:
 BASE_MODEL=/hf-models/vicuna-7b-v1.3
 CKPT_PATH=/tmp/ckpt/vicuna-base/7b/
 ENGINE_DIR=/engines/vicuna-7b/1-gpu/
-CONVERT_CHKPT_SCRIPT=/tensorrtllm_backend/tensorrt_llm/examples/llama/convert_checkpoint.py
+CONVERT_CHKPT_SCRIPT=/app/examples/llama/convert_checkpoint.py
 python3 ${CONVERT_CHKPT_SCRIPT} --model_dir ${BASE_MODEL} \
                                 --output_dir ${CKPT_PATH} \
                                 --dtype float16
@@ -309,7 +293,7 @@ trtllm-build --checkpoint_dir ${CKPT_PATH} \
 Create a Triton readable model for the base model:
 ```bash
 mkdir -p /opt/tritonserver/vicuna_base
-cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/vicuna_base/.
+cp -R /app/all_models/inflight_batcher_llm /opt/tritonserver/vicuna_base/.
 
 TOKENIZER_DIR=/hf-models/vicuna-7b-v1.3
 TOKENIZER_TYPE=auto
@@ -321,7 +305,7 @@ INSTANCE_COUNT=1
 MAX_QUEUE_DELAY_MS=10000
 TRITON_BACKEND=tensorrtllm
 LOGITS_DATATYPE="TYPE_FP32"
-FILL_TEMPLATE_SCRIPT=/tensorrtllm_backend/tools/fill_template.py
+FILL_TEMPLATE_SCRIPT=/app/tools/fill_template.py
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/preprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},preprocessing_instance_count:${INSTANCE_COUNT}
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/postprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},postprocessing_instance_count:${INSTANCE_COUNT}
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm_bls/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},bls_instance_count:${INSTANCE_COUNT},logits_datatype:${LOGITS_DATATYPE}
@@ -331,7 +315,7 @@ python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt tri
 
 Launch Triton Server with the base model:
 ```bash
-python3 /tensorrtllm_backend/scripts/launch_triton_server.py --world_size=1 --model_repo=/opt/tritonserver/vicuna_base/inflight_batcher_llm
+python3 /app/scripts/launch_triton_server.py --world_size=1 --model_repo=/opt/tritonserver/vicuna_base/inflight_batcher_llm
 ```
 
 Run Gen-AI Perf Tool on Base Model:
@@ -399,7 +383,7 @@ BASE_MODEL=/hf-models/vicuna-7b-v1.3
 MEDUSA_MODEL=/hf-models/medusa-vicuna-7b-v1.3
 CKPT_PATH=/tmp/ckpt/vicuna-medusa/7b/
 ENGINE_DIR=/engines/medusa-vicuna-7b/1-gpu/
-CONVERT_CHKPT_SCRIPT=/tensorrtllm_backend/tensorrt_llm/examples/medusa/convert_checkpoint.py
+CONVERT_CHKPT_SCRIPT=/app/examples/medusa/convert_checkpoint.py
 python3 ${CONVERT_CHKPT_SCRIPT} --model_dir ${BASE_MODEL} \
                                 --medusa_model_dir ${MEDUSA_MODEL} \
                                 --output_dir ${CKPT_PATH} \
@@ -415,7 +399,7 @@ trtllm-build --checkpoint_dir ${CKPT_PATH} \
 ### Create a Triton readable model for MEDUSA:
 ```bash
 mkdir -p /opt/tritonserver/vicuna_medusa
-cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/vicuna_medusa/.
+cp -R /app/all_models/inflight_batcher_llm /opt/tritonserver/vicuna_medusa/.
 
 TOKENIZER_DIR=/hf-models/vicuna-7b-v1.3
 TOKENIZER_TYPE=auto
@@ -427,7 +411,7 @@ INSTANCE_COUNT=1
 MAX_QUEUE_DELAY_MS=10000
 TRITON_BACKEND=tensorrtllm
 LOGITS_DATATYPE="TYPE_FP32"
-FILL_TEMPLATE_SCRIPT=/tensorrtllm_backend/tools/fill_template.py
+FILL_TEMPLATE_SCRIPT=/app/tools/fill_template.py
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/preprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},preprocessing_instance_count:${INSTANCE_COUNT}
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/postprocessing/config.pbtxt tokenizer_dir:${TOKENIZER_DIR},tokenizer_type:${TOKENIZER_TYPE},triton_max_batch_size:${MAX_BATCH_SIZE},postprocessing_instance_count:${INSTANCE_COUNT}
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm_bls/config.pbtxt triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},bls_instance_count:${INSTANCE_COUNT},logits_datatype:${LOGITS_DATATYPE}
