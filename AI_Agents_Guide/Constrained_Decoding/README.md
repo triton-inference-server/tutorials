@@ -264,15 +264,17 @@ to serve your TensorRT-LLM model.), custom logits processor should be specified
 during model's initialization as a part of
 [Executor's](https://nvidia.github.io/TensorRT-LLM/executor.html#executor-api)
 configuration
-([`logits_post_processor_map`](https://github.com/NVIDIA/TensorRT-LLM/blob/32ed92e4491baf2d54682a21d247e1948cca996e/tensorrt_llm/hlapi/llm_utils.py#L205)).
+([`logits_post_processor_map`](https://github.com/NVIDIA/TensorRT-LLM/blob/258c7540c03517def55d9a5aadfa9288af474e1b/tensorrt_llm/llmapi/llm_utils.py#L322)).
 Below is the sample for reference.
 
 ```diff
 ...
 
-+ executor_config.logits_post_processor_map = {
-+            "<custom_logits_processor_name>": custom_logits_processor
-+           }
++ logits_proc_config = trtllm.LogitsPostProcessorConfig()
++ logits_proc_config.processor_map = {
++     "<custom_logits_processor_name>": custom_logits_processor
++ }
++ executor_config.logits_post_processor_config = logits_proc_config
 self.executor = trtllm.Executor(model_path=...,
                                 model_type=...,
                                 executor_config=executor_config)
@@ -331,17 +333,15 @@ def execute(self, requests):
     ...
 
     for request in requests:
-        response_sender = request.get_response_sender()
-        if get_input_scalar_by_name(request, 'stop'):
-            self.handle_stop_request(request.request_id(), response_sender)
-        else:
+        ...
             try:
-                converted = convert_request(request,
-                                            self.exclude_input_from_output,
-                                            self.decoupled)
+                converted_reqs = convert_request(
+                        request, self.exclude_input_from_output,
+                        self.decoupled)
 +               logits_post_processor_name = get_input_tensor_by_name(request, 'logits_post_processor_name')
 +               if logits_post_processor_name is not None:
-+                   converted.logits_post_processor_name = logits_post_processor_name.item().decode('utf-8')
++                   for converted in converted_reqs:
++                       converted.logits_post_processor_name = logits_post_processor_name.item().decode('utf-8')
             except Exception as e:
             ...
 ```
@@ -470,6 +470,10 @@ class TritonPythonModel:
     def get_executor_config(self, model_config):
 +       tokenizer_dir = model_config['parameters']['tokenizer_dir']['string_value']
 +       logits_processor = LMFELogitsProcessor(tokenizer_dir, AnswerFormat.model_json_schema())
++       logits_proc_config = trtllm.LogitsPostProcessorConfig()
++       logits_proc_config.processor_map = {
++           LMFELogitsProcessor.PROCESSOR_NAME: logits_processor
++       }
         kwargs = {
             "max_beam_width":
             get_parameter(model_config, "max_beam_width", int),
@@ -490,9 +494,7 @@ class TritonPythonModel:
             self.get_peft_cache_config(model_config),
             "decoding_config":
             self.get_decoding_config(model_config),
-+            "logits_post_processor_map":{
-+                LMFELogitsProcessor.PROCESSOR_NAME: logits_processor
-+            }
++            "logits_post_processor_config": logits_proc_config
         }
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return trtllm.ExecutorConfig(**kwargs)
@@ -603,6 +605,10 @@ class TritonPythonModel:
     def get_executor_config(self, model_config):
 +       tokenizer_dir = model_config['parameters']['tokenizer_dir']['string_value']
 +       logits_processor = OutlinesLogitsProcessor(tokenizer_dir, AnswerFormat.model_json_schema())
++       logits_proc_config = trtllm.LogitsPostProcessorConfig()
++       logits_proc_config.processor_map = {
++           OutlinesLogitsProcessor.PROCESSOR_NAME: logits_processor
++       }
         kwargs = {
             "max_beam_width":
             get_parameter(model_config, "max_beam_width", int),
@@ -623,9 +629,7 @@ class TritonPythonModel:
             self.get_peft_cache_config(model_config),
             "decoding_config":
             self.get_decoding_config(model_config),
-+            "logits_post_processor_map":{
-+                OutlinesLogitsProcessor.PROCESSOR_NAME: logits_processor
-+            }
++            "logits_post_processor_config": logits_proc_config
         }
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return trtllm.ExecutorConfig(**kwargs)
