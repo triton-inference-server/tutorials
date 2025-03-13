@@ -1,0 +1,6 @@
+{
+    "model": "facebook/opt-6.7b",
+    "speculative_model": "facebook/opt-125m",
+    "tensor_parallel_size": 1,
+    "num_speculative_tokens": 5
+}
