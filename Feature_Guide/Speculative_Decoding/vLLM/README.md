@@ -45,7 +45,7 @@ EAGLE ([paper](https://arxiv.org/pdf/2401.15077) | [github](https://github.com/S
 ### Acquiring EAGLE Model and its Base Model
 
 In this example, we will be using the [EAGLE-LLaMA3-Instruct-8B](https://huggingface.co/yuhuili/EAGLE-LLaMA3-Instruct-8B) model.
-More types of EAGLE models could be found [here](https://huggingface.co/yuhuili). The base model [Meta-Llama-3-8B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct) is also needed for EAGLE to work.
+More types of EAGLE models can be found [here](https://huggingface.co/yuhuili). The base model [Meta-Llama-3-8B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct) is also needed for EAGLE to work.
 
 To download both models, run the following command:
 ```bash

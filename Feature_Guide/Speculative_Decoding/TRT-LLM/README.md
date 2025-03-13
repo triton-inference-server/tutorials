@@ -49,7 +49,7 @@ EAGLE ([paper](https://arxiv.org/pdf/2401.15077) | [github](https://github.com/S
 ### Acquiring EAGLE Model and its Base Model
 
 In this example, we will be using the [EAGLE-Vicuna-7B-v1.3](https://huggingface.co/yuhuili/EAGLE-Vicuna-7B-v1.3) model.
-More types of EAGLE models could be found [here](https://huggingface.co/yuhuili). The base model [Vicuna-7B-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3) is also needed for EAGLE to work.
+More types of EAGLE models can be found [here](https://huggingface.co/yuhuili). The base model [Vicuna-7B-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3) is also needed for EAGLE to work.
 
 To download both models, run the following command:
 ```bash
@@ -66,7 +66,7 @@ Launch Triton docker container with TensorRT-LLM backend.
 Note that we're mounting the downloaded EAGLE and base models to `/hf-models` in the docker container.
 Make an `engines` folder outside docker to reuse engines for future runs.
 Please, make sure to replace <xx.yy> with the version of Triton that you want
-to use (must be >= 25.01). The latest Triton Server container is recommended and could be found [here](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver/tags).
+to use (must be >= 25.01). The latest Triton Server container is recommended and can be found [here](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver/tags).
 
 ```bash
 docker run --rm -it --net host --shm-size=2g \
@@ -226,7 +226,7 @@ format required by Gen-AI Perf. Note that MT-bench could not be used since Gen-A
 ```bash
 wget https://raw.githubusercontent.com/SafeAILab/EAGLE/main/eagle/data/humaneval/question.jsonl
 
-# dataset-converter.py file can be found in the parent folder as this README.
+# dataset-converter.py file can be found in the parent folder of this README.
 python3 dataset-converter.py --input_file question.jsonl --output_file converted_humaneval.jsonl
 ```
 
