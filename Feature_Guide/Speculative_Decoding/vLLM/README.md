@@ -88,7 +88,7 @@ docker run --gpus all -it --net=host --rm -p 8001:8001 --shm-size=1G \
 
 ### Send Inference Requests
 
-Let's send an inference request to the [generate endpoint](https://github.com/triton-inference-server/tensorrtllm_backend/tree/release/0.5.0#query-the-server-with-the-triton-generate-endpoint).
+Let's send an inference request to the [generate endpoint](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/protocol/extension_generate.html).
 
 ```bash
 curl -X POST localhost:8000/v2/models/eagle_model/generate -d '{"text_input": "What is Triton Inference Server?", "parameters": {"stream": false, "temperature": 0}}' | jq

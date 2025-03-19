@@ -1,6 +1,0 @@
-{
-    "model": "lmsys/vicuna-7b-v1.3",
-    "speculative_model": "FasterDecoding/medusa-vicuna-7b-v1.3",
-    "speculative_draft_tensor_parallel_size": 1,
-    "num_speculative_tokens": 5
-}
