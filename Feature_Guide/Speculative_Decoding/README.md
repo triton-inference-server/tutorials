@@ -54,4 +54,6 @@ may prove simpler than generating a summary for an article. [Spec-Bench](https:/
 shows the performance of different speculative decoding approaches on different tasks.
 
 ## Speculative Decoding with Triton Inference Server
-Follow [here](TRT-LLM/README.md) to learn how Triton Inference Server supports speculative decoding with [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM).
+ Triton Inference Server supports speculative decoding on different types of Triton backends. See what a Triton backend is [here](https://github.com/triton-inference-server/backend).
+- Follow [here](TRT-LLM/README.md) to learn how Triton Inference Server supports speculative decoding with [TensorRT-LLM Backend](https://github.com/triton-inference-server/tensorrtllm_backend).
+- Follow [here](vLLM/README.md) to learn how Triton Inference Server supports speculative decoding with [vLLM Backend](https://github.com/triton-inference-server/vllm_backend).
