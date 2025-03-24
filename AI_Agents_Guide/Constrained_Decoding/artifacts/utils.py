@@ -25,15 +25,14 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import json
-from collections import defaultdict
-from typing import DefaultDict, Dict, List
+from typing import Any, Dict, List, Optional
 
 import torch
 from lmformatenforcer import JsonSchemaParser, TokenEnforcer
 from lmformatenforcer.integrations.trtllm import build_trtlmm_tokenizer_data
-from outlines.fsm.guide import RegexGuide
-from outlines.fsm.json_schema import build_regex_from_schema
-from outlines.integrations.utils import adapt_tokenizer
+from outlines.fsm.guide import Guide, RegexGuide
+from outlines.models.vllm import adapt_tokenizer
+from outlines_core.fsm.json_schema import build_regex_from_schema
 from pydantic import BaseModel
 from transformers import AutoTokenizer
 
@@ -103,6 +102,7 @@ class LMFELogitsProcessor:
         logits: torch.Tensor,
         ids: List[List[int]],
         stream_ptr: int,
+        client_id: Optional[int]
     ):
         # Create a mask with negative infinity to block all tokens initially.
         mask = torch.full_like(logits, fill_value=float("-inf"), device=logits.device)
@@ -127,8 +127,8 @@ class OutlinesLogitsProcessor:
         )
         tokenizer = adapt_tokenizer(tokenizer)
         regex_string = build_regex_from_schema(json.dumps(schema))
-        self.fsm = RegexGuide(regex_string, tokenizer)
-        self._fsm_state: DefaultDict[int, int] = defaultdict(int)
+        self.guide: Guide = RegexGuide.from_regex(regex_string, tokenizer)
+        self._guide_states: Dict[int, Any] = {}
         self.mask_cache: Dict[int, torch.Tensor] = {}
         # By default, TensorRT-LLM includes request query into the output.
         # Outlines should only look at generated outputs, thus we'll keep
@@ -141,6 +141,7 @@ class OutlinesLogitsProcessor:
         logits: torch.Tensor,
         ids: List[List[int]],
         stream_ptr: int,
+        client_id: Optional[int]
     ):
         seq_id = None
         # If the prefix token IDs have changed we assume that we are dealing
@@ -151,9 +152,9 @@ class OutlinesLogitsProcessor:
             # processed
             or len(ids[0][len(self._prefix) :]) == 0
         ):
-            self._fsm_state = defaultdict(int)
-            self._prefix = ids[0]
             seq_id = hash(tuple([]))
+            self._guide_states = {seq_id: self.guide.initial_state}
+            self._prefix = ids[0]
 
         else:
             # Remove the prefix token IDs from the input token IDs,
@@ -162,14 +163,14 @@ class OutlinesLogitsProcessor:
             last_token = ids[-1]
             last_seq_id = hash(tuple(ids[:-1]))
             seq_id = hash(tuple(ids))
-            self._fsm_state[seq_id] = self.fsm.get_next_state(
-                state=self._fsm_state[last_seq_id], token_id=last_token
+            self._guide_states[seq_id] = self.guide.get_next_state(
+                state=self._guide_states[last_seq_id], token_id=last_token
             )
 
-        state_id = self._fsm_state[seq_id]
+        state_id = self._guide_states[seq_id]
         if state_id not in self.mask_cache:
-            allowed_tokens = self.fsm.get_next_instruction(
-                state=self._fsm_state[seq_id]
+            allowed_tokens = self.guide.get_next_instruction(
+                state=self._guide_states[seq_id]
             ).tokens
             # Create a mask with negative infinity to block all
             # tokens initially.
