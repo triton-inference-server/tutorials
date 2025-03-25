@@ -129,7 +129,7 @@ triton start
 ```
 
 ### Send an inference request
-Use the [generate endpoint](https://github.com/triton-inference-server/tensorrtllm_backend/tree/release/0.5.0#query-the-server-with-the-triton-generate-endpoint).
+Use the [generate endpoint](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/protocol/extension_generate.html).
 to send an inference request to the deployed model.
 
 ```bash

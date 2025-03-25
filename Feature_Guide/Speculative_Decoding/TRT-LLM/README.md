@@ -28,10 +28,17 @@
 
 # Speculative Decoding with TensorRT-LLM
 
-This tutorial shows how to build and serve speculative decoding models in Triton Inference Server with [TensorRT-LLM backend](https://github.com/triton-inference-server/tensorrtllm_backend) on a single node with one GPU.
+- [About Speculative Decoding](#about-speculative-decoding)
+- [EAGLE](#eagle)
+- [MEDUSA](#medusa)
+- [Draft Model-Based Speculative Decoding](#draft-model-based-speculative-decoding)
+
+## About Speculative Decoding
+
+This tutorial shows how to build and serve speculative decoding models in Triton Inference Server with [TensorRT-LLM Backend](https://github.com/triton-inference-server/tensorrtllm_backend) on a single node with one GPU. Please go to [Speculative Decoding](../README.md) main page to learn more about other supported backends.
 
 According to [Spec-Bench](https://sites.google.com/view/spec-bench), EAGLE is currently the top-performing approach for speeding up LLM inference across different tasks.
-In this tutorial, we'll focus on [EAGLE](#eagle) and demonstrate how to make it work with Triton Inference Server. However, we'll also cover [MEDUSA](#medusa) and [Speculative Sampling (SpS)](#speculative-sampling) for those interested in exploring alternative methods. This way, you can choose the best fit for your needs.
+In this tutorial, we'll focus on [EAGLE](#eagle) and demonstrate how to make it work with Triton Inference Server. However, we'll also cover [MEDUSA](#medusa) and [Draft Model-Based Speculative Decoding](#draft-model-based-speculative-decoding) for those interested in exploring alternative methods. This way, you can choose the best fit for your needs.
 
 ## EAGLE
 
@@ -42,7 +49,7 @@ EAGLE ([paper](https://arxiv.org/pdf/2401.15077) | [github](https://github.com/S
 ### Acquiring EAGLE Model and its Base Model
 
 In this example, we will be using the [EAGLE-Vicuna-7B-v1.3](https://huggingface.co/yuhuili/EAGLE-Vicuna-7B-v1.3) model.
-More types of EAGLE models could be found [here](https://sites.google.com/view/eagle-llm). The base model [Vicuna-7B-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3) is also needed for EAGLE to work.
+More types of EAGLE models can be found [here](https://huggingface.co/yuhuili). The base model [Vicuna-7B-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3) is also needed for EAGLE to work.
 
 To download both models, run the following command:
 ```bash
@@ -59,7 +66,7 @@ Launch Triton docker container with TensorRT-LLM backend.
 Note that we're mounting the downloaded EAGLE and base models to `/hf-models` in the docker container.
 Make an `engines` folder outside docker to reuse engines for future runs.
 Please, make sure to replace <xx.yy> with the version of Triton that you want
-to use (must be >= 25.01). The latest Triton Server container could be found [here](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver/tags).
+to use (must be >= 25.01). The latest Triton Server container is recommended and can be found [here](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver/tags).
 
 ```bash
 docker run --rm -it --net host --shm-size=2g \
@@ -195,7 +202,7 @@ python3 /tensorrtllm_client/inflight_batcher_llm_client.py --request-output-len 
 > ...
 > ```
 
-2. The [generate endpoint](https://github.com/triton-inference-server/tensorrtllm_backend/tree/release/0.5.0#query-the-server-with-the-triton-generate-endpoint).
+2. The [generate endpoint](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/protocol/extension_generate.html).
 
 ```bash
 curl -X POST localhost:8000/v2/models/ensemble/generate -d '{"text_input": "What is ML?", "max_tokens": 50, "bad_words": "", "stop_words": "", "pad_id": 2, "end_id": 2}'
@@ -219,7 +226,7 @@ format required by Gen-AI Perf. Note that MT-bench could not be used since Gen-A
 ```bash
 wget https://raw.githubusercontent.com/SafeAILab/EAGLE/main/eagle/data/humaneval/question.jsonl
 
-# dataset-converter.py file can be found in the same folder as this README.
+# dataset-converter.py file can be found in the parent folder of this README.
 python3 dataset-converter.py --input_file question.jsonl --output_file converted_humaneval.jsonl
 ```
 
@@ -419,20 +426,20 @@ python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/ensemble/config.pbtxt triton_
 python3 ${FILL_TEMPLATE_SCRIPT} -i ${MODEL_FOLDER}/tensorrt_llm/config.pbtxt triton_backend:${TRITON_BACKEND},triton_max_batch_size:${MAX_BATCH_SIZE},decoupled_mode:${DECOUPLED_MODE},engine_dir:${ENGINE_DIR},max_queue_delay_microseconds:${MAX_QUEUE_DELAY_MS},batching_strategy:inflight_fused_batching,encoder_input_features_data_type:TYPE_FP16,logits_datatype:${LOGITS_DATATYPE}
 ```
 
-## Speculative Sampling
+## Draft Model-Based Speculative Decoding
 
-Speculative Sampling (SpS) ([paper](https://arxiv.org/pdf/2302.01318)) is another (and earlier) approach to accelerate LLM inference, distinct from both EAGLE and MEDUSA. Here are the key differences:
+Draft Model-Based Speculative Decoding ([paper](https://arxiv.org/pdf/2302.01318)) is another (and earlier) approach to accelerate LLM inference, distinct from both EAGLE and MEDUSA. Here are the key differences:
 
- - Draft Generation: SpS uses a smaller, faster LLM as a draft model to predict multiple tokens ahead1. This contrasts with EAGLE's feature-level extrapolation and MEDUSA's additional decoding heads.
+ - Draft Generation: it uses a smaller, faster LLM as a draft model to predict multiple tokens ahead. This contrasts with EAGLE's feature-level extrapolation and MEDUSA's additional decoding heads.
 
- - Verification Process: SpS employs a chain-like structure for draft generation and verification, unlike EAGLE and MEDUSA which use tree-based attention mechanisms.
+ - Verification Process: it employs a chain-like structure for draft generation and verification, unlike EAGLE and MEDUSA which use tree-based attention mechanisms.
 
- - Consistency: SpS maintains distribution consistency with the target LLM in both greedy and non-greedy settings, similar to EAGLE but different from MEDUSA.
+ - Consistency: it maintains distribution consistency with the target LLM in both greedy and non-greedy settings, similar to EAGLE but different from MEDUSA.
 
- - Efficiency: While effective, SpS is generally slower than both EAGLE and MEDUSA.
+ - Efficiency: While effective, it is generally slower than both EAGLE and MEDUSA.
 
- - Implementation: SpS requires a separate draft model, which can be challenging to implement effectively for smaller target models. EAGLE and MEDUSA, in contrast, modify the existing model architecture.
+ - Implementation: it requires a separate draft model, which can be challenging to implement effectively for smaller target models. EAGLE and MEDUSA, in contrast, modify the existing model architecture.
 
- - Accuracy: SpS's draft accuracy can vary depending on the draft model used, while EAGLE achieves a higher draft accuracy (about 0.8) compared to MEDUSA (about 0.6).
+ - Accuracy: its draft accuracy can vary depending on the draft model used, while EAGLE achieves a higher draft accuracy (about 0.8) compared to MEDUSA (about 0.6).
 
- Please follow the steps [here](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/advanced/speculative-decoding.md#using-draft-target-model-approach-with-triton-inference-server) to run SpS with Triton Inference Server.
+ Please follow the steps [here](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/advanced/speculative-decoding.md#using-draft-target-model-approach-with-triton-inference-server) to run Draft Model-Based Speculative Decoding with Triton Inference Server.
