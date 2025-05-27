@@ -1,0 +1,6 @@
+{
+    "model": "/hf-models/Meta-Llama-3-8B-Instruct",
+    "speculative_model": "/hf-models/EAGLE-LLaMA3-Instruct-8B",
+    "speculative_draft_tensor_parallel_size": 1,
+    "num_speculative_tokens": 5
+}

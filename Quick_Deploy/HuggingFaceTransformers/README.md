@@ -1,5 +1,5 @@
 <!--
-# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2023-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -176,10 +176,10 @@ Using this technique you should be able to serve any transformer models supporte
 hugging face with Triton.
 
 
-# Next Steps
+## Next Steps
 The following sections expand on the base tutorial and provide guidance for future sandboxing.
 
-## Loading Cached Models
+### Loading Cached Models
 In the previous steps, we downloaded the falcon-7b model from hugging face when we
 launched the Triton server. We can avoid this lengthy download process in subsequent runs
 by loading cached models into Triton. By default, the provided `model.py` files will cache
@@ -206,14 +206,14 @@ command from earlier (making sure to replace `${HOME}` with the path to your ass
 -v ${HOME}/.cache/huggingface:/root/.cache/huggingface
 ```
 
-## Triton Tool Ecosystem
+### Triton Tool Ecosystem
 Deploying models in Triton also comes with the benefit of access to a fully-supported suite
 of deployment analyzers to help you better understand and tailor your systems to fit your
 needs. Triton currently has two options for deployment analysis:
 - [Performance Analyzer](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton-inference-server-2310/user-guide/docs/user_guide/perf_analyzer.html): An inference performance optimizer.
 - [Model Analyzer](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_analyzer.html) A GPU memory and compute utilization optimizer.
 
-### Performance Analyzer
+#### Performance Analyzer
 To use the performance analyzer, please remove the persimmon8b model from `model_repository` and restart
 the Triton server using the `docker run` command from above.
 
@@ -289,7 +289,7 @@ guide.
 For more information regarding dynamic batching in Triton, please see [this](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html#dynamic-batcher)
 guide.
 
-### Model Analyzer
+#### Model Analyzer
 
 In the performance analyzer section, we used intuition to increase our throughput by changing
 a subset of variables and measuring the difference in performance. However, we only changed

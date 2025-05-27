@@ -68,13 +68,23 @@ directory as `workspace`.
 
 ```bash
 ./run.sh --framework diffusion
+cd examples/rayserve
+```
 
+### Start Local Ray Cluster
+
+The following command starts a local Ray cluster. It also starts
+prometheus and grafana instances with default Ray and Ray Serve
+metrics and dashboards enabled.
+
+```
+./start_ray.sh
 ```
 
 ### Run Deployment
+
 ```bash
-cd examples/rayserve
-serve run tritonserver_deployment:tritonserver_deployment
+serve run tritonserver_deployment:deployment
 ```
 
 ## Send Requests to Deployment
@@ -95,14 +105,13 @@ curl --request GET "http://127.0.0.1:8000/identity?string_input=hello_world!"
 "hello_world!"
 ```
 
-
 ### `/generate`
 The generate endpoint accepts a prompt, generates an image based on
 the prompt using stable diffusion, and saves the image to a file.
 
 #### Example Request
 ```
-curl --request GET "http://127.0.0.1:8000/generate?prompt=car,model-t,realistic,4k&filename=car_sample.jpg"
+curl --request GET "http://127.0.0.1:8000/generate?prompt=car,model-t,realistic,4k&filename=/workspace/examples/rayserve/car_sample.jpg"
 ```
 
 #### Example Output
@@ -110,4 +119,21 @@ curl --request GET "http://127.0.0.1:8000/generate?prompt=car,model-t,realistic,
 ![car_sample](../../docs/car_sample.jpg)
 
 
+## View Ray and Ray Serve Dashboards
 
+The Ray and Ray Serve dashboards are hosted on the default port and
+can be used to visualize various metrics:
+
+```
+<IP_ADDRESS>:8265
+```
+
+## Stop the Ray Serve Cluster
+
+The following command stops the local Ray cluster and also stops
+prometheus and grafana instances.
+
+
+```bash
+./stop_ray.sh
+```

@@ -1,4 +1,4 @@
-# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -24,10 +24,35 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-accelerate
-diffusers==0.9.0
-torch
-torchaudio
-torchvision
-transformers
-transformers[onnxruntime]
+import argparse
+import json
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Convert dataset format")
+    parser.add_argument(
+        "-i", "--input_file", required=True, help="Input JSONL file path"
+    )
+    parser.add_argument(
+        "-o", "--output_file", required=True, help="Output JSONL file path"
+    )
+    return parser.parse_args()
+
+
+def convert_dataset(input_file, output_file):
+    with open(input_file, "r", encoding="utf-8") as infile, open(
+        output_file, "w", encoding="utf-8"
+    ) as outfile:
+        for line in infile:
+            data = json.loads(line)  # Load each JSONL line as a dict
+            if "turns" in data and isinstance(data["turns"], list):
+                for turn in data["turns"]:  # Iterate over "turns" list
+                    json.dump({"text": turn}, outfile)
+                    outfile.write("\n")  # Newline for JSONL format
+
+    print(f"Converted dataset {input_file} and saved to {output_file}")
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    convert_dataset(args.input_file, args.output_file)

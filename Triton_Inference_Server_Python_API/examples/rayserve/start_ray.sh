@@ -1,4 +1,4 @@
-<!--
+#!/bin/bash -e
 # Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,39 +24,17 @@
 # OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--->
 
-# Guide to Deploying AI Agents with Triton Inference Server
+ip_address=$(hostname -I | awk '{print $1}')
 
-Welcome to the **Guide to Deploying AI Agents with Triton Inference Server**.
-This repository provides a set of tutorials designed to help you deploy
-AI agents efficiently using the Triton Inference Server. This guide is intended
-for users who are already familiar with the basics of Triton and are looking to
-expand their knowledge.
+echo $ip_address
 
-For beginners, we recommend starting with the
-[Conceptual Guide](tutorials/Conceptual_Guide/README.md), which covers
-foundational concepts and basic setup of Triton Inference Server.
+mkdir -p /tmp/rayserve-demo; cd /tmp/rayserve-demo
 
-## AI agents and Agentic Workflows
+ray metrics launch-prometheus
 
-Modern large language models (LLMs) are integral components of AI agents —
-sophisticated self-governing systems that make decisions by interacting with
-their environment and analyzing the data they gather. By integrating LLMs,
-AI agents can understand, generate, and respond to human language with high
-proficiency, enabling them to perform complex tasks such as language
-translation, content generation, and conversational interactions.
+export RAY_GRAFANA_HOST=http://${ip_address}:3000
 
+ray start --head --dashboard-host 0.0.0.0 --metrics-export-port 8080 --disable-usage-stats
 
-## Table of Contents
-
-- [Constrained Decoding](Constrained_Decoding/README.md)
-    * Learn about constrained decoding, how to implement it in Triton,
-    and explore practical examples and use cases.
-- [Function Calling](Function_Calling/README.md)
-    * Discover how to set up and utilize function calling within AI models using
-    Triton. This section includes detailed instructions and examples to help you
-    integrate function calling into your deployments.
-
-
-
+/usr/share/grafana/bin/grafana-server --homepath /usr/share/grafana --config /tmp/ray/session_latest/metrics/grafana/grafana.ini web >grafana.stdout.log 2>&1 &

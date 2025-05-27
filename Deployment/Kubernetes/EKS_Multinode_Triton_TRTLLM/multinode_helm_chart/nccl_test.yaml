@@ -1,0 +1,96 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: test-nccl
+spec:
+  runPolicy:
+    cleanPodPolicy: Running
+    backoffLimit: 20
+  slotsPerWorker: 4
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+         spec:
+          restartPolicy: OnFailure
+          containers:
+          - image: 210086341041.dkr.ecr.us-west-2.amazonaws.com/triton_trtllm_multinode:24.08
+            name: test-nccl-launcher
+            env:
+             - name: LD_LIBRARY_PATH
+               value: /opt/amazon/openmpi/lib:/opt/nccl/build/lib:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/nvidia/lib:$LD_LIBRARY_PATH
+             - name: PATH
+               value: $PATH:/opt/amazon/efa/bin:/usr/bin
+            command:
+            - /opt/amazon/openmpi/bin/mpirun
+            - --allow-run-as-root
+            - --tag-output
+            - -np
+            - "8"
+            - -N
+            - "4"
+            - --bind-to
+            - none
+            - -x
+            - PATH
+            - -x
+            - LD_LIBRARY_PATH
+            - -x
+            - FI_PROVIDER=efa
+            - -x
+            - FI_EFA_FORK_SAFE=1
+            - -x
+            - NCCL_DEBUG=INFO
+            - -x
+            - NCCL_BUFFSIZE=8388608
+            - -x
+            - NCCL_P2P_NET_CHUNKSIZE=524288
+            - --mca
+            - pml
+            - ^cm,ucx
+            - --mca
+            - btl
+            - tcp,self
+            - --mca
+            - btl_tcp_if_exclude
+            - lo,docker0,veth_def_agent
+            - /opt/nccl-tests/build/all_reduce_perf
+            - -b
+            - "4"
+            - -e
+            - "16G"
+            - -f
+            - "2"
+            - -g
+            - "1"
+            - -c
+            - "1"
+            - -n
+            - "100"
+    Worker:
+      replicas: 2
+      template:
+        spec:
+          nodeSelector:
+            node.kubernetes.io/instance-type: "g5.12xlarge"
+          containers:
+          - image: 210086341041.dkr.ecr.us-west-2.amazonaws.com/triton_trtllm_multinode:24.08
+            name: test-nccl-worker
+            volumeMounts:
+            - name: shmem
+              mountPath: /dev/shm
+            resources:
+              limits:
+                nvidia.com/gpu: 4
+                hugepages-2Mi: 5120Mi
+                vpc.amazonaws.com/efa: 1
+                memory: 3200Mi
+              requests:
+                nvidia.com/gpu: 4
+                hugepages-2Mi: 5120Mi
+                vpc.amazonaws.com/efa: 1
+                memory: 3200Mi
+          volumes:
+          - name: shmem
+            hostPath:
+              path: /dev/shm

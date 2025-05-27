@@ -190,7 +190,6 @@ spec:
           readOnly: false
         - mountPath: /var/run/models
           name: model-repository
-          readOnly: true
         - mountPath: /var/run/cache
           name: transformers-cache
           readOnly: false
@@ -255,14 +254,12 @@ spec:
             ephemeral-storage: 96Gi
             nvidia.com/gpu: {{ $model_gpus }}
         volumeMounts:
-        - mountPath: /var/run/engines
-          name: engine-repository
-          readOnly: false
         - mountPath: /var/run/models
           name: model-repository
-          readOnly: false
-        - mountPath: /var/run/cache
-          name: transformers-cache
+        - mountPath: /dev/shm
+          name: dshm
+        - mountPath: /var/run/engines
+          name: engine-repository
           readOnly: false
 {{- with $.Values.model }}
 {{-   if .pullSecret }}
@@ -288,9 +285,12 @@ spec:
           path: {{ printf "%s/models/%s/%dx%d/engines" $hostRootPath $model_lower (int $model_pp) (int $model_tp) }}
           type: DirectoryOrCreate
       - name: model-repository
-        hostPath:
-          path: {{ printf "%s/models/%s/%dx%d/models" $hostRootPath $model_lower (int $model_pp) (int $model_tp) }}
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: nfs-claim-autoscaling-2
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 512Gi
 {{- with $.Values.model }}
 {{-   with .pullSecret }}
       - name: hf-secret

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-claim-autoscaling-2
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-autoscaling-sc
+  resources:
+    requests:
+      storage: 200Gi

@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "copyright": [
+    "# Copyright (c) 2022-2023, NVIDIA CORPORATION.  All rights reserved.",
+    "# NVIDIA CORPORATION and its licensors retain all intellectual property",
+    "# and proprietary rights in and to this software, related documentation",
+    "# and any modifications thereto.  Any use, reproduction, disclosure or",
+    "# distribution of this software and related documentation without an express",
+    "# license agreement from NVIDIA CORPORATION is strictly prohibited."
+  ],
+  "properties": {
+    "gpu": {
+      "description": "Value must match the node's `.metadata.labels.nvidia.com/gpu.product` label.",
+      "type": "string"
+    },
+    "gpuPerNode": {
+      "description": "GPUs per node",
+      "type": "integer"
+    },
+    "persistentVolumeClaim": {
+      "description": "Persistent volume claim where model content will be persisted.",
+      "type": "string"
+    },
+    "pullSecret": {
+      "description": "Name of the secret to pull image.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "null" }
+      ]
+    },
+    "tensorrtLlm": {
+      "description": "Configuration options related to the conversion of a non-optimized model into TensorRT format.",
+      "properties": {
+        "parallelism": {
+          "description": "TensorRT-LLM format, specifically if/how the model is partitioned for deployment to multiple GPUs.",
+          "oneOf": [
+            {
+              "properties": {
+                "pipeline": {
+                  "oneOf": [
+                    {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    { "type": "null" }
+                  ]
+                },
+                "tensor": {
+                  "oneOf": [
+                    {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    { "type": "null" }
+                  ]
+                }
+              },
+              "type": "object"
+            },
+            { "type": "null" }
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "triton": {
+      "description": "Configuration options for Triton Server.",
+      "properties": {
+        "image": {
+          "description": "Configuration options related to the container image for Triton Server.",
+          "properties": {
+            "name": {
+              "description": "Name of the container image containing the version of Triton Server to be used.",
+              "type": "string"
+            }
+          },
+          "required": [ "name" ],
+          "type": "object"
+        },
+        "resources": {
+          "description": "Configuration options managing the resources assigned to individual Triton Server instances. ",
+          "oneOf": [
+            {
+              "properties": {
+                "cpu": {
+                  "description": "Number of logical CPU cores reserved for, and assigned to each instance of Triton Server.",
+                  "oneOf": [
+                    {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^\\d+m$",
+                      "type": "string"
+                    },
+                    { "type": "null" }
+                  ]
+                },
+                "memory": {
+                  "description": "Amount of CPU-visible system memory allocated to, and reserved for each instance of Triton Server.",
+                  "oneOf": [
+                    {
+                      "pattern": "^\\d+[GKMgkm]i$",
+                      "type": "string"
+                    },
+                    { "type": "null" }
+                  ]
+                },
+                "efa": {
+                  "description": "Number of EFA adapters in your nodes. If you don't want to enable EFA, simply set it to 0.",
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            },
+            { "type": "null" }
+          ]
+        },
+        "triton_model_repo_path": {
+          "description": "Triton model repo path",
+          "type": "string"
+        },
+        "enable_nsys": {
+          "description": "Enable profiling on Triton server. Note if you send lots of requests, nsys report can be very large.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "image",
+        "triton_model_repo_path"
+      ],
+      "type": "object"
+    },
+    "logging": {
+      "description": "Configuration options related to how various components generate logs.",
+        "properties": {
+          "tritonServer": {
+            "description": "Logging configuration options specific to Triton Server.",
+            "oneOf": [
+              {
+                "properties": {
+                  "useIso8601": {
+                    "description": "When `true` Triton Server logs are formatted using the ISO8601 standard; otherwise Triton's default format will be used. ",
+                    "oneOf": [
+                      { "type": "boolean" },
+                      { "type": "null" }
+                    ]
+                  },
+                  "verbose": {
+                    "description": "When `true` Triton Server uses verbose logging; otherwise standard logging is used.",
+                    "oneOf": [
+                      { "type": "boolean" },
+                      { "type": "null" }
+                    ]
+                  }
+                },
+                "type": "object"
+              },
+              { "type": "null" }
+            ]
+          }
+        }
+    },
+    "kubernetes": {
+      "description": "Configurations option related to the Kubernetes objects created by the chart.",
+      "oneOf": [
+        {
+          "properties": {
+            "labels": {
+              "description": "Optional set of labels to be applied to created Kubernetes objects.",
+              "oneOf": [
+                { "type": "object" },
+                { "type": "null" }
+              ]
+            },
+            "noService": {
+              "description": "When `false`, a service will not be created when the chart is installed; otherwise a service will be created.",
+              "oneOf": [
+                { "type": "boolean" },
+                { "type": "null" }
+              ]
+            },
+            "tolerations": {
+              "description": "Tolerations applied to every pod deployed as part of this deployment.",
+              "oneOf": [
+                {
+                  "items": [
+                    {
+                      "description": "Toleration applied to every pod deployed as part of this deployment.",
+                      "type": "object"
+                    },
+                    { "type": "null" }
+                  ],
+                  "type": "array"
+                },
+                { "type": "null" }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        { "type": "null" }
+      ]
+    }
+  },
+  "autoscaling": {
+    "description": "Configuration options for automatic scaling of Triton Server deployments.",
+    "oneOf": [
+      {
+        "properties": {
+          "enable": {
+            "description": "Determines if autoscaling is enabled for deployment or not.",
+            "oneOf": [
+              { "type": "boolean" },
+              { "type": "null" }
+            ]
+          },
+          "metric": {
+            "description": "Metric used to determine autoscaling decisions.",
+            "oneOf": [
+              {
+                "properties": {
+                  "name": {
+                    "description": "Name of the metric monitored.",
+                    "oneOf": [
+                      { "type": "string" },
+                      { "type": "null" }
+                    ]
+                  },
+                  "value": {
+                    "description": "Threshold or targeted value used to determine the number of replicas concurrently deployed."
+                  }
+                },
+                "type": "object"
+              },
+              { "type": "null" }
+            ]
+          },
+          "replicas": {
+            "description": "Controls the number of Triton Server replicas are deployed.",
+            "oneOf": [
+              {
+                "properties": {
+                  "maximum": {
+                    "description": "Upper bound of the number of Triton Server replicas deployed concurrently.",
+                    "oneOf": [
+                      {
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      { "type": "null" }
+                    ]
+                  },
+                  "minimum": {
+                    "description": "Lower bound of the number of Triton Server replicas deployed concurrently.",
+                    "oneOf": [
+                      {
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      { "type": "null" }
+                    ]
+                  }
+                },
+                "type": "object"
+              },
+              { "type": "null" }
+            ]
+          }
+        },
+        "type": "object"
+      },
+      { "type": "null" }
+    ]
+  },
+  "required": [
+    "gpu",
+    "gpuPerNode",
+    "persistentVolumeClaim",
+    "triton"
+  ]
+}

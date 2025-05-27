@@ -24,14 +24,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-awscli
-fastapi==0.97.0
-ftfy
-mypy
 pyright
 pytest
-ray[all]==2.9
-scipy
-sphinx
-sphinx-markdown-builder
-starlette==0.27.0
+ray[all]==2.36.0

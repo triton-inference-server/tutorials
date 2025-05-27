@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gen-ai-perf
+  labels:
+    app: gen-ai-perf
+spec:
+  containers:
+  - name: triton
+    image: nvcr.io/nvidia/tritonserver:24.07-py3-sdk
+    command: ["sleep", "infinity"]
+    volumeMounts:
+      - mountPath: /var/run/models
+        name: model-repository
+  volumes:
+    - name: model-repository
+      persistentVolumeClaim:
+        claimName: efs-claim-2

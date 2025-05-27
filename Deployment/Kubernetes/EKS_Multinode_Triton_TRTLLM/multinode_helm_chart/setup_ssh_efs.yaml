@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: setup-ssh-efs
+  labels:
+    app: setup-ssh-efs
+spec:
+  containers:
+  - name: triton
+    image: nvcr.io/nvidia/tritonserver:24.07-trtllm-python-py3
+    command: ["sleep", "infinity"]
+    resources:
+      limits:
+        nvidia.com/gpu: 4
+      requests:
+        nvidia.com/gpu: 4
+    volumeMounts:
+      - mountPath: /var/run/models
+        name: model-repository
+      - mountPath: /dev/shm
+        name: dshm
+  volumes:
+    - name: model-repository
+      persistentVolumeClaim:
+        claimName: efs-claim-2
+    - name: dshm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 32Gi
