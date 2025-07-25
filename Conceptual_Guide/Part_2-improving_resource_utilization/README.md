@@ -110,7 +110,7 @@ model.load_state_dict(state)
 
 # Create ONNX file by tracing model
 trace_input = torch.randn(1, 1, 32, 100)
-torch.onnx.export(model, trace_input, "str.onnx", verbose=True, dynamic_axes={'input.1':[0],'308':[0]})
+torch.onnx.export(model, trace_input, "str.onnx", verbose=True, dynamic_axes={'input.1':[0],'307':[0]})
 ```
 
 ### Launching the server
