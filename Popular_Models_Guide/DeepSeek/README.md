@@ -55,7 +55,6 @@ look like:
 ```json
 {
     "model":"deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
-    "disable_log_requests": true,
     "gpu_memory_utilization": 0.9,
     "enforce_eager": true
 }
