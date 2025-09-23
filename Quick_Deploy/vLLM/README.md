@@ -73,7 +73,6 @@ The content of `model.json` is:
 ```json
 {
     "model": "facebook/opt-125m",
-    "disable_log_requests": "true",
     "gpu_memory_utilization": 0.5
 }
 ```
