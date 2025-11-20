@@ -60,7 +60,7 @@ def generate(prompt):
 with gr.Blocks() as app:
     prompt = gr.Textbox(label="Prompt")
     submit_btn = gr.Button("Generate")
-    img_output = gr.Image().style(height=512)
+    img_output = gr.Image(height=512)
     submit_btn.click(fn=generate, inputs=prompt, outputs=img_output)
 
 app.launch(server_name="0.0.0.0")
