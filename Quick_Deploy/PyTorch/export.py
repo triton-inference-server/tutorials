@@ -1,4 +1,4 @@
-# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -25,11 +25,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import torch
-
-torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
+from torchvision import models
 
 model = (
-    torch.hub.load("pytorch/vision:v0.10.0", "resnet50", pretrained=True)
+    models.resnet50(
+        weights=models.ResNet50_Weights.IMAGENET1K_V1
+    )
     .eval()
     .to("cuda")
 )
