@@ -1,5 +1,5 @@
 <!--
-# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -122,7 +122,7 @@ optimization {
 }
 ```
 While OpenVINO provides software level optimizations, it is also important to consider the CPU hardware being used. CPUs comprise multiple cores, memory resources, and interconnects. With multiple CPUs these resources can be shared with NUMA (Non uniform memory access).
-Refer this [section of the Triton Documentation](https://github.com/triton-inference-server/server/blob/main/docs/optimization.md#numa-optimization) for more.
+Refer this [section of the Triton Documentation](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/optimization.md#numa-optimization) for more.
 
 ## Accelerating Shallow models
 Shallow models like Gradient Boosted Decision Trees are often used in many pipelines. These models are typically built with libraries like [XGBoost](https://xgboost.readthedocs.io/en/stable/), [LightGBM](https://lightgbm.readthedocs.io/en/stable/), [Scikit-learn](https://scikit-learn.org/stable/), [cuML](https://github.com/rapidsai/cuml) and more. These models can be deployed on the Triton Inference Server via the Forest Inference Library backend. Check out [these examples](https://github.com/triton-inference-server/fil_backend/tree/main/notebooks) for more information.

@@ -1,5 +1,5 @@
 <!--
-# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -90,19 +90,15 @@ bash utils/export_text_recognition.sh
 ```
 
 ## Deploy Pre/Post Processing Scripts with the Python Backend
-In previous parts of this this tutorial, we've created client scripts that perform various pre and post processing steps within the client process. For example, in [Part 1](../Part_1-model_deployment/README.md), we created a script [`client.py`](../Part_1-model_deployment/clients/client.py) which
+In previous parts of this this tutorial, we've created client scripts that perform various pre and post processing steps within the client process. For example, in [Part 1](../Part_1-model_deployment/README.md), we created a script [`client.py`](../Part_1-model_deployment/client.py) which
 1. Read in images
 2. Performed scaling and normalization on the image
 3. Sent the images to the Triton server
 4. Cropped the images based on the bounding boxes returned by the text detection model
-5. Saved the cropped images back to disk
-
-Then, we had a second client, [`client2.py`](../Part_1-model_deployment/clients/client2.py), which
-1. Read in the cropped images from `client.py`
-2. Performed scaling and normalization on the images
-3. Sent the cropped images to the Triton server
-4. Decoded the tensor returned by the text recognition model into text
-5. Printed the decoded text
+5. Performed scaling and normalization on the images
+6. Sent the cropped images to the Triton server
+7. Decoded the tensor returned by the text recognition model into text
+8. Printed the decoded text
 
 In order to move many of these steps to the Triton server, we can create a set of scripts that will run in the [Python Backend for Triton](https://github.com/triton-inference-server/python_backend). The Python backend can be used to execute any Python code, so we can port our client code directly over to Triton with only a few changes.
 

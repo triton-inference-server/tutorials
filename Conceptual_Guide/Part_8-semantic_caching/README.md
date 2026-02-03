@@ -1,5 +1,5 @@
 <!--
-# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2024-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -137,7 +137,7 @@ cd vllm_backend
 
 With the repository successfully cloned, the next step is to apply all
 necessary modifications. To simplify this process, we've prepared a
-[semantic_cache.patch](tutorials/Conceptual_Guide/Part_8-semantic_caching/artifacts/semantic_cache.patch)
+[semantic_cache.patch](./artifacts/semantic_cache.patch)
 that consolidates all changes into a single step:
 
 ```bash

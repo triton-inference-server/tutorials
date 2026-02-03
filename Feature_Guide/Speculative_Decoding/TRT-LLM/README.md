@@ -1,5 +1,5 @@
 <!--
-# Copyright 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2025-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -126,7 +126,7 @@ Sample output:
 ### Serving with Triton
 
 The last step is to create a Triton readable model and serve it. You can find a template of a model that uses inflight batching in
-[tensorrtllm_backend/all_models/inflight_batcher_llm](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/all_models/inflight_batcher_llm). To run EAGLE model, you will need to:
+[tensorrtllm_backend/all_models/inflight_batcher_llm](https://github.com/NVIDIA/TensorRT-LLM/tree/main/triton_backend/all_models/inflight_batcher_llm). To run EAGLE model, you will need to:
 
 1. Copy over the inflight batcher models repository
 ```bash
@@ -181,7 +181,7 @@ pkill tritonserver
 ### Send Inference Requests
 
 You can test the results of the run with:
-1. The [inflight_batcher_llm_client.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/inflight_batcher_llm/client/inflight_batcher_llm_client.py) script. Run below in another terminal:
+1. The [inflight_batcher_llm_client.py](https://github.com/NVIDIA/TensorRT-LLM/blob/main/triton_backend/inflight_batcher_llm/client/inflight_batcher_llm_client.py) script. Run below in another terminal:
 
 ```bash
 # Using the SDK container as an example. <xx.yy> is the version of Triton Server you are using.
@@ -442,4 +442,4 @@ Draft Model-Based Speculative Decoding ([paper](https://arxiv.org/pdf/2302.01318
 
  - Accuracy: its draft accuracy can vary depending on the draft model used, while EAGLE achieves a higher draft accuracy (about 0.8) compared to MEDUSA (about 0.6).
 
- Please follow the steps [here](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/advanced/speculative-decoding.md#using-draft-target-model-approach-with-triton-inference-server) to run Draft Model-Based Speculative Decoding with Triton Inference Server.
+ Please follow the steps [here](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/legacy/advanced/speculative-decoding.md#draft-target-model) to run Draft Model-Based Speculative Decoding with Triton Inference Server.

@@ -1,5 +1,5 @@
 <!--
-# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -29,9 +29,9 @@
 # Deploying Hugging Face Transformer Models in Triton
 
 There are multiple ways to run Llama2 with Tritonserver.
-1. Infer with [TensorRT-LLM Backend](trtllm_guide.md#infer-with-tensorrt-llm-backend)
-2. Infer with [vLLM Backend](vllm_guide.md#infer-with-vllm-backend)
-3. Infer with [Python-based Backends as a HuggingFace model](../Quick_Deploy/HuggingFaceTransformers/README.md#deploying-hugging-face-transformer-models-in-triton)
+1. Infer with [TensorRT-LLM Backend](trtllm_guide.md)
+2. Infer with [vLLM Backend](vllm_guide.md)
+3. Infer with [Python-based Backends as a HuggingFace model](../../Quick_Deploy/HuggingFaceTransformers/README.md#deploying-hugging-face-transformer-models-in-triton)
 
 ## Pre-build instructions
 

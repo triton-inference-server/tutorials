@@ -1,5 +1,5 @@
 <!--
-# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -82,7 +82,7 @@ Before diving into details with an example, a discussion about the overall funct
 
 - **objectives**: Users can choose to order the results on the basis of their deployment goals, throughput, latency, or tailoring to specific resource constraints. [Learn more](https://github.com/triton-inference-server/model_analyzer/blob/main/docs/config.md#objective).
 
-    Model Analyzer has two modes, Online and Offline. In online mode users can specify latency budgets for their deployments to cater to their requirements. For Offline mode a similar specification can be mode for minimum throughput. [Learn more](https://github.com/triton-inference-server/model_analyzer/blob/main/docs/cli.md#model-analyze-modes)
+    Model Analyzer has two modes, Online and Offline. In online mode users can specify latency budgets for their deployments to cater to their requirements. For Offline mode a similar specification can be mode for minimum throughput. [Learn more](https://github.com/triton-inference-server/model_analyzer/blob/main/docs/cli.md#model-analyzer-modes)
 
 - **constraints**: Users can also choose to constrain the selection of sweeps to specific requirements for throughput, latency or gpu memory utilization. [Learn more](https://github.com/triton-inference-server/model_analyzer/blob/main/docs/config.md#constraint)
 

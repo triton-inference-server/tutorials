@@ -1,5 +1,5 @@
 <!---
-# Copyright (c) 2024, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2024-2026, NVIDIA CORPORATION. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -356,7 +356,7 @@ Follow the steps to check if your EFS file system is working properly with your 
 
 #### 5. Create an PVC for the created EFS file system
 
-We have provided an example in here: [pvc_aws](./pvc_aws/). This folder contains three files: `pv_aws.yaml`, `claim_aws.yaml`, and `storageclass_aws.yaml`. Make sure you modify the `pv_aws.yaml` file and change the `volumeHandle` value to your own EFS file system ID.
+We have provided an example in here: [pvc_aws](./chart/pvc_aws/). This folder contains three files: `pv_aws.yaml`, `claim_aws.yaml`, and `storageclass_aws.yaml`. Make sure you modify the `pv_aws.yaml` file and change the `volumeHandle` value to your own EFS file system ID.
 
 pv.yaml
 
