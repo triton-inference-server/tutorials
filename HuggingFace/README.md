@@ -1,6 +1,6 @@
 
 <!--
-# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -141,7 +141,7 @@ model_repository/
 ```
 
 In this approach, there are three points to consider.
-* **Preprocessing**: The feature extraction step for ViT is done on a python backend. The implementation details for this step are same as the process followed in the [section above](#deploying-on-the-python-backend).
+* **Preprocessing**: The feature extraction step for ViT is done on a python backend. The implementation details for this step are same as the process followed in the [section above](#deploying-on-the-python-backend-approach-1).
 * **The ViT model**: Simply place the model in the repository as described above. The Triton Inference Server will auto generate the required configurations files. If you wish to see the generated config, append `--log-verbose=1` while launching the server.
 * **Ensemble Configuration**: In this configuration we map the input and output layers of the two pieces in the ensemble, `preprocessing` which is handled on the python backend, and the ViT model which is deployed on the ONNX backend.
 

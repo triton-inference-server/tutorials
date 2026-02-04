@@ -1,5 +1,5 @@
 <!--
-# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -124,8 +124,8 @@ I1030 22:33:28.335154 1 http_server.cc:270] Started Metrics Service at 0.0.0.0:8
 In this tutorial, we will show how to send an inference request to the
 [facebook/opt-125m](https://huggingface.co/facebook/opt-125m) model in 2 ways:
 
-* [Using the generate endpoint](#using-generate-endpoint)
-* [Using the gRPC asyncio client](#using-grpc-asyncio-client)
+* [Using the generate endpoint](#using-the-generate-endpoint)
+* [Using the gRPC asyncio client](#using-the-grpc-asyncio-client)
 
 ### Using the Generate Endpoint
 After you start Triton with the sample model_repository,

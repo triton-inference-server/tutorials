@@ -1,5 +1,5 @@
 <!--
-# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2024-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -40,7 +40,7 @@ expensive to achieve solely through fine-tuning.
 - [Structured Generation via Prompt Engineering](#structured-generation-via-prompt-engineering)
     * [Example 1](#example-1)
     * [Example 2](#example-2)
-- [Enforcig Output Format via External Libraries](#enforcig-output-format-via-external-libraries)
+- [Enforcing Output Format via External Libraries](#enforcing-output-format-via-external-libraries)
     * [Pre-requisite: Common set-up](#pre-requisite-common-set-up)
         + [Logits Post-Processor](#logits-post-processor)
         + [Tokenizer](#tokenizer)
@@ -252,17 +252,17 @@ pkill tritonserver
 
 Both of the libraries limit the set of allowed tokens at every generation stage.
 In TensorRT-LLM, user can define a custom
-[logits post-processor](https://nvidia.github.io/TensorRT-LLM/advanced/batch-manager.html#logits-post-processor-optional)
+[logits post-processor](https://nvidia.github.io/TensorRT-LLM/latest/features/sampling.html#logits-processor)
 to mask logits, which should never be used in the current generation step.
 
 For TensorRT-LLM models, deployed via `python` backend (i.e. when
-[`triton_backend`](https://github.com/triton-inference-server/tensorrtllm_backend/blob/8aaf89bcf723dad112839fd36cbbe09e2e439c63/all_models/inflight_batcher_llm/tensorrt_llm/config.pbtxt#L28C10-L28C29)
+[`triton_backend`](https://github.com/NVIDIA/TensorRT-LLM/blob/97ab014bdbd2b20c567f1b63fb86c18b55aac661/triton_backend/all_models/inflight_batcher_llm/tensorrt_llm/config.pbtxt#L28C10-L28C29)
 is set to `python` in `tensorrt_llm/config.pbtxt`, Triton's python backend will
 use
-[`model.py`](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/all_models/inflight_batcher_llm/tensorrt_llm/1/model.py)
+[`model.py`](https://github.com/NVIDIA/TensorRT-LLM/tree/main/triton_backend/all_models/inflight_batcher_llm/tensorrt_llm/1/model.py)
 to serve your TensorRT-LLM model.), custom logits processor should be specified
 during model's initialization as a part of
-[Executor's](https://nvidia.github.io/TensorRT-LLM/executor.html#executor-api)
+[Executor's](https://nvidia.github.io/TensorRT-LLM/advanced/executor.html#executor-api)
 configuration
 ([`logits_post_processor_map`](https://github.com/NVIDIA/TensorRT-LLM/blob/32ed92e4491baf2d54682a21d247e1948cca996e/tensorrt_llm/hlapi/llm_utils.py#L205)).
 Below is the sample for reference.

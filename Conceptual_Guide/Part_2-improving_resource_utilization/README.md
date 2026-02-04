@@ -1,5 +1,5 @@
 <!--
-# Copyright 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -59,7 +59,7 @@ Using Dynamic batching in this case leads to more efficient packing of requests 
 
 **Note:** The above is an extreme version of an ideal case scenario. In practice, not all elements of execution can be perfectly parallelized, resulting in longer execution time for larger batches.
 
-As observed from the above, the use of Dynamic Batching can lead to improvements in both latency and throughput while serving models. This batching feature is mainly focused on providing a solution for stateless models(models which do not maintain a state between execution, like object detection models). Triton's [sequence batcher](https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md#sequence-batcher) can be used to manage multiple inference requests for stateful models. For more information and configurations regarding dynamic batching, refer to the Triton Inference Server [documentation](https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md#scheduling-and-batching).
+As observed from the above, the use of Dynamic Batching can lead to improvements in both latency and throughput while serving models. This batching feature is mainly focused on providing a solution for stateless models(models which do not maintain a state between execution, like object detection models). Triton's [sequence batcher](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/batcher.md#sequence-batcher) can be used to manage multiple inference requests for stateful models. For more information and configurations regarding dynamic batching, refer to the Triton Inference Server [documentation](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/batcher.md#dynamic-batcher).
 
 ## Concurrent model execution
 
@@ -77,7 +77,7 @@ instance_group [
 
 Let's take the previous example and discuss the effect of adding multiple models for parallel execution. In this example, instead of having a single model process five queries, two models are spawned. ![Multiple Model Instances](./img/multi_instance.PNG)
 
-For a "no dynamic batching" case, as there are two models to execute, the queries are distributed equally. Users can also add [priorities](https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md#priority) to prioritize or de-prioritize any specific instance group.
+For a "no dynamic batching" case, as there are two models to execute, the queries are distributed equally. Users can also add [priorities](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#priority) to prioritize or de-prioritize any specific instance group.
 
 When considering the case of multiple instances with dynamic batches enabled, the following happens. Owing to the availability of another instance, query `B` which arrives with some delay can be executed using the second instance. With some delay allocated, instance 1 gets filled and launched by time `T = X/2` and since queries `D` and `E` stack up to fill up to the maximum batch size, the second model can start inference without any delay.
 
@@ -139,7 +139,7 @@ dynamic_batching { }
 ```
 With `instance_group` users can primarily tweak two things. First, the number of instances of that model deployed on each GPU. The above example will deploy `2` instances of the model `per GPU`. Secondly, the target GPUs for this group can be specified with `gpus: [ <device number>, ... <device number> ]`.
 
-Adding `dynamic_batching {}` will enable the use of dynamic batches. Users can also add `preferred_batch_size` and `max_queue_delay_microseconds` in the body of dynamic batching to manage more efficient batching per their use case. Explore the [model configuration](https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md#model-configuration) documentation for more information.
+Adding `dynamic_batching {}` will enable the use of dynamic batches. Users can also add `preferred_batch_size` and `max_queue_delay_microseconds` in the body of dynamic batching to manage more efficient batching per their use case. Explore the [model configuration](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#model-configuration) documentation for more information.
 
 With the model repository set up, the Triton Inference Server can be launched.
 ```

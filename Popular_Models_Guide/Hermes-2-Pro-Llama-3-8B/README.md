@@ -1,5 +1,5 @@
 <!--
-# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2024-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -48,7 +48,7 @@ are some version mismatches between the `tutorials` and `tensorrtllm_backend`
 repository. Refer to [llama.md](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md)
 for more detailed modifications if necessary. And if you are familiar with
 python, you can also try using
-[High-level API](https://github.com/NVIDIA/TensorRT-LLM/blob/main/examples/high-level-api/README.md)
+[LLM API](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples/llm-api/README.md)
 for LLM workflow.
 
 ## Prerequisite: TensorRT-LLM backend
@@ -90,7 +90,7 @@ docker run --rm -it --net host --shm-size=2g \
 ```
 
 Alternatively, you can follow instructions
-[here](https://github.com/triton-inference-server/tensorrtllm_backend?tab=readme-ov-file#build-the-docker-container)
+[here](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/build.md#build-the-docker-container)
 to build Triton Server with Tensorrt-LLM Backend if you want to build
 a specialized container.
 
@@ -138,7 +138,7 @@ trtllm-build --checkpoint_dir ${UNIFIED_CKPT_PATH} \
 
 The last step is to create a Triton readable model. You can
 find a template of a model that uses inflight batching in
-[tensorrtllm_backend/all_models/inflight_batcher_llm](https://github.com/triton-inference-server/tensorrtllm_backend/tree/main/all_models/inflight_batcher_llm).
+[tensorrtllm_backend/all_models/inflight_batcher_llm](https://github.com/NVIDIA/TensorRT-LLM/tree/main/triton_backend/all_models/inflight_batcher_llm).
 To run our model, you will need to:
 
 
@@ -152,7 +152,7 @@ cp -R /tensorrtllm_backend/all_models/inflight_batcher_llm /opt/tritonserver/.
 steps. The following script do a minimized configuration to run tritonserver,
 but if you want optimal performance or custom parameters, read details in
 [documentation](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md)
-and [perf_best_practices](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/performance/perf-best-practices.md):
+and [perf_best_practices](https://github.com/NVIDIA/TensorRT-LLM/blob/v0.16.0/docs/source/performance/perf-best-practices.md):
 
 ```bash
 # preprocessing
@@ -201,7 +201,7 @@ pkill tritonserver
 ## Send an inference request
 
 You can test the results of the run with:
-1. The [inflight_batcher_llm_client.py](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/inflight_batcher_llm/client/inflight_batcher_llm_client.py) script.
+1. The [inflight_batcher_llm_client.py](https://github.com/NVIDIA/TensorRT-LLM/blob/main/triton_backend/inflight_batcher_llm/client/inflight_batcher_llm_client.py) script.
 
 First, let's start Triton SDK container:
 ```bash

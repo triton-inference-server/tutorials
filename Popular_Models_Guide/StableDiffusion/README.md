@@ -1,5 +1,5 @@
 <!--
-# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2024-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -57,7 +57,7 @@ support matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/i
 ## Building the Triton Inference Server Image
 
 The example is designed based on the
-`nvcr.io/nvidia/tritonserver:24.08-py3` docker image and [TensorRT OSS v10.4](https://github.com/NVIDIA/TensorRT/releases/tag/v10.4).
+`nvcr.io/nvidia/tritonserver:24.08-py3` docker image and [TensorRT OSS v10.4](https://github.com/NVIDIA/TensorRT/releases/tag/v10.4.0).
 
 A set of convenience scripts are provided to create a docker image
 based on the `nvcr.io/nvidia/tritonserver:24.01-py3` image with the
@@ -80,8 +80,8 @@ cd tutorials/Popular_Models_Guide/StableDiffusion
 
 The `default` build includes model configuration files located in the
 `/diffusion-models` folder. Example configurations are provided for
-[`stable_diffusion_1_5`](diffusion-models/stable_diffustion_1_5) and
-[`stable_diffusion_xl`](diffusion-models/stable_diffustion_xl).
+[`stable_diffusion_1_5`](diffusion-models/stable_diffusion_1_5) and
+[`stable_diffusion_xl`](diffusion-models/stable_diffusion_xl).
 
 Model artifacts and engine files are not included in the image but are
 built into a volume mounted directory as a separate step.

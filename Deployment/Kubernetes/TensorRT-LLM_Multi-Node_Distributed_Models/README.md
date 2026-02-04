@@ -1,5 +1,5 @@
 <!---
-# Copyright (c) 2024, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2024-2026, NVIDIA CORPORATION. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -411,7 +411,7 @@ to the example below.
 > [!Note]
 > Deploying Triton Server with a model that fits on a single GPU is straightforward but not explained by this guide.
 > For instructions and examples of deploying a model using a single GPU or multiple GPUs on a single node, use the
-> [Autoscaling and Load Balancing Generative AI w/ Triton Server and TensorRT-LLM Guide](../Kubernetes/TensorRT-LLM_Autoscaling_and_Load_Balancing/README.md) instead.
+> [Autoscaling and Load Balancing Generative AI w/ Triton Server and TensorRT-LLM Guide](../TensorRT-LLM_Autoscaling_and_Load_Balancing/README.md) instead.
 
 Given the memory requirements of some AI models it is not possible to host them using a single device.
 Triton and TensorRT-LLM provide a mechanism to enable a large model to be hosted by multiple GPU devices working in concert.

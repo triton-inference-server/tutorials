@@ -1,5 +1,5 @@
 <!--
-# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2024-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -37,7 +37,7 @@ are some version mismatches between the `tutorials` and `tensorrtllm_backend`
 repository. Refer to [llama.md](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llama.md)
 for more detailed modifications if necessary. And if you are familiar with
 python, you can also try using
-[High-level API](https://github.com/NVIDIA/TensorRT-LLM/blob/main/examples/high-level-api/README.md)
+[LLM API](https://github.com/NVIDIA/TensorRT-LLM/blob/main/examples/llm-api/README.md)
 for LLM workflow.
 
 
@@ -92,7 +92,7 @@ docker run --rm -it --net host --shm-size=2g \
 ```
 
 Alternatively, you can follow instructions
-[here](https://github.com/triton-inference-server/tensorrtllm_backend?tab=readme-ov-file#build-the-docker-container)
+[here](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/build.md#build-the-docker-container)
 to build Triton Server with Tensorrt-LLM Backend if you want
 to build a specialized container.
 
@@ -190,7 +190,7 @@ pkill tritonserver
 ### Send an inference request
 
 You can test the results of the run with:
-1. The [multi_modal_client.py](tutorials/Popular_Models_Guide/Llava1.5/multi_modal_client.py) script.
+1. The [multi_modal_client.py](./multi_modal_client.py) script.
 
 ```bash
 # Using the SDK container as an example
@@ -220,4 +220,4 @@ curl -X POST localhost:8000/v2/models/llava-1.5/generate -d '{"prompt":"USER: <i
 
 ## References
 
-For more examples feel free to refer to [End to end workflow to run multi-modal models.](https://github.com/NVIDIA/TensorRT-LLM/blob/main/examples/multimodal/README.md)
+For more examples feel free to refer to [End to end workflow to run multi-modal models.](https://github.com/NVIDIA/TensorRT-LLM/blob/main/examples/models/core/multimodal/README.md)
