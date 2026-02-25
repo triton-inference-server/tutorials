@@ -316,10 +316,9 @@ include:
 - **Persistence**: Redis AOF/RDB for warm tier crash recovery
 - **Horizontal scaling**: Multiple Triton replicas with shared Redis
 
-For a production implementation with multi-tier caching
-(GPU L0 + Redis L1 + Milvus L2), adaptive GPU memory management,
-multi-tenant isolation, and enterprise SLA guarantees, see
-[Synapse](https://github.com/worldflowai/synapse).
+For a production implementation with multi-tier caching,
+adaptive GPU memory management, multi-tenant isolation, and
+enterprise SLA guarantees, see [Synapse](https://worldflowai.com).
 
 ## Files
 

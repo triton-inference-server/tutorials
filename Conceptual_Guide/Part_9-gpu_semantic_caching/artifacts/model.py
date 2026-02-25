@@ -27,7 +27,7 @@ from tiered_store import TieredResponseStore
 # cuVS CAGRA imports
 try:
     from cuvs.neighbors import cagra
-    from pylibraft.common import DeviceResources
+    import cupy as cp
 
     HAS_CUVS = True
 except ImportError:
@@ -124,7 +124,6 @@ class TritonPythonModel:
     def _init_cagra(self):
         """Initialize GPU-resident CAGRA index."""
         self.backend = "cagra"
-        self.resources = DeviceResources()
 
         # Pre-allocate dataset buffer on GPU
         import cupy as cp
@@ -180,8 +179,8 @@ class TritonPythonModel:
         self.index = cagra.build(
             self.build_params,
             active_data,
-            resources=self.resources,
         )
+        cp.cuda.Device(0).synchronize()
         self.index_dirty = False
 
     def execute(self, requests):
@@ -339,8 +338,8 @@ class TritonPythonModel:
             self.index,
             query_gpu,
             k=1,
-            resources=self.resources,
         )
+        cp.cuda.Device(0).synchronize()
 
         # Transfer results back to CPU
         distances_cpu = cp.asnumpy(distances).flatten()
@@ -436,8 +435,6 @@ class TritonPythonModel:
 
     def finalize(self):
         """Cleanup GPU resources and tiered store."""
-        if hasattr(self, "resources"):
-            del self.resources
         if hasattr(self, "index"):
             del self.index
         if hasattr(self, "dataset"):
