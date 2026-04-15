@@ -29,7 +29,7 @@
 # Speculative Decoding with TensorRT-LLM
 
 - [About Speculative Decoding](#about-speculative-decoding)
-- [EAGLE 3](#eagle-3)
+- [EAGLE-3](#eagle-3)
 - [MEDUSA](#medusa)
 - [Draft Model-Based Speculative Decoding](#draft-model-based-speculative-decoding)
 
@@ -40,11 +40,11 @@ This tutorial shows how to build and serve speculative decoding models in Triton
 > **Note:** This tutorial uses the modern **LLM API / PyTorch backend**, which works directly with HuggingFace model checkpoints and does not require building TensorRT engines. If you are looking for the legacy TRT engine-based approach, see the [engine backend archive](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/README-engine-backend-archive.md).
 
 According to [Spec-Bench](https://sites.google.com/view/spec-bench), EAGLE is currently the top-performing approach for speeding up LLM inference across different tasks.
-In this tutorial, we'll focus on [EAGLE 3](#eagle-3) and demonstrate how to make it work with Triton Inference Server. However, we'll also cover [Draft Model-Based Speculative Decoding](#draft-model-based-speculative-decoding) for those interested in exploring alternative methods. This way, you can choose the best fit for your needs.
+In this tutorial, we'll focus on [EAGLE-3](#eagle-3) and demonstrate how to make it work with Triton Inference Server. However, we'll also cover [Draft Model-Based Speculative Decoding](#draft-model-based-speculative-decoding) for those interested in exploring alternative methods. This way, you can choose the best fit for your needs.
 
-## EAGLE 3
+## EAGLE-3
 
-EAGLE-3 ([paper](https://arxiv.org/pdf/2503.01840) | [github](https://github.com/SafeAILab/EAGLE) | [blog](https://sites.google.com/view/eagle-llm)) is the latest generation of the EAGLE speculative decoding technique that accelerates Large Language Model (LLM) inference by predicting future tokens based on contextual features. It employs a lightweight draft head to predict the next feature vector, which is then used to generate tokens through the LLM's frozen classification head, achieving significant speedups (2x-3x faster than vanilla decoding) while maintaining output quality. Compared to EAGLE (v1/v2), EAGLE 3 further improves acceptance rates through training-time test enhancements.
+EAGLE-3 ([paper](https://arxiv.org/pdf/2503.01840) | [github](https://github.com/SafeAILab/EAGLE) | [blog](https://sites.google.com/view/eagle-llm)) is the latest generation of the EAGLE speculative decoding technique that accelerates Large Language Model (LLM) inference by predicting future tokens based on contextual features. It employs a lightweight draft head to predict the next feature vector, which is then used to generate tokens through the LLM's frozen classification head, achieving significant speedups (2x-3x faster than vanilla decoding) while maintaining output quality. Compared to EAGLE (v1/v2), EAGLE-3 further improves acceptance rates through training-time test enhancements.
 
 ### Download the Target and Draft Models (Optional)
 
@@ -57,7 +57,7 @@ huggingface-cli download meta-llama/Llama-3.1-8B-Instruct
 huggingface-cli download yuhuili/EAGLE3-LLaMA3.1-Instruct-8B
 ```
 
-More EAGLE 3 compatible draft model checkpoints can be found in the [Speculative Decoding Modules](https://huggingface.co/collections/nvidia/speculative-decoding-modules) collection from NVIDIA.
+More EAGLE-3 compatible draft model checkpoints can be found in the [Speculative Decoding Modules](https://huggingface.co/collections/nvidia/speculative-decoding-modules) collection from NVIDIA.
 
 ### Launch Triton TensorRT-LLM Container
 
@@ -78,7 +78,7 @@ Copy the LLM API model template inside the container:
 cp -R /app/all_models/llmapi/ /opt/tritonserver/llmapi_repo/
 ```
 
-Edit `/opt/tritonserver/llmapi_repo/tensorrt_llm/1/model.yaml` to configure EAGLE 3:
+Edit `/opt/tritonserver/llmapi_repo/tensorrt_llm/1/model.yaml` to configure EAGLE-3:
 
 ```yaml
 model: meta-llama/Llama-3.1-8B-Instruct
@@ -146,7 +146,7 @@ This adds fields like `acceptance_rate`, `total_accepted_draft_tokens`, and `tot
 ### Evaluating Performance with Gen-AI Perf
 
 Gen-AI Perf is a command line tool for measuring the throughput and latency of generative AI models as served through an inference server.
-You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_analyzer/genai-perf/README.html). We will use Gen-AI Perf to evaluate the performance gain of EAGLE 3 over the base model.
+You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_analyzer/genai-perf/README.html). We will use Gen-AI Perf to evaluate the performance gain of EAGLE-3 over the base model.
 
 *NOTE: below experiment is done on a single node with one GPU - RTX 5880 (48GB GPU memory). The number below is only for reference. The actual number may vary due to the different hardware and environment.*
 
@@ -187,7 +187,7 @@ You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/
 
 4. Run Gen-AI Perf on Base Model
 
-   To compare performance between EAGLE 3 and the base model (i.e. vanilla LLM without speculative decoding), restart Triton Server with a `model.yaml` that omits the `speculative_config` block:
+   To compare performance between EAGLE-3 and the base model (i.e. vanilla LLM without speculative decoding), restart Triton Server with a `model.yaml` that omits the `speculative_config` block:
 
    ```yaml
    model: meta-llama/Llama-3.1-8B-Instruct
@@ -205,7 +205,7 @@ You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/
 
 5. Compare Performance
 
-   From sample runs, EAGLE 3 typically delivers 2x or greater token throughput improvement over the base model at low concurrency. The exact speedup varies by hardware, model, and dataset.
+   From sample runs, EAGLE-3 typically delivers 2x or greater token throughput improvement over the base model at low concurrency. The exact speedup varies by hardware, model, and dataset.
 
    As stated above, the number above is gathered from a single node with one GPU - RTX 5880 (48GB GPU memory). The actual number may vary due to the different hardware and environment.
 
@@ -213,25 +213,25 @@ You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/
 
 > **Important:** MEDUSA is **not supported** in the modern LLM API / PyTorch backend. It only works with the legacy TRT engine backend.
 >
-> For new deployments, we recommend using [EAGLE 3](#eagle-3) instead, which is fully supported on the LLM API / PyTorch backend and achieves higher draft accuracy.
+> For new deployments, we recommend using [EAGLE-3](#eagle-3) instead, which is fully supported on the LLM API / PyTorch backend and achieves higher draft accuracy.
 >
 > If you specifically need MEDUSA with the TRT engine backend, refer to the [engine backend archive](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/README-engine-backend-archive.md) for the legacy instructions.
 
 ## Draft Model-Based Speculative Decoding
 
-Draft Model-Based Speculative Decoding ([paper](https://arxiv.org/pdf/2302.01318)) is another approach to accelerate LLM inference that uses a smaller, faster LLM as a draft model to predict multiple tokens ahead. This approach is distinct from EAGLE 3 and is supported in the modern LLM API / PyTorch backend. Here are the key differences compared to EAGLE 3:
+Draft Model-Based Speculative Decoding ([paper](https://arxiv.org/pdf/2302.01318)) is another approach to accelerate LLM inference that uses a smaller, faster LLM as a draft model to predict multiple tokens ahead. This approach is distinct from EAGLE-3 and is supported in the modern LLM API / PyTorch backend. Here are the key differences compared to EAGLE-3:
 
- - Draft Generation: it uses a separate, independent LLM as a draft model to predict multiple tokens ahead. This contrasts with EAGLE 3's feature-level extrapolation using a lightweight draft head embedded into the target model.
+ - Draft Generation: it uses a separate, independent LLM as a draft model to predict multiple tokens ahead. This contrasts with EAGLE-3's feature-level extrapolation using a lightweight draft head embedded into the target model.
 
- - Verification Process: it employs a chain-like (linear) structure for draft generation and verification, unlike EAGLE 3 which uses tree-based attention mechanisms.
+ - Verification Process: it employs a chain-like (linear) structure for draft generation and verification, unlike EAGLE-3 which uses tree-based attention mechanisms.
 
- - Consistency: it maintains distribution consistency with the target LLM in both greedy and non-greedy settings, similar to EAGLE 3.
+ - Consistency: it maintains distribution consistency with the target LLM in both greedy and non-greedy settings, similar to EAGLE-3.
 
- - Efficiency: While effective, it is generally slower than EAGLE 3.
+ - Efficiency: While effective, it is generally slower than EAGLE-3.
 
  - Implementation: it requires a separate draft model that shares the same tokenizer as the target model. The draft model can be any HuggingFace-compatible LLM.
 
-To use Draft Model-Based Speculative Decoding with Triton via the LLM API, follow the same container setup and model repository preparation steps as in the [EAGLE 3](#eagle-3) section above, but configure `model.yaml` as follows:
+To use Draft Model-Based Speculative Decoding with Triton via the LLM API, follow the same container setup and model repository preparation steps as in the [EAGLE-3](#eagle-3) section above, but configure `model.yaml` as follows:
 
 ```yaml
 model: meta-llama/Llama-3.1-8B-Instruct
