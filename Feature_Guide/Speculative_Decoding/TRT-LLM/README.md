@@ -152,62 +152,62 @@ You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/
 
 1. Prepare Dataset
 
-We will be using the HumanEval dataset for our evaluation, which is used in the original EAGLE paper. The HumanEval dataset has been converted to the format required by EAGLE and is available [here](https://github.com/SafeAILab/EAGLE/blob/main/eagle/data/humaneval/question.jsonl). To make it compatible for Gen-AI Perf, we need to do another conversion. You may use other datasets besides HumanEval as well, as long as it could be converted to the format required by Gen-AI Perf. Note that MT-bench could not be used since Gen-AI Perf does not support multiturn dataset as input yet. Follow the steps below to download and convert the dataset.
+   We will be using the HumanEval dataset for our evaluation, which is used in the original EAGLE paper. The HumanEval dataset has been converted to the format required by EAGLE and is available [here](https://github.com/SafeAILab/EAGLE/blob/main/eagle/data/humaneval/question.jsonl). To make it compatible for Gen-AI Perf, we need to do another conversion. You may use other datasets besides HumanEval as well, as long as it could be converted to the format required by Gen-AI Perf. Note that MT-bench could not be used since Gen-AI Perf does not support multiturn dataset as input yet. Follow the steps below to download and convert the dataset.
 
-```bash
-wget https://raw.githubusercontent.com/SafeAILab/EAGLE/main/eagle/data/humaneval/question.jsonl
+   ```bash
+   wget https://raw.githubusercontent.com/SafeAILab/EAGLE/main/eagle/data/humaneval/question.jsonl
 
-# dataset-converter.py file can be found in the parent folder of this README.
-python3 dataset-converter.py --input_file question.jsonl --output_file converted_humaneval.jsonl
-```
+   # dataset-converter.py file can be found in the parent folder of this README.
+   python3 dataset-converter.py --input_file question.jsonl --output_file converted_humaneval.jsonl
+   ```
 
 2. Install GenAI-Perf (Ubuntu 24.04, Python 3.10+)
 
-```bash
-pip install genai-perf
-```
-*NOTE: you must already have CUDA 12 installed.*
+   ```bash
+   pip install genai-perf
+   ```
+   *NOTE: you must already have CUDA 12 installed.*
 
 3. Run Gen-AI Perf
 
-Run the following command in the SDK container:
-```bash
-genai-perf \
-  profile \
-  -m tensorrt_llm \
-  --service-kind triton \
-  --backend tensorrtllm \
-  --input-file /path/to/converted/dataset/converted_humaneval.jsonl \
-  --tokenizer meta-llama/Llama-3.1-8B-Instruct \
-  --profile-export-file my_profile_export.json \
-  --url localhost:8001 \
-  --concurrency 1
-```
-*NOTE: When benchmarking the speedup of speculative decoding versus the base model, use `--concurrency 1`. This setting is crucial because speculative decoding is designed to trade extra computation for reduced token generation latency. By limiting concurrency, we avoid saturating hardware resources with multiple requests, allowing for a more accurate assessment of the technique's latency benefits. This approach ensures that the benchmark reflects the true performance gains of speculative decoding in real-world, low-concurrency scenarios.*
+   Run the following command in the SDK container:
+   ```bash
+   genai-perf \
+     profile \
+     -m tensorrt_llm \
+     --service-kind triton \
+     --backend tensorrtllm \
+     --input-file /path/to/converted/dataset/converted_humaneval.jsonl \
+     --tokenizer meta-llama/Llama-3.1-8B-Instruct \
+     --profile-export-file my_profile_export.json \
+     --url localhost:8001 \
+     --concurrency 1
+   ```
+   *NOTE: When benchmarking the speedup of speculative decoding versus the base model, use `--concurrency 1`. This setting is crucial because speculative decoding is designed to trade extra computation for reduced token generation latency. By limiting concurrency, we avoid saturating hardware resources with multiple requests, allowing for a more accurate assessment of the technique's latency benefits. This approach ensures that the benchmark reflects the true performance gains of speculative decoding in real-world, low-concurrency scenarios.*
 
 4. Run Gen-AI Perf on Base Model
 
-To compare performance between EAGLE 3 and the base model (i.e. vanilla LLM without speculative decoding), restart Triton Server with a `model.yaml` that omits the `speculative_config` block:
+   To compare performance between EAGLE 3 and the base model (i.e. vanilla LLM without speculative decoding), restart Triton Server with a `model.yaml` that omits the `speculative_config` block:
 
-```yaml
-model: meta-llama/Llama-3.1-8B-Instruct
-backend: pytorch
+   ```yaml
+   model: meta-llama/Llama-3.1-8B-Instruct
+   backend: pytorch
 
-tensor_parallel_size: 1
-pipeline_parallel_size: 1
+   tensor_parallel_size: 1
+   pipeline_parallel_size: 1
 
-triton_config:
-  max_batch_size: 0
-  decoupled: False
-```
+   triton_config:
+     max_batch_size: 0
+     decoupled: False
+   ```
 
-Then re-run the Gen-AI Perf command above.
+   Then re-run the Gen-AI Perf command above.
 
 5. Compare Performance
 
-From sample runs, EAGLE 3 typically delivers 2x or greater token throughput improvement over the base model at low concurrency. The exact speedup varies by hardware, model, and dataset.
+   From sample runs, EAGLE 3 typically delivers 2x or greater token throughput improvement over the base model at low concurrency. The exact speedup varies by hardware, model, and dataset.
 
-As stated above, the number above is gathered from a single node with one GPU - RTX 5880 (48GB GPU memory). The actual number may vary due to the different hardware and environment.
+   As stated above, the number above is gathered from a single node with one GPU - RTX 5880 (48GB GPU memory). The actual number may vary due to the different hardware and environment.
 
 ## MEDUSA
 
