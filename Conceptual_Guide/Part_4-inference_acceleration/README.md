@@ -64,7 +64,7 @@ There are three routes for users to use to convert their models to TensorRT: the
 
 That said, there are two main steps needed. First, convert the model to a TensorRT Engine. It is recommended to use the [TensorRT Container](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tensorrt) to run the command.
 
-```
+```bash
 trtexec --onnx=model.onnx \
         --saveEngine=model.plan \
         --explicitBatch
@@ -95,7 +95,7 @@ There are three options to accelerate the ONNX runtime: with `TensorRT` and `CUD
 In general TensorRT will provide better optimizations than the CUDA execution provider however, this depends on the exact structure of the model, more precisely, it depends in the operators used in the network being accelerated. If all the operators are supported, conversion to TensorRT will yield better performance. When `TensorRT` is selected as the accelerator, all supported subgraphs are accelerated by TensorRT and the rest of the graph runs on the CUDA execution provider. Users can achieve this with the following additions to the config file.
 
 **TensorRT acceleration**
-```
+```text proto
 optimization {
   execution_accelerators {
     gpu_execution_accelerator : [ {
@@ -112,7 +112,7 @@ There are a few other ONNX runtime specific optimizations. Refer to this section
 
 ## CPU Based Acceleration
 Triton Inference Server also supports acceleration for CPU only model with [OpenVINO](https://docs.openvino.ai/latest/index.html). In configuration file, users can add the following to enable CPU acceleration.
-```
+```text proto
 optimization {
   execution_accelerators {
     cpu_execution_accelerator : [{
@@ -133,7 +133,7 @@ On the other end of the spectrum, Deep Learning practitioners are drawn to Large
 ## Working Example
 Before proceeding, please set up a model repository for the Text Recognition model being used in Part 1-3 of this series. Then, navigate to the model repository and launch two containers:
 
-```
+```bash
 # Server Container
 docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v$(pwd):/workspace/ -v/$(pwd)/model_repository:/models nvcr.io/nvidia/tritonserver:22.11-py3 bash
 
@@ -150,7 +150,7 @@ While using ONNX RT there are some [general optimizations](https://github.com/tr
 
 With this context, let's launch the Triton Inference Server with the appropriate configuration file.
 
-```
+```bash
 tritonserver --model-repository=/models
 ```
 **NOTE: These benchmarks are just to illustrate the general curve of the performance gain. This is not the highest throughput obtainable via Triton as resource utilization features haven't been enabled (eg. Dynamic Batching). Refer to the Model Analyzer tutorial for the best deployment configuration once model optimization are done.**
@@ -158,7 +158,7 @@ tritonserver --model-repository=/models
 **NOTE**: These settings are to maximize throughput. Refer to the Model Analyzer tutorial which covers managing latency requirements.
 
 For reference, the baseline performance is as follows:
-```
+```text
 Inferences/Second vs. Client Average Batch Latency
 Concurrency: 2, throughput: 4191.7 infer/sec, latency 7633 usec
 ```
@@ -167,7 +167,7 @@ Concurrency: 2, throughput: 4191.7 infer/sec, latency 7633 usec
 
 For this model, an exhaustive search for the best convolution algorithm is enabled. [Learn about more options](https://github.com/triton-inference-server/onnxruntime_backend#onnx-runtime-with-cuda-execution-provider-optimization).
 
-```
+```bash
 ## Additions to Config
 parameters { key: "cudnn_conv_algo_search" value: { string_value: "0" } }
 parameters { key: "gpu_mem_limit" value: { string_value: "4294967200" } }
@@ -182,7 +182,7 @@ Concurrency: 2, throughput: 4257.9 infer/sec, latency 7672 usec
 ### ONNX RT execution on GPU w. TRT acceleration
 While specifying the use of TensorRT Execution Provider, the CUDA Execution provider is used as a fallback for operators not supported by TensorRT. It is recommended to use TensorRT natively if all operators are supported as the performance boost and optimization options are considerably better. In this case, TensorRT accelerator has been used with lower `FP16` precision.
 
-```
+```text proto
 ## Additions to Config
 optimization {
   graph : {
@@ -208,7 +208,7 @@ Concurrency: 2, throughput: 11820.2 infer/sec, latency 2706 usec
 
 Triton users can also use OpenVINO for CPU deployment. This can be enabled via the following:
 
-```
+```text proto
 optimization { execution_accelerators {
   cpu_execution_accelerator : [ {
     name : "openvino"

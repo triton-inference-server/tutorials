@@ -70,7 +70,7 @@ With Model Analyzer users can:
 
 Refer to Part 2 of this series to get access to the models. Refer to the Model Analyzer [installation guide](https://github.com/triton-inference-server/model_analyzer/blob/main/docs/install.md#recommended-installation-method) for more information about installing Model Analyzer. For ease of following along, use these commands to install model analyzer:
 
-```
+```bash
 sudo apt-get update && sudo apt-get install python3-pip
 sudo apt-get update && sudo apt-get install wkhtmltopdf
 pip3 install triton-model-analyzer
@@ -106,13 +106,13 @@ Consider the deployment of the text recognition model with a latency budget of `
 
 Note: The config file contains the shape of the query image. Refer the Launch mode [documentation](https://github.com/triton-inference-server/model_analyzer/blob/main/docs/launch_modes.md) for more info about the launch mode flag.
 
-```
+```bash
 model-analyzer profile --model-repository /workspace/model_repository --profile-models text_recognition --triton-launch-mode=local --output-model-repository-path /workspace/output/ -f perf.yaml --override-output-model-repository --latency-budget 10 --run-config-search-mode quick
 ```
 
 Once the sweeps are done users can then use `report` to summarize the top configurations.
 
-```
+```bash
 model-analyzer report --report-model-configs text_recognition_config_4,text_recognition_config_5,text_recognition_config_6 --export-path /workspace --config-file perf.yaml
 ```
 
