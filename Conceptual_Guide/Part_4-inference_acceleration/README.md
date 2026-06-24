@@ -135,10 +135,10 @@ Before proceeding, please set up a model repository for the Text Recognition mod
 
 ```
 # Server Container
-docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v$(pwd):/workspace/ -v/$(pwd)/model_repository:/models nvcr.io/nvidia/tritonserver:22.11-py3 bash
+docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v$(pwd):/workspace/ -v/$(pwd)/model_repository:/models nvcr.io/nvidia/tritonserver:26.06-py3 bash
 
 # Client Container (on a different terminal)
-docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:22.11-py3-sdk bash
+docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:26.06-py3-sdk bash
 ```
 
 Since this is a model we converted to ONNX, and TensorRT acceleration examples are linked throughout the explanation, we will explore the ONNX pathway. There are three cases to consider with ONNX backend:
