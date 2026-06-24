@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
   - name: triton
-    image: nvcr.io/nvidia/tritonserver:24.07-py3-sdk
+    image: nvcr.io/nvidia/tritonserver:26.06-py3-sdk
     command: ["sleep", "infinity"]
     volumeMounts:
       - mountPath: /var/run/models

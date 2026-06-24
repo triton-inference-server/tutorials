@@ -67,7 +67,7 @@ Then you can run the tritonserver as usual
 LOCAL_MODEL_REPOSITORY=./vllm_backend/samples/model_repository/
 docker run --rm -it --net host --shm-size=2g  --ulimit memlock=-1 \
 --ulimit stack=67108864 --gpus all -v $LOCAL_MODEL_REPOSITORY:/opt/tritonserver/model_repository  \
-nvcr.io/nvidia/tritonserver:25.01-vllm-python-py3 tritonserver --model-repository=model_repository/
+nvcr.io/nvidia/tritonserver:26.06-vllm-python-py3 tritonserver --model-repository=model_repository/
 ```
 The server has launched successfully when you see the following outputs in your console:
 
@@ -100,7 +100,7 @@ that has an example client.py to test the model.
 
 ```bash
 LOCAL_WORKSPACE=./vllm_backend/samples
-docker run -ti --gpus all --network=host --pid=host --ipc=host -v $LOCAL_WORKSPACE:/workspace nvcr.io/nvidia/tritonserver:25.01-py3-sdk
+docker run -ti --gpus all --network=host --pid=host --ipc=host -v $LOCAL_WORKSPACE:/workspace nvcr.io/nvidia/tritonserver:26.06-py3-sdk
 ```
 Then you can use client as follows:
 ```bash

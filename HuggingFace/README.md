@@ -115,7 +115,7 @@ Before the specifics around deploying the models can be discussed, the first ste
 
 ```
 # Pull the PyTorch Container from NGC
-docker run -it --gpus=all -v ${PWD}:/workspace nvcr.io/nvidia/pytorch:23.05-py3
+docker run -it --gpus=all -v ${PWD}:/workspace nvcr.io/nvidia/pytorch:26.05-py3
 
 # Install dependencies
 pip install transformers
