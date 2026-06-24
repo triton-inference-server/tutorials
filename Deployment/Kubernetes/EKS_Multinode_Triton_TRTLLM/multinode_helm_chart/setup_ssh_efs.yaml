@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
   - name: triton
-    image: nvcr.io/nvidia/tritonserver:24.07-trtllm-python-py3
+    image: nvcr.io/nvidia/tritonserver:26.06-trtllm-python-py3
     command: ["sleep", "infinity"]
     resources:
       limits:

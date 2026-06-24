@@ -198,7 +198,7 @@ To run Draft Model-Based Speculative Decoding with Triton Inference Server, it i
 docker run --gpus all -it --net=host --rm -p 8001:8001 --shm-size=1G \
     --ulimit memlock=-1 --ulimit stack=67108864 \
     -v </path/to/model_repository>:/model_repository \
-    nvcr.io/nvidia/tritonserver:25.02-vllm-python-py3 \
+    nvcr.io/nvidia/tritonserver:26.06-vllm-python-py3 \
     tritonserver --model-repository /model_repository \
     --model-control-mode explicit --load-model opt_model
 ```
