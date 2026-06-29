@@ -26,4 +26,4 @@
 
 pyright
 pytest
-ray[all]==2.36.0
+ray[all]==2.55.1

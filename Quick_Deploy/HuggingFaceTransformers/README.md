@@ -220,7 +220,7 @@ the Triton server using the `docker run` command from above.
 Once Triton launches successfully, start a Triton SDK container by running the following in a separate window:
 
 ```bash
-docker run -it --net=host nvcr.io/nvidia/tritonserver:23.10-py3-sdk bash
+docker run -it --net=host nvcr.io/nvidia/tritonserver:26.06-py3-sdk bash
 ```
 This container comes with all of Triton's deployment analyzers pre-installed, meaning
 we can simply enter the following to get feedback on our model's inference performance:
