@@ -39,8 +39,8 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
 # Base Images
 BASE_IMAGE=nvcr.io/nvidia/tritonserver
-BASE_IMAGE_TAG_IDENTITY=26.06-py3
-BASE_IMAGE_TAG_DIFFUSION=26.06-py3
+BASE_IMAGE_TAG_IDENTITY=26.07-py3
+BASE_IMAGE_TAG_DIFFUSION=26.07-py3
 
 get_options() {
     while :; do
@@ -137,7 +137,7 @@ get_options() {
     fi
 
     if [ -z "$TAG" ]; then
-        TAG="triton-python-api:r26.06"
+        TAG="triton-python-api:r26.07"
 
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
 	    TAG+="-diffusion"
@@ -181,7 +181,7 @@ get_options "$@"
 
 if [[ $FRAMEWORK == DIFFUSION ]]; then
     BASE_IMAGE="tritonserver"
-    BASE_IMAGE_TAG="r26.06-diffusion"
+    BASE_IMAGE_TAG="r26.07-diffusion"
 fi
 
 # BUILD RUN TIME IMAGE
@@ -203,8 +203,8 @@ if [[ $FRAMEWORK == DIFFUSION ]]; then
 	set -x
     fi
     $RUN_PREFIX mkdir -p ${SOURCE_DIR}/backend/diffusion
-    $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --framework diffusion --tag tritonserver:r26.06-diffusion
-    $RUN_PREFIX docker run --rm -it -v ${SOURCE_DIR}:/workspace tritonserver:r26.06-diffusion /bin/bash -c "cp -rf /tmp/TensorRT/demo/Diffusion /workspace/backend/diffusion"
+    $RUN_PREFIX $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/build.sh --framework diffusion --tag tritonserver:r26.07-diffusion
+    $RUN_PREFIX docker run --rm -it -v ${SOURCE_DIR}:/workspace tritonserver:r26.07-diffusion /bin/bash -c "cp -rf /tmp/TensorRT/demo/Diffusion /workspace/backend/diffusion"
     $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/backend/diffusion/model.py ${SOURCE_DIR}/backend/diffusion/model.py
     $RUN_PREFIX mkdir -p ${SOURCE_DIR}/diffusion-models/stable_diffusion_1_5/1
     $RUN_PREFIX cp $SOURCE_DIR/../Popular_Models_Guide/StableDiffusion/diffusion-models/stable_diffusion_1_5/config.pbtxt  ${SOURCE_DIR}/diffusion-models/stable_diffusion_1_5/config.pbtxt
