@@ -315,7 +315,7 @@ We'll again be launching Triton using docker containers. This time, we'll start 
 docker run --gpus=all -it --shm-size=1G --rm  \
   -p8000:8000 -p8001:8001 -p8002:8002 \
   -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models \
-  nvcr.io/nvidia/tritonserver:26.06-py3
+  nvcr.io/nvidia/tritonserver:26.07-py3
 ```
 
 We'll need to install a couple of dependencies for our Python backend scripts.
