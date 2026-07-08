@@ -23,5 +23,5 @@
 # OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-FROM nvcr.io/nvidia/tritonserver:26.06-py3
+FROM nvcr.io/nvidia/tritonserver:26.07-py3
 RUN pip install transformers==5.12.1 protobuf==3.20.3 sentencepiece==0.2.1 accelerate==0.23.0 einops==0.6.1

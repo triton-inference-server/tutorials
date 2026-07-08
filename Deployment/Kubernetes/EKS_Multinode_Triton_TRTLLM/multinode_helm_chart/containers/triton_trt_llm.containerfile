@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG BASE_CONTAINER_IMAGE=nvcr.io/nvidia/tritonserver:26.06-trtllm-python-py3
+ARG BASE_CONTAINER_IMAGE=nvcr.io/nvidia/tritonserver:26.07-trtllm-python-py3
 FROM ${BASE_CONTAINER_IMAGE}
 
 ENV EFA_INSTALLER_VERSION=1.33.0
