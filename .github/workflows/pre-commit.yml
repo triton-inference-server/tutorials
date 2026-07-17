@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: pre-commit
+
+on:
+  pull_request:
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5.0.0
+      with:
+        fetch-depth: 2
+    - name: Get modified files
+      id: modified-files
+      run: echo "modified_files=$(git diff --name-only -r HEAD^1 HEAD | xargs)" >> $GITHUB_OUTPUT
+    - uses: actions/setup-python@v6.0.0
+    - uses: pre-commit/action@v3.0.1
+      with:
+        extra_args: --files ${{ steps.modified-files.outputs.modified_files }}
