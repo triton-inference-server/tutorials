@@ -1,3 +1,30 @@
+<!--
+# Copyright (c) 2023-2026, NVIDIA CORPORATION. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
 # Triton Tutorials
 
 For users experiencing the "Tensor in" & "Tensor out" approach to Deep Learning Inference, getting started with Triton can lead to many questions. The goal of this repository is to familiarize users with Triton's features and provide guides and examples to ease migration. For a feature by feature explanation, refer to the [Triton Inference Server documentation](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html).
@@ -22,6 +49,11 @@ The table below contains some popular models that are supported in our tutorials
 | [Persimmon-8B](https://www.adept.ai/blog/persimmon-8b) | [HuggingFace Transformers Tutorial](https://github.com/triton-inference-server/tutorials/tree/main/Quick_Deploy/HuggingFaceTransformers)  |
 [Falcon-7B](https://huggingface.co/tiiuae/falcon-7b) |[HuggingFace Transformers Tutorial](https://github.com/triton-inference-server/tutorials/tree/main/Quick_Deploy/HuggingFaceTransformers)   |
 [LLaVA-v1.5-7B](https://huggingface.co/llava-hf/llava-1.5-7b-hf) | [TensorRT-LLM Tutorial](Popular_Models_Guide/Llava1.5/llava_trtllm_guide.md)
+
+## Generative Recommenders
+| Example Models | Tutorial Link |
+| :-------------: | :------------------------------: |
+| [HSTU](https://github.com/NVIDIA/recsys-examples/tree/main/examples/hstu) | [HSTU on Triton (Torch AOTI)](Popular_Models_Guide/HSTU/README.md) |
 
 **Note:**
 This is not an exhausitive list of what Triton supports, just what is included in the tutorials.
