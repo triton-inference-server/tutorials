@@ -3,8 +3,8 @@ confluent_kafka==2.5.0
 gcn-kafka==0.3.3
 jsonschema==4.23.0
 pandas==2.2.2
-ray==2.55.1
-ray[serve]==2.55.1
+ray==2.56.1
+ray[serve]==2.56.1
 torch==2.12.1
 transformers==5.12.1
 tritonclient==2.69.0
