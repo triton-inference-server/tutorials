@@ -208,6 +208,8 @@ docker start tritonserver_builder >/dev/null
 docker exec tritonserver_builder sh -c 'find /tmp/tritonbuild -name "*manylinux*.whl"' \
   | while read -r w; do docker cp "tritonserver_builder:$w" build/install/python/; done
 docker stop tritonserver_builder >/dev/null
+find build/install/python -name '*manylinux*.whl' | grep -q . \
+  || { echo "ERROR: no manylinux wheels extracted; leaving originals in place." >&2; exit 1; }
 rm -f build/install/python/*-linux_x86_64.whl
 ```
 

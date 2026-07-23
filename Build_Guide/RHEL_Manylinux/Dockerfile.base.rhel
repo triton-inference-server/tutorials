@@ -59,7 +59,7 @@ RUN set -eux; \
 # Make gcc-toolset-13 the default compiler (CC/CXX so nested CMake builds honor it, not the
 # system gcc 8.5); point ORT's build at cuDNN (CUDNN_HOME); pre-create the pyenv symlink dir.
 ENV PATH=/opt/rh/gcc-toolset-13/root/usr/bin:${PATH} \
-    LD_LIBRARY_PATH=/opt/rh/gcc-toolset-13/root/usr/lib64:${LD_LIBRARY_PATH} \
+    LD_LIBRARY_PATH=/opt/rh/gcc-toolset-13/root/usr/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}} \
     CC=/opt/rh/gcc-toolset-13/root/usr/bin/gcc \
     CXX=/opt/rh/gcc-toolset-13/root/usr/bin/g++ \
     CUDNN_HOME=/usr

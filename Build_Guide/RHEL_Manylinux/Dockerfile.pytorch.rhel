@@ -29,8 +29,8 @@
 # prebuilt libtorch from -- i.e. a manylinux_2_28 image with a public torch wheel installed,
 # mirroring what the internal CI does (install torch into the wheel image, then --image=pytorch).
 # ONLY needed for the pytorch backend. EXAMPLE ONLY -- equivalent, not identical, to the
-# internal wheel image. The public wheel has no torchvision, so build the server with
-# torchvision disabled (see the README's Step 3).
+# internal wheel image. This tutorial builds without torchvision (see the README's Step 3);
+# wiring it up from public sources is an untested path here.
 #
 #   docker build -f Dockerfile.pytorch.rhel \
 #     --build-arg TORCH_INDEX_URL=https://download.pytorch.org/whl/cu132 \
