@@ -173,7 +173,8 @@ Key flags:
   (onnxruntime, tensorrt, python) compile from source during the build; PyTorch instead reuses a
   **prebuilt** libtorch (too heavy to build in-tree), which build.py `docker pull`s and extracts from
   this image — the only backend that needs an `--image`.
-- `TRITON_PYTORCH_ENABLE_TORCHVISION=OFF` — the public torch wheel ships no torchvision.
+- `TRITON_PYTORCH_ENABLE_TORCHVISION=OFF` — this example builds without torchvision;
+  wiring torchvision up from public sources is an untested path in this tutorial.
 - `TRITON_PYTORCH_NVSHMEM=ON` — leave nvshmem on so build.py copies `libtorch_nvshmem.so`
   (libtorch links it); Step 4 supplies the one runtime library it in turn needs.
 
