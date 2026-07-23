@@ -52,7 +52,7 @@ ENV PATH=/opt/python/cp312-cp312/bin:${PATH}
 RUN set -eux; \
     python -m pip install --upgrade pip; \
     python -m pip install --index-url "${TORCH_INDEX_URL}" \
-        "torch${TORCH_VERSION:+==${TORCH_VERSION}}"; \
+        "torch==${TORCH_VERSION}"; \
     # The rhel pytorch_backend copies from a HARDCODED /opt/_internal/cpython-3.12.1 path;
     # symlink it to whatever 3.12 patch this image actually ships so the `docker cp` resolves.
     if [ ! -e /opt/_internal/cpython-3.12.1 ]; then \
