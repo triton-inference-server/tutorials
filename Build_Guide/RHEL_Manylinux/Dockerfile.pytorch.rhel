@@ -42,7 +42,10 @@ ARG BASE_IMAGE=quay.io/pypa/manylinux_2_28_x86_64
 FROM ${BASE_IMAGE}
 
 # Pin torch to the release's version; the CUDA channel must match the base (13.2 -> cu132).
-ARG TORCH_VERSION=
+# Keep this in sync with Dockerfile.pytorch-runtime.rhel's TORCH_VERSION -- the wheel here
+# is the source build.py extracts libtorch from, and the runtime installs the same version
+# to get matching bundled cuSPARSELt/NCCL/nvshmem. A mismatch would ABI-break at server load.
+ARG TORCH_VERSION=2.13.0
 ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu132
 ENV PATH=/opt/python/cp312-cp312/bin:${PATH}
 

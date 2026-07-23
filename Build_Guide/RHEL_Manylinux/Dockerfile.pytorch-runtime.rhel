@@ -43,17 +43,21 @@
 FROM tritonserver
 
 # Match the libtorch the backend extracted from the Step 2 image (CUDA 13.2 -> cu132).
+# Keep this in sync with Dockerfile.pytorch.rhel's TORCH_VERSION -- a mismatch would ABI-break.
 ARG TORCH_VERSION=2.13.0
 ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu132
 
+# Point at whichever 3.12.<patch> build.py provisioned, so nothing below hardcodes the patch.
+RUN ln -sfn "$(ls -d /opt/pyenv_build/versions/3.12.* | head -1)" /opt/pyenv_build/versions/3.12
+
 # Add torch into the pyenv Python build.py already set up (via the python backend).
-RUN /opt/pyenv_build/versions/3.12.3/bin/python -m pip install --no-cache-dir \
+RUN /opt/pyenv_build/versions/3.12/bin/python -m pip install --no-cache-dir \
       "torch==${TORCH_VERSION}" --index-url "${TORCH_INDEX_URL}"
 
 # The extracted libtorch links cuSPARSELt, NCCL and nvshmem (the last via libtorch_nvshmem.so,
 # copied in by NVSHMEM=ON), none of which the stock CUDA base ships. All three are bundled inside
 # the torch wheel installed above (site-packages/nvidia/*/lib), so point the loader at just those
 # three dirs -- version-matched to the libtorch, and without shadowing the base's own CUDA libs.
-RUN SP=/opt/pyenv_build/versions/3.12.3/lib/python3.12/site-packages/nvidia; \
+RUN SP=/opt/pyenv_build/versions/3.12/lib/python3.12/site-packages/nvidia; \
     printf '%s\n' "$SP/cusparselt/lib" "$SP/nccl/lib" "$SP/nvshmem/lib" \
       > /etc/ld.so.conf.d/torch-cuda.conf && ldconfig

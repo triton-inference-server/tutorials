@@ -53,8 +53,25 @@ By the end of this tutorial, we will produce the following:
    [Known differences](#known-differences-from-the-released-artifacts)).
 
 The commands below target **Triton 2.69.0 / NGC 26.05** (CUDA 13.2.1, TensorRT
-10.16.1.11, Python 3.12). To target a different release, change the versions in
-Steps 1 and 3 to match that release.
+10.16.1.11, PyTorch 2.13.0, Python 3.12).
+
+> [!IMPORTANT]
+> **Targeting a different Triton release?** Look up the matching CUDA, TensorRT,
+> PyTorch, and Python versions in NVIDIA's
+> [Framework Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)
+> and the [Triton Inference Server release notes](https://docs.nvidia.com/deeplearning/triton-inference-server/release-notes/index.html),
+> then update **all** of these to match:
+>
+> - `--build-arg BASE_IMAGE=...` (Step 1)
+> - `--build-arg TENSORRT_VERSION=...` (Step 1)
+> - `--build-arg TORCH_VERSION=...` **in both** [`Dockerfile.pytorch.rhel`](Dockerfile.pytorch.rhel)
+>   **and** [`Dockerfile.pytorch-runtime.rhel`](Dockerfile.pytorch-runtime.rhel) (Steps 2 and 4)
+> - `--build-arg TORCH_INDEX_URL=...` if the CUDA channel changes (e.g. `cu132` → `cu133`)
+> - `--version`, `--container-version`, `--upstream-container-version`, and every
+>   `--repo-tag`/`--backend=X:tag` in the `build.py` invocation (Step 3)
+>
+> Torch in particular must be the **same version** in both Dockerfiles — a mismatch
+> ABI-breaks at server load, not at build time.
 
 ## Prerequisites
 
