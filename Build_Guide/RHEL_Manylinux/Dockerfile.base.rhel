@@ -41,9 +41,6 @@
 ARG BASE_IMAGE=nvidia/cuda:13.2.1-cudnn-devel-rockylinux8
 FROM ${BASE_IMAGE}
 
-# Empty installs newest TensorRT for the base CUDA, otherwise pin to release version.
-ARG TENSORRT_VERSION=
-
 # EPEL + PowerTools, then the OS packages build.py needs that a stock CUDA image lacks:
 # gcc-toolset-13 (C++17 default; system gcc 8.5 is too old), python3.12 headers (pybind11),
 # build utils incl. patch (ORT dep fetch), and CPython build deps (_ctypes/_bz2/_lzma).
@@ -65,6 +62,8 @@ ENV PATH=/opt/rh/gcc-toolset-13/root/usr/bin:${PATH} \
     CUDNN_HOME=/usr
 
 # TensorRT from the cuda-rhel8 repo that the base image already ships in /etc/yum.repos.d/.
+# Empty installs newest TensorRT for the base CUDA, otherwise pin to release version.
+ARG TENSORRT_VERSION=
 RUN set -eux; \
     if [ -n "${TENSORRT_VERSION}" ]; then \
         dnf install -y "tensorrt-devel-${TENSORRT_VERSION}"; \
@@ -88,9 +87,8 @@ RUN mkdir -p /opt/python && \
 
 # The final runtime image (FROM this base) installs the tritonserver/tritonfrontend wheels with a
 # bare `pip install <whl>`. Rocky 8's system `pip` maps to python3.6, which can't install cp312 wheels,
-# so shim `/usr/local/bin/pip` to python3.12. Least invasive way to make bare `pip` work downstream.
-RUN printf '#!/bin/sh\nexec /usr/bin/python3.12 -m pip "$@"\n' > /usr/local/bin/pip && \
-    chmod +x /usr/local/bin/pip
+# so point `/usr/local/bin/pip` at pip3.12 (from the python3.12-pip package installed above).
+RUN ln -sf /usr/bin/pip3.12 /usr/local/bin/pip
 
 # Fail loudly if a bad version pin left the CUDA/TensorRT/compiler/pip pieces missing.
 RUN set -eux; rpm -q tensorrt-devel; nvcc --version >/dev/null; g++ --version | head -1; pip --version
