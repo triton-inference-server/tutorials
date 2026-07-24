@@ -1,0 +1,85 @@
+# Copyright 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Public reconstruction of the internal PyTorch manylinux "wheel image"
+# (dl/dgx/pytorch:<ver>-py3-wheel-*) that build.py's `--image=pytorch,...` path extracts a
+# prebuilt libtorch from -- i.e. a manylinux_2_28 image with a public torch wheel installed,
+# mirroring what the internal CI does (install torch into the wheel image, then --image=pytorch).
+# ONLY needed for the pytorch backend. EXAMPLE ONLY -- equivalent, not identical, to the
+# internal wheel image. This tutorial builds without torchvision (see the README's Step 3);
+# wiring it up from public sources is an untested path here.
+#
+#   docker build -f Dockerfile.pytorch.rhel \
+#     --build-arg TORCH_INDEX_URL=https://download.pytorch.org/whl/cu132 \
+#     -t triton-manylinux-pytorch:example .
+
+# manylinux_2_28 == AlmaLinux 8 / glibc 2.28, matching the base-image ABI and providing the
+# /opt/_internal/cpython-3.12.* layout the pytorch_backend copies libtorch from.
+ARG BASE_IMAGE=quay.io/pypa/manylinux_2_28_x86_64
+FROM ${BASE_IMAGE}
+
+# Pin torch to the release's version; the CUDA channel must match the base (13.2 -> cu132).
+# Keep this in sync with Dockerfile.pytorch-runtime.rhel's TORCH_VERSION -- the wheel here
+# is the source build.py extracts libtorch from, and the runtime installs the same version
+# to get matching bundled cuSPARSELt/NCCL/nvshmem. A mismatch would ABI-break at server load.
+ARG TORCH_VERSION=2.13.0
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu132
+ENV PATH=/opt/python/cp312-cp312/bin:${PATH}
+
+RUN set -eux; \
+    python -m pip install --upgrade pip; \
+    python -m pip install --index-url "${TORCH_INDEX_URL}" \
+        "torch==${TORCH_VERSION}"; \
+    # The rhel pytorch_backend copies from a HARDCODED /opt/_internal/cpython-3.12.1 path;
+    # symlink it to whatever 3.12 patch this image actually ships so the `docker cp` resolves.
+    if [ ! -e /opt/_internal/cpython-3.12.1 ]; then \
+        ln -s "$(ls -d /opt/_internal/cpython-3.12.*)" /opt/_internal/cpython-3.12.1; \
+    fi; \
+    # OS libs the backend copies from /usr/lib64 (libjpeg.so.62 / libpng16.so.16).
+    dnf install -y libjpeg-turbo libpng; \
+    dnf clean all; \
+    python -c "import torch; print('torch', torch.__version__, torch.__path__[0] + '/lib')"
+
+# The rhel pytorch_backend's --image=pytorch path does a FIXED set of `docker cp`s that
+# NVIDIA's from-source torch image satisfies but a public wheel doesn't. Backfill them so the
+# (hardcoded, unconditional) copies succeed:
+#  - 10 MKL libs + libbackend_with_compiler.so + libaoti_custom_ops.so: this torch links no MKL
+#    (verified via ldd) and omits the two demo/AOTI libs, so empty stub .so's satisfy the copy
+#    and the patchelf that follows, and are never dlopen'd at runtime.
+#  - LICENSE + jit/codegen: taken from the wheel (the codegen headers already ship in torch/include).
+RUN set -eux; \
+    P=/opt/_internal/cpython-3.12.1; \
+    TL="$P/lib/python3.12/site-packages/torch/lib"; \
+    SP="$P/lib/python3.12/site-packages"; \
+    stub() { gcc -shared -fPIC -x c -o "$1" /dev/null; }; \
+    for m in avx2 avx512 core def gnu_thread intel_lp64 intel_thread rt sequential vml_def; do \
+        stub "$P/lib/libmkl_${m}.so.1"; \
+    done; \
+    stub "$TL/libbackend_with_compiler.so"; \
+    stub "$TL/libaoti_custom_ops.so"; \
+    mkdir -p /opt/pytorch/pytorch/torch/csrc/jit; \
+    cp "$(find "$SP" -path '*/torch-*.dist-info/licenses/LICENSE' | head -1)" /opt/pytorch/pytorch/LICENSE; \
+    cp -r "$SP/torch/include/torch/csrc/jit/codegen" /opt/pytorch/pytorch/torch/csrc/jit/codegen

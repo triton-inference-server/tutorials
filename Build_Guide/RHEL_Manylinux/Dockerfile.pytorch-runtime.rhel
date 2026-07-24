@@ -1,0 +1,63 @@
+# Copyright 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Completes the `tritonserver` image from Step 3 so the PyTorch backend can SERVE, not just
+# build. ONLY needed for the pytorch backend; the other backends serve from the Step 3 image
+# as-is.
+#
+# The pytorch backend runs a Python "stub" process at model load whose `import torch` /
+# `import numpy` must resolve under the pyenv Python the backend was compiled against (at
+# /opt/pyenv_build, not the system python3.12). Building the `python` backend already had
+# build.py provision that interpreter AND numpy into this image (its `if "python" in
+# FLAGS.backend` runtime block). All that's left is torch itself -- the framework build.py
+# never bundles -- so we add it here, into that same interpreter.
+#
+# If you build WITHOUT the python backend, build.py won't provision the interpreter; you then
+# also need to COPY it from tritonserver_buildbase and `pip install numpy` here first.
+#
+#   docker build -f Dockerfile.pytorch-runtime.rhel -t tritonserver-pytorch:example .
+
+FROM tritonserver
+
+# Match the libtorch the backend extracted from the Step 2 image (CUDA 13.2 -> cu132).
+# Keep this in sync with Dockerfile.pytorch.rhel's TORCH_VERSION -- a mismatch would ABI-break.
+ARG TORCH_VERSION=2.13.0
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu132
+
+# Point at whichever 3.12.<patch> build.py provisioned, so nothing below hardcodes the patch.
+RUN ln -sfn "$(ls -d /opt/pyenv_build/versions/3.12.* | head -1)" /opt/pyenv_build/versions/3.12
+
+# Add torch into the pyenv Python build.py already set up (via the python backend).
+RUN /opt/pyenv_build/versions/3.12/bin/python -m pip install --no-cache-dir \
+      "torch==${TORCH_VERSION}" --index-url "${TORCH_INDEX_URL}"
+
+# The extracted libtorch links cuSPARSELt, NCCL and nvshmem (the last via libtorch_nvshmem.so,
+# copied in by NVSHMEM=ON), none of which the stock CUDA base ships. All three are bundled inside
+# the torch wheel installed above (site-packages/nvidia/*/lib), so point the loader at just those
+# three dirs -- version-matched to the libtorch, and without shadowing the base's own CUDA libs.
+RUN SP=/opt/pyenv_build/versions/3.12/lib/python3.12/site-packages/nvidia; \
+    printf '%s\n' "$SP/cusparselt/lib" "$SP/nccl/lib" "$SP/nvshmem/lib" \
+      > /etc/ld.so.conf.d/torch-cuda.conf && ldconfig

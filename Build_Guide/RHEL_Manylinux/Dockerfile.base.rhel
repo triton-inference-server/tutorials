@@ -1,0 +1,94 @@
+# Copyright 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Reconstructs, from 100% public sources, the EL8 / glibc-2.28 (manylinux_2_28)
+# CUDA/cuDNN/TensorRT base image (plus OS build-dependencies) that
+# `build.py --target-platform=rhel` expects but does not install itself -- so you can
+# reproduce a RHEL/manylinux Triton build without an internal, unpublished base image.
+# Rocky Linux 8 (not UBI8) because build.py's -devel deps need EPEL + PowerTools.
+#
+# EXAMPLE ONLY -- not officially supported; equivalent, not identical, to the base
+# NVIDIA uses for the released manylinux artifacts. See this tutorial's README.
+#
+#   docker build -f Dockerfile.base.rhel \
+#     --build-arg BASE_IMAGE=nvidia/cuda:13.2.1-cudnn-devel-rockylinux8 \
+#     --build-arg TENSORRT_VERSION=10.16.1.11-1.cuda13.2 -t triton-manylinux-base:local .
+
+# The base CUDA/cuDNN image; pin to the target release (e.g. nvidia/cuda:13.0.3-...-rockylinux8 for 25.08).
+ARG BASE_IMAGE=nvidia/cuda:13.2.1-cudnn-devel-rockylinux8
+FROM ${BASE_IMAGE}
+
+# EPEL + PowerTools, then the OS packages build.py needs that a stock CUDA image lacks:
+# gcc-toolset-13 (C++17 default; system gcc 8.5 is too old), python3.12 headers (pybind11),
+# build utils incl. patch (ORT dep fetch), and CPython build deps (_ctypes/_bz2/_lzma).
+RUN set -eux; \
+    dnf install -y dnf-plugins-core epel-release; \
+    dnf config-manager --set-enabled powertools || dnf config-manager --set-enabled crb || true; \
+    dnf install -y \
+        gcc-toolset-13 python3.12 python3.12-devel python3.12-pip \
+        patch which file diffutils make \
+        libffi-devel bzip2-devel xz-devel zlib-devel; \
+    dnf clean all
+
+# Make gcc-toolset-13 the default compiler (CC/CXX so nested CMake builds honor it, not the
+# system gcc 8.5); point ORT's build at cuDNN (CUDNN_HOME); pre-create the pyenv symlink dir.
+ENV PATH=/opt/rh/gcc-toolset-13/root/usr/bin:${PATH} \
+    LD_LIBRARY_PATH=/opt/rh/gcc-toolset-13/root/usr/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}} \
+    CC=/opt/rh/gcc-toolset-13/root/usr/bin/gcc \
+    CXX=/opt/rh/gcc-toolset-13/root/usr/bin/g++ \
+    CUDNN_HOME=/usr
+
+# TensorRT from the cuda-rhel8 repo that the base image already ships in /etc/yum.repos.d/.
+# Empty installs newest TensorRT for the base CUDA, otherwise pin to release version.
+ARG TENSORRT_VERSION=
+RUN set -eux; \
+    if [ -n "${TENSORRT_VERSION}" ]; then \
+        dnf install -y "tensorrt-devel-${TENSORRT_VERSION}"; \
+        dnf install -y python3-dnf-plugin-versionlock; \
+        dnf versionlock add "tensorrt*" "libnvinfer*"; \
+    else \
+        dnf install -y tensorrt-devel; \
+    fi; \
+    dnf clean all
+
+# auditwheel/patchelf retag the tritonserver wheels manylinux_2_28 (else linux_x86_64). The rhel
+# buildbase compiles with a fresh pyenv python AND reshuffles the default python3.12, so a plain
+# `pip install auditwheel` ends up importable by neither interpreter at wheel-repair time. Install
+# both in an isolated venv and put them on PATH -- self-contained, so the swap can't orphan them,
+# and stock build.py's manylinux repair step works without patching build.py.
+RUN mkdir -p /opt/python && \
+    python3.12 -m venv --copies /opt/auditwheel-venv && \
+    /opt/auditwheel-venv/bin/pip install --no-cache-dir auditwheel patchelf && \
+    ln -sf /opt/auditwheel-venv/bin/auditwheel /usr/local/bin/auditwheel && \
+    ln -sf /opt/auditwheel-venv/bin/patchelf   /usr/local/bin/patchelf
+
+# The final runtime image (FROM this base) installs the tritonserver/tritonfrontend wheels with a
+# bare `pip install <whl>`. Rocky 8's system `pip` maps to python3.6, which can't install cp312 wheels,
+# so point `/usr/local/bin/pip` at pip3.12 (from the python3.12-pip package installed above).
+RUN ln -sf /usr/bin/pip3.12 /usr/local/bin/pip
+
+# Fail loudly if a bad version pin left the CUDA/TensorRT/compiler/pip pieces missing.
+RUN set -eux; rpm -q tensorrt-devel; nvcc --version >/dev/null; g++ --version | head -1; pip --version

@@ -56,7 +56,14 @@ The table below contains some popular models that are supported in our tutorials
 | [HSTU](https://github.com/NVIDIA/recsys-examples/tree/main/examples/hstu) | [HSTU on Triton (Torch AOTI)](Popular_Models_Guide/HSTU/README.md) |
 
 **Note:**
-This is not an exhausitive list of what Triton supports, just what is included in the tutorials.
+This is not an exhaustive list of what Triton supports, just what is included in the tutorials.
+
+## Building Triton
+
+Guides for building the Triton Inference Server itself from source for a specific platform.
+
+| [Build for RHEL / manylinux (example)](./Build_Guide/RHEL_Manylinux/README.md) |
+| --------------- |
 
 ## What does this repository contain?
 This repository contains the following resources:
@@ -65,6 +72,7 @@ This repository contains the following resources:
 * [HuggingFace Guide](./HuggingFace/): The focus of this guide is to walk the user through different methods in which a HuggingFace model can be deployed using the Triton Inference Server.
 * [Feature Guides](./Feature_Guide/): This folder is meant to house Triton's feature-specific examples.
 * [Migration Guide](./Migration_Guide/migration_guide.md): Migrating from an existing solution to Triton Inference Server? Get an understanding of the general architecture that might best fit your use case.
+* [Build Guide](./Build_Guide/): Community examples for building the Triton Inference Server from source for a specific platform (e.g. RHEL / manylinux). These are not officially supported build paths.
 
 ## Navigating Triton Inference Server Resources
 
