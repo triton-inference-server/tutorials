@@ -47,7 +47,7 @@ In this example, the models are being run on:
 * Python Backend
 
 Both the models deployed on a framework backend can be triggered using the following API:
-```
+```python
 encoding_request = pb_utils.InferenceRequest(
     model_name="text_encoder",
     requested_output_names=["last_hidden_state"],
@@ -66,13 +66,13 @@ Before starting, clone this repository and navigate to the root folder. Use thre
 
 ### Step 1: Prepare the Server Environment
 * First, run the Triton Inference Server Container.
-```
+```bash
 # Replace yy.mm with year and month of release. Eg. 22.08
 docker run --gpus=all -it --shm-size=256m --rm -p8000:8000 -p8001:8001 -p8002:8002 -v ${PWD}:/workspace/ -v ${PWD}/model_repository:/models nvcr.io/nvidia/tritonserver:yy.mm-py3 bash
 ```
 * Next, install all the dependencies required by the models running in the python backend and login with your [huggingface token](https://huggingface.co/settings/tokens)(Account on [HuggingFace](https://huggingface.co/) is required).
 
-```
+```bash
 # PyTorch & Transformers Lib
 pip install torch torchvision torchaudio
 pip install transformers ftfy scipy accelerate
@@ -84,7 +84,7 @@ huggingface-cli login
 ### Step 2: Exporting and converting the models
 Use the NGC PyTorch container, to export and convert the models.
 
-```
+```bash
 docker run -it --gpus all -p 8888:8888 -v ${PWD}:/mount nvcr.io/nvidia/pytorch:yy.mm-py3
 
 pip install transformers ftfy scipy
@@ -106,13 +106,13 @@ mv encoder.onnx model_repository/text_encoder/1/model.onnx
 
 ### Step 3: Launch the Server
 From the server container, launch the Triton Inference Server.
-```
+```bash
 tritonserver --model-repository=/models
 ```
 
 ### Step 4: Run the client
 Use the client container and run the client.
-```
+```bash
 docker run -it --net=host -v ${PWD}:/workspace/ nvcr.io/nvidia/tritonserver:yy.mm-py3-sdk bash
 
 # Client with no GUI
