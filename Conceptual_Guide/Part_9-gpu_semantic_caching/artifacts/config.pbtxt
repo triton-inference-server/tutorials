@@ -1,0 +1,121 @@
+name: "cagra_cache"
+backend: "python"
+max_batch_size: 64
+
+input [
+  {
+    name: "query_embedding"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "operation"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+  },
+  {
+    name: "response_text"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+    optional: true
+  }
+]
+
+output [
+  {
+    name: "cache_hit"
+    data_type: TYPE_BOOL
+    dims: [ 1 ]
+  },
+  {
+    name: "similarity"
+    data_type: TYPE_FP32
+    dims: [ 1 ]
+  },
+  {
+    name: "cached_response"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+  },
+  {
+    name: "latency_us"
+    data_type: TYPE_FP32
+    dims: [ 1 ]
+  }
+]
+
+# -------------------------------------------------------
+# Vector search parameters
+# -------------------------------------------------------
+parameters: {
+  key: "similarity_threshold"
+  value: { string_value: "0.85" }
+}
+
+parameters: {
+  key: "max_entries"
+  value: { string_value: "100000" }
+}
+
+parameters: {
+  key: "embedding_dim"
+  value: { string_value: "1024" }
+}
+
+parameters: {
+  key: "graph_degree"
+  value: { string_value: "32" }
+}
+
+parameters: {
+  key: "use_gpu"
+  value: { string_value: "true" }
+}
+
+# -------------------------------------------------------
+# Tiered response storage parameters
+# -------------------------------------------------------
+# Hot tier: in-memory LRU cache for frequently accessed responses.
+# Entries are evicted to the warm tier (Redis) when capacity is reached.
+parameters: {
+  key: "hot_capacity"
+  value: { string_value: "10000" }
+}
+
+# Warm tier: Redis for persistent response storage.
+# Set to empty string to disable (responses evicted from hot are lost).
+parameters: {
+  key: "redis_url"
+  value: { string_value: "redis://redis:6379" }
+}
+
+# Key prefix for Redis entries (namespace isolation for multi-model).
+parameters: {
+  key: "redis_prefix"
+  value: { string_value: "triton_cache:" }
+}
+
+# TTL for warm tier entries in Redis (seconds). Default: 24 hours.
+parameters: {
+  key: "redis_ttl_secs"
+  value: { string_value: "86400" }
+}
+
+# Promote warm tier hits back to hot tier for faster subsequent access.
+parameters: {
+  key: "promote_on_warm_hit"
+  value: { string_value: "true" }
+}
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 1, 4, 16 ]
+  max_queue_delay_microseconds: 500
+}
