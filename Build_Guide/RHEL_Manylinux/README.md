@@ -37,9 +37,10 @@
 
 NVIDIA publishes prebuilt `manylinux` (RHEL 8‑compatible) Triton Inference Server
 artifacts. Reproducing them ourselves with `build.py --target-platform=rhel` requires a
-CUDA/cuDNN/TensorRT base image that is not published, so this tutorial reconstructs an
-equivalent one from public sources — a public NVIDIA CUDA image on Rocky Linux 8 plus
-TensorRT from the public CUDA repo — and walks through building and running a
+manylinux CUDA/cuDNN/TensorRT base image that is not published, so this tutorial reconstructs
+an equivalent one from public sources — pypa's `manylinux_2_28` image (AlmaLinux 8) plus the
+CUDA toolkit, cuDNN and TensorRT from NVIDIA's public `cuda-rhel8` repo — and walks through
+building and running a
 RHEL/manylinux Triton server end‑to‑end.
 
 By the end of this tutorial, we will produce the following:
@@ -52,8 +53,8 @@ By the end of this tutorial, we will produce the following:
    the server binary needs OpenSSL 1.1 (`libssl.so.1.1`) there (see
    [Known differences](#known-differences-from-the-released-artifacts)).
 
-The commands below target **Triton 2.69.0 / NGC 26.05** (CUDA 13.2.1, TensorRT
-10.16.1.11, PyTorch 2.13.0, Python 3.12).
+The commands below target **Triton 2.72.0 / NGC 26.08** (CUDA 13.4.1, cuDNN 9.25,
+TensorRT 11.2.1.2, PyTorch 2.14.0, Python 3.12).
 
 > [!IMPORTANT]
 > **Targeting a different Triton release?** Look up the matching CUDA, TensorRT,
@@ -62,13 +63,19 @@ The commands below target **Triton 2.69.0 / NGC 26.05** (CUDA 13.2.1, TensorRT
 > and the [Triton Inference Server release notes](https://docs.nvidia.com/deeplearning/triton-inference-server/release-notes/index.html),
 > then update **all** of these to match:
 >
-> - `--build-arg BASE_IMAGE=...` (Step 1)
-> - `--build-arg TENSORRT_VERSION=...` (Step 1)
+> - `--build-arg BASE_IMAGE=...` — the same pinned manylinux tag in Steps 1 and 2
+> - `--build-arg CUDA_VERSION=...`, `CUDNN_VERSION=...`, `TENSORRT_VERSION=...` (Step 1) — the
+>   release's `nvcr.io/nvidia/tritonserver:<release>-py3-min` image exports the authoritative
+>   values as `CUDA_VERSION` / `CUDNN_VERSION` / `TRT_VERSION`
+> - `--build-arg PYTORCH_BACKEND_CPYTHON_DIR=...` (Step 2) — the `/opt/_internal/cpython-3.12.x`
+>   path hardcoded in the release branch's `pytorch_backend/CMakeLists.txt`
 > - `--build-arg TORCH_VERSION=...` **in both** [`Dockerfile.pytorch.rhel`](Dockerfile.pytorch.rhel)
 >   **and** [`Dockerfile.pytorch-runtime.rhel`](Dockerfile.pytorch-runtime.rhel) (Steps 2 and 4)
-> - `--build-arg TORCH_INDEX_URL=...` if the CUDA channel changes (e.g. `cu132` → `cu133`)
+> - `--build-arg TORCH_INDEX_URL=...` if a newer public CUDA channel appears (e.g. `cu132` → `cu134`)
 > - `--version`, `--container-version`, `--upstream-container-version`, and every
 >   `--repo-tag`/`--backend=X:tag` in the `build.py` invocation (Step 3)
+> - Releases **before 26.08** used a different, pyenv-based `rhel` build path — use the tutorial
+>   revision that shipped with that release rather than this one.
 >
 > Torch in particular must be the **same version** in both Dockerfiles — a mismatch
 > ABI-breaks at server load, not at build time.
@@ -106,36 +113,47 @@ The commands below target **Triton 2.69.0 / NGC 26.05** (CUDA 13.2.1, TensorRT
 
 ## Step 1: Build the public base image
 
-On the `rhel` path, `build.py` only installs DCGM (NVIDIA's Data Center GPU Manager) and
-expects the CUDA/cuDNN/TensorRT stack and a set of OS `-devel` packages to already be
-present in the base image. [`Dockerfile.base.rhel`](Dockerfile.base.rhel) reconstructs
-that from public sources: it starts from NVIDIA's official
-`nvidia/cuda:*-cudnn-devel-rockylinux8` image (CUDA + cuDNN, on Rocky Linux 8 = RHEL 8 /
-glibc 2.28), enables **EPEL + PowerTools**, installs **TensorRT** from the public
-`cuda-rhel8` repo, and adds the compiler toolchain, Python headers, and wheel tooling that
-`build.py` assumes. (PyTorch's extra CUDA runtime libraries — cuSPARSELt, NCCL, nvshmem — are
-*not* added here; they ship inside the torch wheel and get wired up in the Step 4 completion
-image, so the base stays generic).
+On the `rhel` path, `build.py` installs its own build tooling and DCGM (NVIDIA's Data Center
+GPU Manager) but expects the base image to already be a **manylinux** image with the
+CUDA/cuDNN/TensorRT stack on it: since 26.08 it relies on pypa's `/opt/_internal` layout — the
+CPython builds, their static `libpython` archive (the python backend's stub links it), and the
+`pipx` "shared" venv it puts first on `PATH` and uses as `python3`/`pip3` for its tooling, the
+Triton wheels and the python backend. [`Dockerfile.base.rhel`](Dockerfile.base.rhel) starts from
+pypa's official `quay.io/pypa/manylinux_2_28_x86_64` image (AlmaLinux 8 = RHEL 8 / glibc 2.28,
+gcc-toolset-14), enables **EPEL + PowerTools** for the `-devel` packages `build.py` installs,
+adds the **CUDA toolkit, cuDNN and TensorRT** from the public `cuda-rhel8` repo with the same
+environment the `nvidia/cuda` images export, and recreates that shared venv from the image's
+**CPython 3.12** — the interpreter Triton's RHEL build targets. (PyTorch's extra runtime
+libraries — NCCL, cuSPARSELt — are *not* added here; the Step 4 completion image installs them,
+so the base stays generic.)
 
-To build this image, run the following command, pinning the CUDA image and TensorRT to your release versions:
+To build this image, pin the manylinux tag and the CUDA/cuDNN versions to your release. The
+TensorRT glob picks the newest build for the given CUDA line — TensorRT trails CUDA by a minor,
+so NGC 26.08 pairs CUDA 13.4.1 with TensorRT 11.2.1.2 built against `cuda13.3`:
 
 ```bash
 docker build -f Dockerfile.base.rhel \
-  --build-arg BASE_IMAGE=nvidia/cuda:13.2.1-cudnn-devel-rockylinux8 \
-  --build-arg TENSORRT_VERSION=10.16.1.11-1.cuda13.2 \
+  --build-arg BASE_IMAGE=quay.io/pypa/manylinux_2_28_x86_64:2026.09.05-1 \
+  --build-arg CUDA_VERSION=13.4.1 \
+  --build-arg CUDNN_VERSION=9.25.1.1 \
+  --build-arg TENSORRT_VERSION='*.cuda13.3' \
   -t triton-manylinux-base:example .
 ```
 
 ## Step 2 (optional): Build the PyTorch backend image
 
 Only needed if you build the `pytorch` backend.
-[`Dockerfile.pytorch.rhel`](Dockerfile.pytorch.rhel) installs a public `torch` wheel into a
-`manylinux_2_28` image so the PyTorch backend can extract a libtorch that runs on EL8's
-glibc 2.28. Note that the default Ubuntu-based `libtorch` is built against a newer glibc and won't
-load there.
+[`Dockerfile.pytorch.rhel`](Dockerfile.pytorch.rhel) installs a public `torch` wheel into the
+same `manylinux_2_28` image so the PyTorch backend can extract a libtorch that runs on EL8's
+glibc 2.28 (the default Ubuntu-based `libtorch` is built against a newer glibc and won't load
+there). The backend copies from a **hardcoded** `/opt/_internal/cpython-3.12.x` path
+(`cpython-3.12.13` on r26.08); the Dockerfile symlinks that name to whatever 3.12 patch the
+image actually ships.
 
 ```bash
 docker build -f Dockerfile.pytorch.rhel \
+  --build-arg BASE_IMAGE=quay.io/pypa/manylinux_2_28_x86_64:2026.09.05-1 \
+  --build-arg TORCH_VERSION=2.14.0 \
   --build-arg TORCH_INDEX_URL=https://download.pytorch.org/whl/cu132 \
   -t triton-manylinux-pytorch:example .
 ```
@@ -159,20 +177,20 @@ image:
 
 ```bash
 git clone https://github.com/triton-inference-server/server.git
-cd server && git checkout r26.05  # choose any release version
+cd server && git checkout r26.08  # choose any release version (26.08 or newer, see the note above)
 
 ./build.py -v --target-platform=rhel --no-container-pull \
-  --version=2.69.0 --container-version=26.05 --upstream-container-version=26.05 \
+  --version=2.72.0 --container-version=26.08 --upstream-container-version=26.08 \
   --image=base,triton-manylinux-base:example \
   --image=pytorch,localhost:5000/triton-manylinux-pytorch:example \
   --extra-core-cmake-arg=PYBIND11_FINDPYTHON=ON \
   --enable-gpu --enable-logging --enable-stats --enable-metrics \
   --enable-gpu-metrics --enable-cpu-metrics --enable-tracing \
   --endpoint=http --endpoint=grpc \
-  --backend=onnxruntime:r26.05 --backend=pytorch:r26.05 --backend=python:r26.05 \
+  --backend=onnxruntime:r26.08 --backend=pytorch:r26.08 --backend=python:r26.08 \
   --extra-backend-cmake-arg=pytorch:TRITON_PYTORCH_NVSHMEM=ON \
   --extra-backend-cmake-arg=pytorch:TRITON_PYTORCH_ENABLE_TORCHVISION=OFF \
-  --repoagent=checksum:r26.05
+  --repoagent=checksum:r26.08
 ```
 
 Key flags:
@@ -183,9 +201,9 @@ Key flags:
 - If you're running headless (CI, `ssh` without a TTY, etc.), add `--no-container-interactive` —
   build.py launches the compile with `docker run -it` by default, which aborts with
   `the input device is not a TTY` when no terminal is attached.
-- `--extra-core-cmake-arg=PYBIND11_FINDPYTHON=ON` — makes pybind11 use the Python 3.12 you
-  installed instead of Rocky 8's system `python3` (3.6), which it otherwise picks up and, lacking
-  dev headers, fails against with `fatal error: Python.h`.
+- `--extra-core-cmake-arg=PYBIND11_FINDPYTHON=ON` — makes pybind11 use CMake's modern
+  `FindPython`, so the Python 3.12 venv on `PATH` is what the `tritonserver` wheel is built
+  against rather than whatever legacy discovery finds first.
 - `--image=pytorch,localhost:5000/…` — the prebuilt PyTorch image from Step 2. The other backends
   (onnxruntime, tensorrt, python) compile from source during the build; PyTorch instead reuses a
   **prebuilt** libtorch (too heavy to build in-tree), which build.py `docker pull`s and extracts from
@@ -195,9 +213,9 @@ Key flags:
 - `TRITON_PYTORCH_NVSHMEM=ON` — leave nvshmem on so build.py copies `libtorch_nvshmem.so`
   (libtorch links it); Step 4 supplies the one runtime library it in turn needs.
 
-The `python` backend is built here because it makes build.py provision the pyenv Python + numpy
-the pytorch backend serves against (Step 4). It's optional — drop `--backend=python` and you must
-re-add those to the completion image yourself. `tensorrt` is optional too (ONNX Runtime already
+The `python` backend is built here because it makes build.py provision numpy into the Python
+3.12 venv the pytorch backend's stub serves against (Step 4). It's optional — drop
+`--backend=python` and you must add numpy to the completion image yourself. `tensorrt` is optional too (ONNX Runtime already
 pulls in its TensorRT provider); add `--backend=tensorrt:r26.05` for the standalone backend.
 
 Triton's `common`, `core`, `backend`, and `third_party` repos don't need explicit
@@ -216,9 +234,11 @@ Docker image.
 **1. Manylinux artifact generation**
 
 > [!NOTE]
-> The `rhel` build currently **ships wheels tagged `linux_x86_64`, not `manylinux`.** It *does*
-> run `auditwheel repair` and produce correct `manylinux_2_27` wheels (under the build container's
-> `.../python/generic/` dirs), but the packaging step installs the *un-repaired* copies instead. As a workaround, pull the repaired wheels out of the build container:
+> Older `rhel` builds **shipped wheels tagged `linux_x86_64`, not `manylinux`** — they ran
+> `auditwheel repair` but packaged the un‑repaired copies. Check the tags first
+> (`find build/install -name '*.whl'`): on 26.08 the staged wheels should already carry a
+> `manylinux_2_28` tag and this step is a no-op. If you still see `linux_x86_64`, pull the
+> repaired wheels out of the build container:
 
 ```bash
 docker start tritonserver_builder >/dev/null
@@ -232,17 +252,17 @@ rm -f build/install/python/*-linux_x86_64.whl
 
 Now `ls` the artifacts and prove the tag is real (not just a filename) with `auditwheel`, which
 checks the wheel's external symbols actually fit within the target glibc (auditwheel picks the
-true minimum — `2_27` here, which is *more* portable than 2_28):
+true minimum — `2_27` or `2_28`; the lower is *more* portable):
 
 ```bash
 ls build/install/backends                 # onnxruntime  pytorch  python
-find build/install -name '*.whl'          # ...-cp312-cp312-manylinux_2_27_x86_64.whl
+find build/install -name '*.whl'          # ...-cp312-cp312-manylinux_2_28_x86_64.whl
 
 # auditwheel lives in the base image — run it from there, nothing installed on your host:
 docker run --rm -v "$PWD/build:/b:ro" triton-manylinux-base:example \
   bash -c 'auditwheel show /b/install/python/tritonserver-*.whl'
-#  ... is consistent with the following platform tag: "manylinux_2_27_x86_64"
-#  ... external versioned symbols in system libraries: libc.so.6 (GLIBC_2.2.5 ... 2.27)
+#  ... is consistent with the following platform tag: "manylinux_2_28_x86_64"
+#  ... external versioned symbols in system libraries: libc.so.6 (GLIBC_2.2.5 ... 2.28)
 ```
 
 **2. Serve real workloads from Manylinux container**
@@ -335,7 +355,7 @@ Expected: `ready: 200`, and both models return `OUTPUT0 = [11, 22, 33, 44]`. A c
 
 ### PyTorch backend
 
-The `pytorch` backend is verified **separately, in its own model repo** (`models_torch/`, GPU). First complete the serving image: [`Dockerfile.pytorch-runtime.rhel`](Dockerfile.pytorch-runtime.rhel) adds `torch` into the pyenv Python the `python` backend already provisioned:
+The `pytorch` backend is verified **separately, in its own model repo** (`models_torch/`, GPU). First complete the serving image: [`Dockerfile.pytorch-runtime.rhel`](Dockerfile.pytorch-runtime.rhel) installs `torch` into the image's Python 3.12 plus the NCCL and cuSPARSELt libraries libtorch links:
 
 ```bash
 docker build -f Dockerfile.pytorch-runtime.rhel -t tritonserver-pytorch:example .
@@ -390,13 +410,15 @@ sources, serving correct inference.
 
 This build is *equivalent*, not identical, to the official `manylinux` release:
 
-- **Pin versions for parity.** `BASE_IMAGE` and `TENSORRT_VERSION` (Step 1) and
-  `--version` / `--container-version` (Step 3) must all match the target release.
-  Cross‑check against the release's artifact name
-  (`…-cu132-cp312-manylinux_2_28-x86_64.zip`) and the framework support matrix.
-- **cuDNN** comes from the public CUDA base image and may be a slightly newer patch than the
-  release used; if you need an exact match, install a specific cuDNN RPM from the `cuda-rhel8`
-  repo in `Dockerfile.base.rhel`.
+- **Pin versions for parity.** The manylinux `BASE_IMAGE` tag, `CUDA_VERSION`, `CUDNN_VERSION`
+  and `TENSORRT_VERSION` (Step 1), `TORCH_VERSION` (Steps 2 and 4) and `--version` /
+  `--container-version` (Step 3) must all match the target release. Cross‑check against the
+  release's artifact name (`…-cu13x-cp312-manylinux_2_28-x86_64.zip`), the framework support
+  matrix, or the `nvcr.io/nvidia/tritonserver:<release>-py3-min` image's environment.
+- **Library patch levels** come from whatever the public `cuda-rhel8` repo and pypa image ship
+  at build time and may be slightly newer than the release used (e.g. cuDNN 9.25.1.1 vs
+  9.25.0.28, CPython 3.12.14 vs 3.12.13 — hence the Step 2 symlink). Pin exact RPM versions in
+  `Dockerfile.base.rhel` if you need a closer match.
 - **Running the binary** requires EL8's `libssl.so.1.1`. Run it inside the built image /
   on an EL8 host, or bundle OpenSSL 1.1 alongside the executable.
 
