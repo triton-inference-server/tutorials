@@ -28,6 +28,13 @@
 
 # Deploying Hugging Face Llava1.5-7b Model in Triton
 
+> [!WARNING]
+> **Deprecated.** This guide describes the prebuilt-TensorRT-engine multimodal
+> path (`tensorrtllm_backend`'s `all_models/multimodal`), which TensorRT-LLM has
+> declared end-of-life as of TensorRT-LLM v1.2. It is no longer maintained.
+> Use the TensorRT-LLM PyTorch backend instead; see
+> [Deploying Hugging Face Qwen2.5-VL Model in Triton](../Qwen2.5-VL/qwen2_5_vl_trtllm_guide.md).
+
 TensorRT-LLM is Nvidia's recommended solution of running Large Language
 Models(LLMs) on Nvidia GPUs. Read more about TensoRT-LLM [here](https://github.com/NVIDIA/TensorRT-LLM)
 and Triton's TensorRT-LLM Backend [here](https://github.com/triton-inference-server/tensorrtllm_backend).
