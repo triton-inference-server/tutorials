@@ -1,5 +1,5 @@
 #!/bin/bash -e
-# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2024-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -99,7 +99,7 @@ get_options() {
     fi
 
     if [ -z "$IMAGE" ]; then
-        IMAGE="tritonserver:r24.08"
+        IMAGE="tritonserver:r26.09"
 
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
 	    IMAGE+="-diffusion"
