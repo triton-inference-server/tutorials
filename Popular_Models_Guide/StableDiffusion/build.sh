@@ -1,5 +1,5 @@
 #!/bin/bash -e
-# Copyright 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright 2024-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -39,7 +39,7 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
 # Base Images
 BASE_IMAGE=nvcr.io/nvidia/tritonserver
-BASE_IMAGE_TAG_DIFFUSION=24.08-py3
+BASE_IMAGE_TAG_DIFFUSION=26.09-py3
 
 get_options() {
     while :; do
@@ -141,7 +141,7 @@ get_options() {
     fi
 
     if [ -z "$TAG" ]; then
-        TAG="tritonserver:r24.08"
+        TAG="tritonserver:r26.09"
 
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
 	    TAG+="-diffusion"
