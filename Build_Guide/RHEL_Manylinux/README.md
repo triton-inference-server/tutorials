@@ -53,32 +53,31 @@ By the end of this tutorial, we will produce the following:
    the server binary needs OpenSSL 1.1 (`libssl.so.1.1`) there (see
    [Known differences](#known-differences-from-the-released-artifacts)).
 
-The commands below target **Triton 2.72.0 / NGC 26.08** (CUDA 13.4.1, cuDNN 9.25,
-TensorRT 11.2.1.2, PyTorch 2.14.0, Python 3.12).
+## Which Triton version to build
+
+To build a release, set `TRITON_REF` to its branch and the other variables to the versions in its
+table row. To build `main`, set `TRITON_REF=main` and use the row of the release named by
+`upstream_container_version` in `main`'s `build.py`. All steps below use these variables.
+
+```bash
+export TRITON_REF=r26.08                # release branch, or main
+export CUDA_VERSION=13.4.1
+export CUDNN_VERSION=9.25.1.1
+export TENSORRT_VERSION='*.cuda13.3'    # newest TensorRT rpm built for this CUDA line
+export TORCH_VERSION=2.14.0             # used by Steps 2 and 4
+export TORCH_INDEX_URL=https://download.pytorch.org/whl/cu132
+export PYTORCH_BACKEND_CPYTHON_DIR=cpython-3.12.13
+```
+
+Known-good versions per release:
+
+| Release | `TRITON_REF` | `CUDA_VERSION` | `CUDNN_VERSION` | `TENSORRT_VERSION` | `TORCH_VERSION` / `TORCH_INDEX_URL` | `PYTORCH_BACKEND_CPYTHON_DIR` |
+|---|---|---|---|---|---|---|
+| 26.08 | `r26.08` | `13.4.1` | `9.25.1.1` | `*.cuda13.3` (11.2.1.2) | `2.14.0` / `cu132` | `cpython-3.12.13` |
 
 > [!IMPORTANT]
-> **Targeting a different Triton release?** Look up the matching CUDA, TensorRT,
-> PyTorch, and Python versions in NVIDIA's
-> [Framework Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)
-> and the [Triton Inference Server release notes](https://docs.nvidia.com/deeplearning/triton-inference-server/release-notes/index.html),
-> then update **all** of these to match:
->
-> - `--build-arg BASE_IMAGE=...` — the same pinned manylinux tag in Steps 1 and 2
-> - `--build-arg CUDA_VERSION=...`, `CUDNN_VERSION=...`, `TENSORRT_VERSION=...` (Step 1) — the
->   release's `nvcr.io/nvidia/tritonserver:<release>-py3-min` image exports the authoritative
->   values as `CUDA_VERSION` / `CUDNN_VERSION` / `TRT_VERSION`
-> - `--build-arg PYTORCH_BACKEND_CPYTHON_DIR=...` (Step 2) — the `/opt/_internal/cpython-3.12.x`
->   path hardcoded in the release branch's `pytorch_backend/CMakeLists.txt`
-> - `--build-arg TORCH_VERSION=...` **in both** [`Dockerfile.pytorch.rhel`](Dockerfile.pytorch.rhel)
->   **and** [`Dockerfile.pytorch-runtime.rhel`](Dockerfile.pytorch-runtime.rhel) (Steps 2 and 4)
-> - `--build-arg TORCH_INDEX_URL=...` if a newer public CUDA channel appears (e.g. `cu132` → `cu134`)
-> - `--version`, `--container-version`, `--upstream-container-version`, and every
->   `--repo-tag`/`--backend=X:tag` in the `build.py` invocation (Step 3)
-> - Releases **before 26.08** used a different, pyenv-based `rhel` build path — use the tutorial
->   revision that shipped with that release rather than this one.
->
-> Torch in particular must be the **same version** in both Dockerfiles — a mismatch
-> ABI-breaks at server load, not at build time.
+> Releases **before 26.08** used a different, pyenv-based `rhel` build path — use the tutorial
+> revision that shipped with that release rather than this one.
 
 ## Prerequisites
 
@@ -127,16 +126,16 @@ environment the `nvidia/cuda` images export, and recreates that shared venv from
 libraries — NCCL, cuSPARSELt — are *not* added here; the Step 4 completion image installs them,
 so the base stays generic.)
 
-To build this image, pin the manylinux tag and the CUDA/cuDNN versions to your release. The
-TensorRT glob picks the newest build for the given CUDA line — TensorRT trails CUDA by a minor,
-so NGC 26.08 pairs CUDA 13.4.1 with TensorRT 11.2.1.2 built against `cuda13.3`:
+Build it with the values from your release (the TensorRT glob picks the newest build for that
+CUDA line — TensorRT trails CUDA by a minor, so 26.08 pairs CUDA 13.4.1 with TensorRT 11.2.1.2
+built against `cuda13.3`). The pypa manylinux image tag is pinned in the Dockerfile; pass
+`--build-arg BASE_IMAGE=...` to change it:
 
 ```bash
 docker build -f Dockerfile.base.rhel \
-  --build-arg BASE_IMAGE=quay.io/pypa/manylinux_2_28_x86_64:2026.09.05-1 \
-  --build-arg CUDA_VERSION=13.4.1 \
-  --build-arg CUDNN_VERSION=9.25.1.1 \
-  --build-arg TENSORRT_VERSION='*.cuda13.3' \
+  --build-arg CUDA_VERSION="$CUDA_VERSION" \
+  --build-arg CUDNN_VERSION="$CUDNN_VERSION" \
+  --build-arg TENSORRT_VERSION="$TENSORRT_VERSION" \
   -t triton-manylinux-base:example .
 ```
 
@@ -152,9 +151,9 @@ image actually ships.
 
 ```bash
 docker build -f Dockerfile.pytorch.rhel \
-  --build-arg BASE_IMAGE=quay.io/pypa/manylinux_2_28_x86_64:2026.09.05-1 \
-  --build-arg TORCH_VERSION=2.14.0 \
-  --build-arg TORCH_INDEX_URL=https://download.pytorch.org/whl/cu132 \
+  --build-arg TORCH_VERSION="$TORCH_VERSION" \
+  --build-arg TORCH_INDEX_URL="$TORCH_INDEX_URL" \
+  --build-arg PYTORCH_BACKEND_CPYTHON_DIR="$PYTORCH_BACKEND_CPYTHON_DIR" \
   -t triton-manylinux-pytorch:example .
 ```
 
@@ -177,24 +176,27 @@ image:
 
 ```bash
 git clone https://github.com/triton-inference-server/server.git
-cd server && git checkout r26.08  # choose any release version (26.08 or newer, see the note above)
+cd server && git checkout "$TRITON_REF"
 
 ./build.py -v --target-platform=rhel --no-container-pull \
-  --version=2.72.0 --container-version=26.08 --upstream-container-version=26.08 \
   --image=base,triton-manylinux-base:example \
   --image=pytorch,localhost:5000/triton-manylinux-pytorch:example \
   --extra-core-cmake-arg=PYBIND11_FINDPYTHON=ON \
   --enable-gpu --enable-logging --enable-stats --enable-metrics \
   --enable-gpu-metrics --enable-cpu-metrics --enable-tracing \
   --endpoint=http --endpoint=grpc \
-  --backend=onnxruntime:r26.08 --backend=pytorch:r26.08 --backend=python:r26.08 \
+  --backend=onnxruntime --backend=pytorch --backend=python \
   --extra-backend-cmake-arg=pytorch:TRITON_PYTORCH_NVSHMEM=ON \
   --extra-backend-cmake-arg=pytorch:TRITON_PYTORCH_ENABLE_TORCHVISION=OFF \
-  --repoagent=checksum:r26.08
+  --repoagent=checksum
 ```
 
 Key flags:
 
+- No `--version` / `--container-version` / `--upstream-container-version`, and no `:tag` on the
+  `--backend` / `--repoagent` flags — build.py reads all of them from the checkout
+  (`DEFAULT_TRITON_VERSION_MAP` and the branch), so this command is the same for every
+  `TRITON_REF`.
 - `--no-container-pull` — assuming your base image is local, this stops Docker from
   trying to pull it. It does **not** stop the pytorch backend's own pull of `--image=pytorch`
   — that's why Step 2 pushes to a local registry.
@@ -216,11 +218,11 @@ Key flags:
 The `python` backend is built here because it makes build.py provision numpy into the Python
 3.12 venv the pytorch backend's stub serves against (Step 4). It's optional — drop
 `--backend=python` and you must add numpy to the completion image yourself. `tensorrt` is optional too (ONNX Runtime already
-pulls in its TensorRT provider); add `--backend=tensorrt:r26.05` for the standalone backend.
+pulls in its TensorRT provider); add `--backend=tensorrt` for the standalone backend.
 
 Triton's `common`, `core`, `backend`, and `third_party` repos don't need explicit
-`--repo-tag` flags — build.py defaults them to the branch matching `--container-version`
-(`r26.05` here).
+`--repo-tag` flags either — build.py defaults them, like the backend and repoagent tags
+above, to the checked-out release branch (or `main` for a dev checkout).
 
 ONNX Runtime is compiled from source here (~2 hours — it builds CUDA kernels for several
 GPU architectures). To speed it up, build for only your GPU's architecture — see the
@@ -268,8 +270,8 @@ docker run --rm -v "$PWD/build:/b:ro" triton-manylinux-base:example \
 **2. Serve real workloads from Manylinux container**
 
 Run the server and real inference. The
-server binary links against EL8's `libssl.so.1.1`, so run it **inside the built image** (Rocky 8)
-rather than on a non‑EL8 host. First create a model repository with two
+server binary links against EL8's `libssl.so.1.1`, so run it **inside the built image**
+(AlmaLinux 8) rather than on a non‑EL8 host. First create a model repository with two
 `OUTPUT0 = INPUT0 + INPUT1` models — one Python, one ONNX.
 
 ```bash
@@ -358,7 +360,9 @@ Expected: `ready: 200`, and both models return `OUTPUT0 = [11, 22, 33, 44]`. A c
 The `pytorch` backend is verified **separately, in its own model repo** (`models_torch/`, GPU). First complete the serving image: [`Dockerfile.pytorch-runtime.rhel`](Dockerfile.pytorch-runtime.rhel) installs `torch` into the image's Python 3.12 plus the NCCL and cuSPARSELt libraries libtorch links:
 
 ```bash
-docker build -f Dockerfile.pytorch-runtime.rhel -t tritonserver-pytorch:example .
+docker build -f Dockerfile.pytorch-runtime.rhel \
+  --build-arg TORCH_VERSION="$TORCH_VERSION" --build-arg TORCH_INDEX_URL="$TORCH_INDEX_URL" \
+  -t tritonserver-pytorch:example .
 ```
 
 Add a TorchScript `OUTPUT__0 = INPUT__0 + INPUT__1` model (the PyTorch backend uses the
@@ -410,11 +414,9 @@ sources, serving correct inference.
 
 This build is *equivalent*, not identical, to the official `manylinux` release:
 
-- **Pin versions for parity.** The manylinux `BASE_IMAGE` tag, `CUDA_VERSION`, `CUDNN_VERSION`
-  and `TENSORRT_VERSION` (Step 1), `TORCH_VERSION` (Steps 2 and 4) and `--version` /
-  `--container-version` (Step 3) must all match the target release. Cross‑check against the
-  release's artifact name (`…-cu13x-cp312-manylinux_2_28-x86_64.zip`), the framework support
-  matrix, or the `nvcr.io/nvidia/tritonserver:<release>-py3-min` image's environment.
+- **Pin versions for parity.** The Dockerfile build-args must match the `TRITON_REF` you build —
+  use the [Which Triton version to build](#which-triton-version-to-build) table. Cross-check
+  against the release's artifact name (`…-cu13x-cp312-manylinux_2_28-x86_64.zip`).
 - **Library patch levels** come from whatever the public `cuda-rhel8` repo and pypa image ship
   at build time and may be slightly newer than the release used (e.g. cuDNN 9.25.1.1 vs
   9.25.0.28, CPython 3.12.14 vs 3.12.13 — hence the Step 2 symlink). Pin exact RPM versions in
