@@ -26,37 +26,38 @@
 
 # Public reconstruction of the internal PyTorch manylinux "wheel image"
 # (dl/dgx/pytorch:<ver>-py3-wheel-*) that build.py's `--image=pytorch,...` path extracts a
-# prebuilt libtorch from -- i.e. a manylinux_2_28 image with a public torch wheel installed,
+# prebuilt libtorch from -- i.e. a manylinux_2_34 image with a public torch wheel installed,
 # mirroring what the internal CI does (install torch into the wheel image, then --image=pytorch).
 # ONLY needed for the pytorch backend. EXAMPLE ONLY -- equivalent, not identical, to the
 # internal wheel image. This tutorial builds without torchvision (see the README's Step 3);
 # wiring it up from public sources is an untested path here.
-#
-#   docker build -f Dockerfile.pytorch.rhel \
-#     --build-arg TORCH_INDEX_URL=https://download.pytorch.org/whl/cu132 \
-#     -t triton-manylinux-pytorch:example .
 
-# manylinux_2_28 == AlmaLinux 8 / glibc 2.28, matching the base-image ABI and providing the
+# Same pinned pypa image as Dockerfile.base.rhel: AlmaLinux 9 / glibc 2.34 and the
 # /opt/_internal/cpython-3.12.* layout the pytorch_backend copies libtorch from.
-ARG BASE_IMAGE=quay.io/pypa/manylinux_2_28_x86_64
+ARG BASE_IMAGE=quay.io/pypa/manylinux_2_34_x86_64:2026.09.05-1
 FROM ${BASE_IMAGE}
 
-# Pin torch to the release's version; the CUDA channel must match the base (13.2 -> cu132).
+# Pin torch to the release's version. cu132 is the newest public CUDA-13 channel; its wheels
+# run on the base's CUDA 13.4 (same major, driver/runtime minor-version compatible).
 # Keep this in sync with Dockerfile.pytorch-runtime.rhel's TORCH_VERSION -- the wheel here
 # is the source build.py extracts libtorch from, and the runtime installs the same version
-# to get matching bundled cuSPARSELt/NCCL/nvshmem. A mismatch would ABI-break at server load.
-ARG TORCH_VERSION=2.13.0
+# for the backend's Python stub. A mismatch would ABI-break at model load.
+ARG TORCH_VERSION=2.14.0
 ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu132
+# The rhel pytorch_backend copies from a HARDCODED /opt/_internal/<this dir> (PY_INSTALL_PATH
+# in its CMakeLists.txt; cpython-3.12.13 on r26.08). Check the branch you build.
+ARG PYTORCH_BACKEND_CPYTHON_DIR=cpython-3.12.13
 ENV PATH=/opt/python/cp312-cp312/bin:${PATH}
 
 RUN set -eux; \
     python -m pip install --upgrade pip; \
     python -m pip install --index-url "${TORCH_INDEX_URL}" \
         "torch==${TORCH_VERSION}"; \
-    # The rhel pytorch_backend copies from a HARDCODED /opt/_internal/cpython-3.12.1 path;
-    # symlink it to whatever 3.12 patch this image actually ships so the `docker cp` resolves.
-    if [ ! -e /opt/_internal/cpython-3.12.1 ]; then \
-        ln -s "$(ls -d /opt/_internal/cpython-3.12.*)" /opt/_internal/cpython-3.12.1; \
+    # Point the backend's hardcoded dir at whatever 3.12 patch this image actually ships so
+    # the `docker cp` resolves.
+    if [ ! -e "/opt/_internal/${PYTORCH_BACKEND_CPYTHON_DIR}" ]; then \
+        ln -s "$(ls -d /opt/_internal/cpython-3.12.* | head -1)" \
+              "/opt/_internal/${PYTORCH_BACKEND_CPYTHON_DIR}"; \
     fi; \
     # OS libs the backend copies from /usr/lib64 (libjpeg.so.62 / libpng16.so.16).
     dnf install -y libjpeg-turbo libpng; \
@@ -71,7 +72,7 @@ RUN set -eux; \
 #    and the patchelf that follows, and are never dlopen'd at runtime.
 #  - LICENSE + jit/codegen: taken from the wheel (the codegen headers already ship in torch/include).
 RUN set -eux; \
-    P=/opt/_internal/cpython-3.12.1; \
+    P=/opt/_internal/${PYTORCH_BACKEND_CPYTHON_DIR}; \
     TL="$P/lib/python3.12/site-packages/torch/lib"; \
     SP="$P/lib/python3.12/site-packages"; \
     stub() { gcc -shared -fPIC -x c -o "$1" /dev/null; }; \
