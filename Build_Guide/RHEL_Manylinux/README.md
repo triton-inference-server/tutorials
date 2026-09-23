@@ -298,7 +298,8 @@ g = helper.make_graph(
     [helper.make_tensor_value_info("INPUT0", TensorProto.FLOAT, [4]),
      helper.make_tensor_value_info("INPUT1", TensorProto.FLOAT, [4])],
     [helper.make_tensor_value_info("OUTPUT0", TensorProto.FLOAT, [4])])
-onnx.save(helper.make_model(g, opset_imports=[helper.make_opsetid("", 13)]),
+# ir_version 7 pairs with opset 13; onnx's default (its newest IR) can exceed what ORT accepts.
+onnx.save(helper.make_model(g, ir_version=7, opset_imports=[helper.make_opsetid("", 13)]),
           "/models/add_onnx/1/model.onnx")
 EOF
 docker run --rm -v "$PWD/models:/models" -v /tmp/gen_onnx.py:/gen.py:ro python:3.12-slim \
