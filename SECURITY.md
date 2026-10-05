@@ -90,9 +90,13 @@ them, not by this repository itself):
 **Repository Exposure Classification:** Public. Basis: the repository is
 publicly visible on GitHub.
 
-**Service Exposure Classification:** Internal-Isolated (low confidence). Basis:
+**Service Exposure Classification:** Not determined (low confidence). Basis:
 the repository ships no running service; deployments are created by users in
-their own environments from the examples.
+their own environments from the examples. Exposure depends on the example used:
+the EKS multi-node Helm chart under `Deployment/Kubernetes` creates a Kubernetes
+Service of type `LoadBalancer` by default for the unauthenticated Triton HTTP,
+gRPC and metrics ports (8000-8002), so a deployment from it can be reachable
+beyond the cluster unless the operator restricts access with network controls.
 
 ## Threat Model
 
@@ -107,10 +111,12 @@ their own environments from the examples.
    Anyone who can reach the host can submit inference requests, read metrics
    and model metadata, or exhaust GPU capacity.
 3. **Credential exposure through build and run scripts.** The Stable Diffusion
-   and Python API `build.sh` scripts pass `HF_TOKEN` as a Docker `--build-arg`,
-   which can persist in image history, and `run.sh` passes it as a container
-   environment variable. Images built this way and pushed to a registry can
-   leak the token.
+   and Python API `build.sh` scripts forward `HF_TOKEN` to `docker build` as a
+   `--build-arg`, but neither Dockerfile declares or uses it, so these
+   Dockerfiles do not place the token in the image. The `run.sh` scripts pass
+   `HF_TOKEN` and `GITHUB_TOKEN` into the running container as environment
+   variables, where any process in the container, or anyone with access to it,
+   can read them.
 4. **Exposed management and UI surfaces.** The Gradio example client binds to
    `0.0.0.0` and the Ray example starts the Ray head node with its dashboard
    on `0.0.0.0`. On a shared network these expose a web UI and a cluster
