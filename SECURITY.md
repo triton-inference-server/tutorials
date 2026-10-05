@@ -26,55 +26,19 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-# Security Policy
+# Report a Security Vulnerability
 
-## Reporting a Vulnerability
+To report a potential security vulnerability in any NVIDIA product, please use either:
+* This web form: [Security Vulnerability Submission Form](https://www.nvidia.com/object/submit-security-vulnerability.html), or
+* Send email to: [NVIDIA PSIRT](mailto:psirt@nvidia.com)
 
-NVIDIA is dedicated to the security and trust of our software products and services, including all source code repositories managed through our organization.
+**OEM Partners should contact their NVIDIA Customer Program Manager**
 
-To report a potential security vulnerability, please use one of the following channels:
-
-1. **NVIDIA Vulnerability Disclosure Program** (preferred): https://www.nvidia.com/en-us/security/
-2. **Web form:** [Security Vulnerability Submission Form](https://www.nvidia.com/object/submit-security-vulnerability.html)
-3. **Email:** [NVIDIA PSIRT](mailto:psirt@nvidia.com). Please encrypt sensitive reports with NVIDIA's [PGP key](https://www.nvidia.com/en-us/security/pgp-key).
-4. **GitHub Private Vulnerability Reporting (where enabled):** use the "Report a vulnerability" button on the Security tab of this repository.
-
-**Do not open a public issue or pull request to report a vulnerability.**
-
-Please include:
-
-* Product or component name and version or branch
-* Type of vulnerability
-* Steps to reproduce
-* Proof of concept, if available
-* Potential impact and how it could be exploited
+If reporting a potential vulnerability via email, please encrypt it using NVIDIA’s public PGP key ([see PGP Key page](https://www.nvidia.com/en-us/security/pgp-key/)) and include the following information:
+1. Product/Driver name and version/branch that contains the vulnerability
+2. Type of vulnerability (code execution, denial of service, buffer overflow, etc.)
+3. Instructions to reproduce the vulnerability
+4. Proof-of-concept or exploit code
+5. Potential impact of the vulnerability, including how an attacker could exploit the vulnerability
 
 See https://www.nvidia.com/en-us/security/ for past NVIDIA Security Bulletins and Notices.
-
-## Security Architecture and Context
-
-**Project:** Tutorials and examples for Triton Inference Server.
-
-**Software type:** Examples and bundled third-party source packages.
-
-**Security boundaries:** The main security boundary is between this code and the environments, credentials and networks where it is built or run.
-
-**Repository Exposure Classification:** Public.
-
-**Service Exposure Classification:** Deployment-dependent. Exposure depends on how the software is deployed and configured by the operator.
-
-## Threat Model
-
-1. **Not hardened:** Examples and modified third-party sources are for development and reference, and may omit production security controls.
-2. **Vulnerable or outdated dependencies:** Bundled or referenced third-party code may contain known vulnerabilities or lag behind upstream fixes.
-3. **Supply chain:** Sources and models fetched at build or run time may be tampered with or unpinned.
-4. **Exposure by default:** Example deployments may expose services without authentication or encryption.
-5. **Credentials and sensitive data:** Credentials and data handled by examples may leak through logs, environment variables or build artifacts.
-
-## Critical Security Assumptions
-
-* The code is used for development and evaluation, and is reviewed before any production use.
-* Deployers add authentication, authorization and TLS before exposing services.
-* Dependencies are kept up to date and obtained from trusted sources.
-* Credentials used with the examples are protected and rotated.
-* Host operating system, driver and hardware security are the operator's responsibility.
