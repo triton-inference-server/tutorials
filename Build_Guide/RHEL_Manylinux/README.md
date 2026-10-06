@@ -410,6 +410,46 @@ Expected output:
 The PyTorch backend, built entirely from public sources, is serving correct inference. Stop the
 server with `Ctrl‑C`.
 
+### Run the checks as tests
+
+The same two checks are tests in the server repo: `qa/L0_rhel_tutorial_cpu` (add_py and add_onnx)
+and `qa/L0_rhel_tutorial_gpu` (add_torch). Like every test under `qa/`, they run inside the server
+image: each `test.sh` writes its models, starts the server, and runs a small pytest suite against
+it. Mount the `qa/` tree of the `server/` checkout from Step 3 and run them the way the server's
+[test guide](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/test.md)
+does:
+
+```bash
+docker run --rm -v "<server-checkout>/qa:/opt/tritonserver/qa" tritonserver:latest \
+  bash -c "cd /opt/tritonserver/qa/L0_rhel_tutorial_cpu && bash -ex ./test.sh"
+docker run --rm --gpus all -v "<server-checkout>/qa:/opt/tritonserver/qa" tritonserver-pytorch:example \
+  bash -c "cd /opt/tritonserver/qa/L0_rhel_tutorial_gpu && bash -ex ./test.sh"
+```
+
+Each ends with `*** Test Passed`, or `*** Test FAILED` followed by the pytest and server logs.
+The tests are on the server's `main` branch; if your `TRITON_REF` predates them, mount a `main`
+checkout's `qa/` instead.
+
+The PyTorch image also runs the server's own `pytorch` backend tests that do not need torchvision:
+`qa/L0_libtorch_inference_mode`, `qa/L0_libtorch_io_names` and `qa/L0_libtorch_io_types`. They
+load models from the server's QA model repository, so generate its PyTorch part once, on a host
+with Docker and a GPU (the generator pulls `nvcr.io/nvidia/pytorch`; see the
+[QA model generation notes](https://github.com/triton-inference-server/server/blob/main/qa/common/README.md)):
+
+```bash
+cd <server-checkout>/qa/common
+./gen_qa_model_repository.py --pytorch      # writes /tmp/<version>/qa_*_model_repository
+```
+
+Then mount that directory where the tests expect it and run each test with the same `<version>`:
+
+```bash
+docker run --rm --gpus all -v "<server-checkout>/qa:/opt/tritonserver/qa" \
+  -v "/tmp/<version>:/data/inferenceserver/<version>:ro" tritonserver-pytorch:example \
+  bash -c "pip install --quiet 'tritonclient[http]' ml_dtypes && \
+           cd /opt/tritonserver/qa/L0_libtorch_io_names && bash -ex ./test.sh <version>"
+```
+
 ## Known differences from the released artifacts
 
 This build is *equivalent*, not identical, to the official `manylinux` release:
