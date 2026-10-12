@@ -37,7 +37,7 @@
 
 This tutorial shows how to build and serve speculative decoding models in Triton Inference Server with [TensorRT-LLM LLM API / PyTorch backend](https://github.com/triton-inference-server/tensorrtllm_backend/blob/main/docs/llmapi.md) on a single node with one GPU. Please go to [Speculative Decoding](../README.md) main page to learn more about other supported backends.
 
-> **Note:** This tutorial uses the modern **LLM API / PyTorch backend**, which works directly with HuggingFace model checkpoints and does not require building TensorRT engines. If you are looking for the legacy TRT engine-based approach, see the [engine backend archive](https://github.com/triton-inference-server/tensorrtllm_backend#tensorrt-engine-backend).
+> **Note:** This tutorial uses the modern **LLM API / PyTorch backend**, which works directly with HuggingFace model checkpoints.
 
 According to [Spec-Bench](https://sites.google.com/view/spec-bench), EAGLE is currently the top-performing approach for speeding up LLM inference across different tasks.
 In this tutorial, we'll focus on [EAGLE-3](#eagle-3) and demonstrate how to make it work with Triton Inference Server. However, we'll also cover [Draft Model-Based Speculative Decoding](#draft-model-based-speculative-decoding) for those interested in exploring alternative methods. This way, you can choose the best fit for your needs.
@@ -211,11 +211,9 @@ You can read more about Gen-AI Perf [here](https://docs.nvidia.com/deeplearning/
 
 ## MEDUSA
 
-> **Important:** MEDUSA is **not supported** in the modern LLM API / PyTorch backend. It only works with the legacy TRT engine backend.
+> **Important:** MEDUSA is **not supported** in the LLM API / PyTorch backend.
 >
 > For new deployments, we recommend using [EAGLE-3](#eagle-3) instead, which is fully supported on the LLM API / PyTorch backend and achieves higher draft accuracy.
->
-> If you specifically need MEDUSA with the TRT engine backend, refer to the [engine backend archive](https://github.com/triton-inference-server/tensorrtllm_backend#tensorrt-engine-backend) for the legacy instructions.
 
 ## Draft Model-Based Speculative Decoding
 
