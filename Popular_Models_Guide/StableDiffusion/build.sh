@@ -39,7 +39,7 @@ DOCKERFILE=${SOURCE_DIR}/docker/Dockerfile
 
 # Base Images
 BASE_IMAGE=nvcr.io/nvidia/tritonserver
-BASE_IMAGE_TAG_DIFFUSION=26.09-py3
+BASE_IMAGE_TAG_DIFFUSION=26.10-py3
 
 get_options() {
     while :; do
@@ -141,7 +141,7 @@ get_options() {
     fi
 
     if [ -z "$TAG" ]; then
-        TAG="tritonserver:r26.09"
+        TAG="tritonserver:r26.10"
 
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
 	    TAG+="-diffusion"
