@@ -99,7 +99,7 @@ get_options() {
     fi
 
     if [ -z "$IMAGE" ]; then
-        IMAGE="tritonserver:r26.09"
+        IMAGE="tritonserver:r26.10"
 
 	if [[ $FRAMEWORK == "DIFFUSION" ]]; then
 	    IMAGE+="-diffusion"
