@@ -41,3 +41,4 @@ Conceptual guides have been designed as an onboarding experience to Triton Infer
 * [Part 6: Using the BLS API to build complex pipelines](Part_6-building_complex_pipelines/): Often times there are scenarios where the pipeline requires control flows. Learn how to work with complex pipelines with models deployed on different backends.
 * [Part 7: Iterative Scheduling Tutorial](./Part_7-iterative_scheduling): Shows how to use the Triton Iterative Scheduler with a GPT2 model using HuggingFace Transformers.
 * [Part 8: Semantic Caching](./Part_8-semantic_caching/): Shows benefits of adding semantic caching to you LLM-based workflow.
+* [Part 9: GPU-Accelerated Semantic Caching](./Part_9-gpu_semantic_caching/): Extends Part 8 with GPU-accelerated vector search using cuVS CAGRA and tiered response storage, achieving up to 817x speedup over CPU Faiss at 100K cache entries.
